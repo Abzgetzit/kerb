@@ -1,3 +1,10 @@
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 function Icon({ name }) {
   const icons = {
     car: (
@@ -128,7 +135,69 @@ function Icon({ name }) {
   );
 }
 
-export default function HomePage() {
+function getListingImage(car) {
+  const directImage =
+    car.main_photo ||
+    car.photo_url ||
+    car.image_url ||
+    car.cover_image ||
+    car.main_image;
+
+  if (directImage) return directImage;
+
+  const possibleArrays = [
+    car.photos,
+    car.photo_urls,
+    car.image_urls,
+    car.images,
+  ];
+
+  for (const item of possibleArrays) {
+    if (Array.isArray(item) && item.length > 0) {
+      return item[0];
+    }
+
+    if (typeof item === "string") {
+      try {
+        const parsed = JSON.parse(item);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed[0];
+        }
+      } catch {
+        if (item.startsWith("http")) return item;
+      }
+    }
+  }
+
+  return "/cars/hero-car.png";
+}
+
+function formatPrice(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return "POA";
+  return `£${number.toLocaleString("en-GB")}`;
+}
+
+function formatMileage(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "Mileage TBC";
+  return `${number.toLocaleString("en-GB")} miles`;
+}
+
+function carTitle(car) {
+  return [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing";
+}
+
+export default async function HomePage() {
+  const { data } = await supabase
+    .from("kerb_listings")
+    .select("*")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  const approvedListings = data || [];
+
   const categories = [
     ["car", "Used cars", "Browse trusted second-hand cars"],
     ["new", "New cars", "Explore new models and deals"],
@@ -143,7 +212,7 @@ export default function HomePage() {
         <a href="/" className="logo">Kerb</a>
 
         <nav className="navLinks">
-          <a href="#coming-soon"><Icon name="car" /> Browse cars</a>
+          <a href="/browse"><Icon name="car" /> Browse cars</a>
           <a href="#coming-soon"><Icon name="new" /> New cars</a>
           <a href="/post-car"><Icon name="sell" /> Sell your car</a>
           <a href="#coming-soon"><Icon name="electric" /> Electric</a>
@@ -231,9 +300,9 @@ export default function HomePage() {
             </div>
           </div>
 
-          <button className="searchBtn" type="button">
+          <a className="searchBtn" href="/browse">
             Search cars
-          </button>
+          </a>
         </div>
       </section>
 
@@ -255,28 +324,78 @@ export default function HomePage() {
       </section>
 
       <section className="launchGrid" id="coming-soon">
-        <div className="emptyListings">
-          <div className="emptyIcon">
-            <Icon name="car" />
-          </div>
+        <div className="listingsPanel">
+          <div className="sectionTitleRow">
+            <div>
+              <span className="sectionKicker">Approved listings</span>
+              <h2>Latest cars on Kerb</h2>
+            </div>
 
-          <h2>Car listings are coming soon</h2>
-
-          <p>
-            Kerb is getting ready to launch. Once sellers start posting cars and
-            you approve them, listings will appear here with photos, prices,
-            mileage, location and seller details.
-          </p>
-
-          <div className="emptyActions">
-            <a href="/post-car" className="primaryBtn">
-              <Icon name="plus" /> Post your car
-            </a>
-
-            <a href="#early-access" className="secondaryBtn">
-              Join launch list
+            <a href="/browse" className="browseAllLink">
+              Browse all cars →
             </a>
           </div>
+
+          {approvedListings.length > 0 ? (
+            <div className="homeListingsGrid">
+              {approvedListings.map((car) => (
+                <article className="listingCard" key={car.id}>
+                  <div className="listingImageWrap">
+                    <img
+                      src={getListingImage(car)}
+                      alt={carTitle(car)}
+                      className="listingImage"
+                    />
+                  </div>
+
+                  <div className="listingContent">
+                    <div>
+                      <h3>{carTitle(car)}</h3>
+                      <p className="listingLocation">
+                        <Icon name="location" /> {car.location || "Location TBC"}
+                      </p>
+                    </div>
+
+                    <div className="listingMeta">
+                      <span>{formatMileage(car.mileage)}</span>
+                      <span>{car.fuel_type || car.gearbox || "Approved"}</span>
+                    </div>
+
+                    <div className="listingFooter">
+                      <strong>{formatPrice(car.price)}</strong>
+
+                      <a href={`/cars/${car.id}`} className="viewCarBtn">
+                        View car
+                      </a>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="emptyListings">
+              <div className="emptyIcon">
+                <Icon name="car" />
+              </div>
+
+              <h2>No approved cars yet</h2>
+
+              <p>
+                Once sellers submit cars and you approve them in the admin
+                dashboard, they will appear here automatically.
+              </p>
+
+              <div className="emptyActions">
+                <a href="/post-car" className="primaryBtn">
+                  <Icon name="plus" /> Post your car
+                </a>
+
+                <a href="#early-access" className="secondaryBtn">
+                  Join launch list
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="sellerBox">
@@ -635,6 +754,10 @@ export default function HomePage() {
           color: white;
           font-weight: 950;
           font-size: 14px;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .categories {
@@ -692,7 +815,7 @@ export default function HomePage() {
           margin-top: 20px;
         }
 
-        .emptyListings,
+        .listingsPanel,
         .sellerBox {
           background: white;
           border: 1px solid #e6ebf4;
@@ -701,8 +824,135 @@ export default function HomePage() {
           box-shadow: 0 12px 30px rgba(10, 20, 40, 0.05);
         }
 
+        .sectionTitleRow {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          gap: 18px;
+          margin-bottom: 22px;
+        }
+
+        .sectionKicker {
+          color: #0048ff;
+          font-size: 13px;
+          font-weight: 950;
+          display: block;
+          margin-bottom: 7px;
+        }
+
+        .sectionTitleRow h2 {
+          margin: 0;
+          font-size: 31px;
+          letter-spacing: -1.1px;
+        }
+
+        .browseAllLink {
+          color: #0048ff;
+          text-decoration: none;
+          font-weight: 950;
+          white-space: nowrap;
+          font-size: 14px;
+        }
+
+        .homeListingsGrid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .listingCard {
+          border: 1px solid #e7edf6;
+          border-radius: 20px;
+          overflow: hidden;
+          background: #fff;
+          box-shadow: 0 8px 24px rgba(10, 20, 40, 0.04);
+          transition: 0.2s ease;
+        }
+
+        .listingCard:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 18px 44px rgba(10, 20, 40, 0.09);
+        }
+
+        .listingImageWrap {
+          height: 170px;
+          background: #edf3ff;
+          overflow: hidden;
+        }
+
+        .listingImage {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .listingContent {
+          padding: 16px;
+        }
+
+        .listingContent h3 {
+          margin: 0;
+          font-size: 17px;
+          letter-spacing: -0.4px;
+          color: #071126;
+        }
+
+        .listingLocation {
+          margin: 7px 0 0;
+          color: #657189;
+          font-size: 13px;
+          font-weight: 750;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .listingLocation .icon {
+          width: 15px;
+          height: 15px;
+          color: #0048ff;
+        }
+
+        .listingMeta {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          margin: 16px 0;
+          color: #657189;
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+        .listingFooter {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .listingFooter strong {
+          font-size: 20px;
+          color: #071126;
+        }
+
+        .viewCarBtn {
+          background: #0048ff;
+          color: white;
+          border-radius: 13px;
+          padding: 10px 14px;
+          font-size: 13px;
+          font-weight: 950;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+
         .emptyListings {
           text-align: center;
+          border: 1px dashed #c8d7f2;
+          border-radius: 22px;
+          background: #f8fbff;
+          padding: 34px;
         }
 
         .emptyIcon {
@@ -895,6 +1145,10 @@ export default function HomePage() {
             grid-template-columns: 1fr;
           }
 
+          .homeListingsGrid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
           .trustGrid {
             grid-template-columns: repeat(2, 1fr);
           }
@@ -965,12 +1219,22 @@ export default function HomePage() {
           }
 
           .categories,
-          .trustGrid {
+          .trustGrid,
+          .homeListingsGrid {
             grid-template-columns: 1fr;
           }
 
-          .emptyListings,
+          .listingsPanel,
           .sellerBox {
+            padding: 24px;
+          }
+
+          .sectionTitleRow {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .emptyListings {
             padding: 24px;
           }
 
