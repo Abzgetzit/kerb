@@ -10,21 +10,21 @@ export default function HomePage() {
   return (
     <main className="page">
       <header className="navbar">
-        <div className="logo">Kerb</div>
+        <a href="/" className="logo">Kerb</a>
 
         <nav className="navLinks">
-          <a>🚗 Browse cars</a>
-          <a>✨ New cars</a>
-          <a>🔁 Sell your car</a>
-          <a>⚡ Electric</a>
-          <a>💷 Finance</a>
-          <a>📘 Guides</a>
+          <a href="#coming-soon">🚗 Browse cars</a>
+          <a href="#coming-soon">✨ New cars</a>
+          <a href="/post-car">🔁 Sell your car</a>
+          <a href="#coming-soon">⚡ Electric</a>
+          <a href="#coming-soon">💷 Finance</a>
+          <a href="#coming-soon">📘 Guides</a>
         </nav>
 
         <div className="navActions">
           <button className="ghostBtn">♡ Saved</button>
           <button className="ghostBtn">Sign in</button>
-          <button className="primaryBtn">＋ Post your car</button>
+          <a href="/post-car" className="primaryBtn">＋ Post your car</a>
         </div>
       </header>
 
@@ -100,7 +100,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <button className="searchBtn">Search cars</button>
+          <button className="searchBtn" type="button">Search cars</button>
         </div>
       </section>
 
@@ -117,7 +117,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="launchGrid">
+      <section className="launchGrid" id="coming-soon">
         <div className="emptyListings">
           <div className="emptyIcon">🚗</div>
           <h2>Car listings are coming soon</h2>
@@ -128,8 +128,8 @@ export default function HomePage() {
           </p>
 
           <div className="emptyActions">
-            <button className="primaryBtn">Post your car</button>
-            <button className="secondaryBtn">Join launch list</button>
+            <a href="/post-car" className="primaryBtn">Post your car</a>
+            <a href="#early-access" className="secondaryBtn">Join launch list</a>
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <button className="primaryBtn fullBtn">Start selling</button>
+          <a href="/post-car" className="primaryBtn fullBtn">Start selling</a>
         </div>
       </section>
 
@@ -193,7 +193,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="newsletter">
+      <section className="newsletter" id="early-access">
         <div>
           <h3>Get early access to Kerb</h3>
           <p>Be notified when the first cars go live.</p>
@@ -201,7 +201,7 @@ export default function HomePage() {
 
         <div className="emailBox">
           <input placeholder="Enter your email address" />
-          <button>Notify me</button>
+          <button type="button">Notify me</button>
         </div>
       </section>
 
@@ -236,6 +236,7 @@ export default function HomePage() {
           font-weight: 900;
           color: #0048ff;
           letter-spacing: -1.8px;
+          text-decoration: none;
         }
 
         .navLinks {
@@ -250,6 +251,7 @@ export default function HomePage() {
         .navLinks a {
           text-decoration: none;
           cursor: pointer;
+          color: inherit;
         }
 
         .navActions {
@@ -278,6 +280,13 @@ export default function HomePage() {
           padding: 14px 24px;
           font-weight: 800;
           box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
         }
 
         .secondaryBtn {
@@ -286,6 +295,13 @@ export default function HomePage() {
           border-radius: 14px;
           padding: 14px 24px;
           font-weight: 800;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
         }
 
         .hero {
