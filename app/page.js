@@ -185,16 +185,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="heroVisual">
-          <div className="heroGlow" />
-          <div className="heroCarStage">
-            <div className="heroGroundShadow" />
-            <img
-              className="heroCarImage"
-              src="/cars/hero-car.png"
-              alt="White BMW on Kerb"
-            />
-          </div>
+        <div className="heroCar">
+          <div className="heroCarGlow" />
+          <img src="/cars/hero-car.png" alt="White BMW on Kerb" />
         </div>
 
         <div className="searchBox">
@@ -488,40 +481,12 @@ export default function HomePage() {
           border-radius: 30px;
           overflow: hidden;
           background:
-            radial-gradient(circle at 78% 42%, rgba(0, 72, 255, 0.15), transparent 34%),
-            radial-gradient(circle at 72% 78%, rgba(255, 255, 255, 0.95), transparent 42%),
+            radial-gradient(circle at 76% 42%, rgba(0,72,255,0.14), transparent 34%),
+            radial-gradient(circle at 72% 72%, rgba(255,255,255,0.92), transparent 42%),
             linear-gradient(105deg, #f9fbff 0%, #f5f8ff 42%, #eaf2ff 100%);
           border: 1px solid #e5eaf5;
           padding: 46px 56px 104px;
           box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
-          isolation: isolate;
-        }
-
-        .hero::before {
-          content: "";
-          position: absolute;
-          inset: -80px -120px auto auto;
-          width: 640px;
-          height: 420px;
-          background:
-            radial-gradient(circle at 50% 50%, rgba(0, 72, 255, 0.14), transparent 58%),
-            radial-gradient(circle at 58% 54%, rgba(255, 255, 255, 0.85), transparent 54%);
-          filter: blur(8px);
-          z-index: 0;
-          pointer-events: none;
-        }
-
-        .hero::after {
-          content: "";
-          position: absolute;
-          right: -120px;
-          bottom: -160px;
-          width: 620px;
-          height: 320px;
-          background: radial-gradient(circle, rgba(0, 72, 255, 0.08), transparent 68%);
-          filter: blur(14px);
-          z-index: 0;
-          pointer-events: none;
         }
 
         .pill {
@@ -577,78 +542,47 @@ export default function HomePage() {
           height: 17px;
         }
 
-        .heroVisual {
+        .heroCar {
           position: absolute;
-          right: 36px;
-          top: 26px;
-          width: min(52vw, 670px);
-          height: 285px;
+          right: 46px;
+          bottom: 92px;
+          width: 640px;
           z-index: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           pointer-events: none;
         }
 
-        .heroGlow {
-          position: absolute;
-          inset: -34px -46px -42px -44px;
-          background:
-            radial-gradient(circle at 62% 42%, rgba(255, 255, 255, 0.96), transparent 38%),
-            radial-gradient(circle at 50% 54%, rgba(0, 72, 255, 0.14), transparent 48%),
-            radial-gradient(circle at 40% 68%, rgba(124, 165, 255, 0.16), transparent 44%);
-          filter: blur(14px);
-          opacity: 0.95;
-          z-index: 0;
-        }
-
-        .heroCarStage {
-          position: relative;
-          width: 100%;
-          max-width: 680px;
-          transform-style: preserve-3d;
-          perspective: 1400px;
-          z-index: 1;
-        }
-
-        .heroGroundShadow {
+        .heroCar::after {
+          content: "";
           position: absolute;
           left: 50%;
-          bottom: 12px;
+          bottom: 10px;
           width: 72%;
-          height: 28px;
-          transform: translateX(-50%) rotateX(62deg);
-          background: rgba(8, 18, 38, 0.19);
-          filter: blur(20px);
+          height: 24px;
+          transform: translateX(-50%);
+          background: rgba(8, 18, 38, 0.14);
+          filter: blur(18px);
           border-radius: 999px;
           z-index: 0;
         }
 
-        .heroCarImage {
+        .heroCarGlow {
+          position: absolute;
+          inset: -44px -58px -34px -58px;
+          background:
+            radial-gradient(circle at 58% 46%, rgba(255, 255, 255, 0.92), transparent 43%),
+            radial-gradient(circle at 55% 58%, rgba(0, 72, 255, 0.12), transparent 52%);
+          filter: blur(16px);
+          z-index: 0;
+        }
+
+        .heroCar img {
           position: relative;
-          z-index: 2;
+          z-index: 1;
           width: 100%;
           height: auto;
           display: block;
           object-fit: contain;
-          mix-blend-mode: multiply;
-          filter:
-            drop-shadow(0 30px 34px rgba(8, 18, 38, 0.16))
-            drop-shadow(0 12px 16px rgba(8, 18, 38, 0.08));
-          transform: perspective(1400px) rotateY(-7deg) rotateX(2deg) translateY(4px);
-          animation: heroFloat 5.5s ease-in-out infinite;
-        }
-
-        @keyframes heroFloat {
-          0% {
-            transform: perspective(1400px) rotateY(-7deg) rotateX(2deg) translateY(4px);
-          }
-          50% {
-            transform: perspective(1400px) rotateY(-5deg) rotateX(1deg) translateY(-4px);
-          }
-          100% {
-            transform: perspective(1400px) rotateY(-7deg) rotateX(2deg) translateY(4px);
-          }
+          filter: drop-shadow(0 22px 26px rgba(8, 18, 38, 0.13));
         }
 
         .searchBox {
@@ -660,7 +594,7 @@ export default function HomePage() {
           display: grid;
           grid-template-columns: repeat(5, 1fr) 170px;
           gap: 16px;
-          background: rgba(255, 255, 255, 0.9);
+          background: rgba(255,255,255,0.9);
           backdrop-filter: blur(20px);
           border: 1px solid #e4e9f3;
           border-radius: 22px;
@@ -939,14 +873,10 @@ export default function HomePage() {
             display: none;
           }
 
-          .heroVisual {
-            right: -20px;
-            width: 56vw;
+          .heroCar {
+            right: 20px;
+            width: 560px;
             opacity: 0.42;
-          }
-
-          .heroCarImage {
-            mix-blend-mode: multiply;
           }
 
           .searchBox {
@@ -1001,35 +931,24 @@ export default function HomePage() {
             font-size: 15px;
           }
 
-          .heroVisual {
+          .heroCar {
             position: relative;
-            top: auto;
             right: auto;
+            bottom: auto;
             width: 100%;
-            height: auto;
-            margin: 22px 0 2px;
             opacity: 1;
+            margin: 18px 0 0;
           }
 
-          .heroGlow {
-            inset: -28px -20px -26px;
-          }
-
-          .heroCarStage {
-            max-width: 100%;
-          }
-
-          .heroGroundShadow {
-            bottom: 6px;
+          .heroCar::after {
+            bottom: 5px;
             width: 68%;
             height: 20px;
             filter: blur(16px);
           }
 
-          .heroCarImage {
-            transform: none;
-            animation: none;
-            mix-blend-mode: multiply;
+          .heroCarGlow {
+            inset: -25px -20px -18px;
           }
 
           .searchBox {
