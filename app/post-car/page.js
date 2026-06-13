@@ -1,9 +1,111 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const carMakes = {
+  Audi: ["A1", "A3", "A4", "A5", "A6", "Q2", "Q3", "Q5", "Q7", "TT"],
+  BMW: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "X1", "X3", "X5", "i3", "i4"],
+  Mercedes: ["A-Class", "C-Class", "E-Class", "S-Class", "GLA", "GLC", "GLE", "CLA"],
+  Volkswagen: ["Polo", "Golf", "Passat", "Tiguan", "T-Roc", "Touareg"],
+  Ford: ["Fiesta", "Focus", "Kuga", "Puma", "Mondeo", "Transit"],
+  Vauxhall: ["Corsa", "Astra", "Insignia", "Mokka", "Grandland"],
+  Toyota: ["Yaris", "Corolla", "Auris", "C-HR", "RAV4", "Prius"],
+  Nissan: ["Micra", "Juke", "Qashqai", "X-Trail", "Leaf"],
+  Hyundai: ["i10", "i20", "i30", "Tucson", "Kona", "Ioniq"],
+  Kia: ["Picanto", "Rio", "Ceed", "Sportage", "Niro", "EV6"],
+  Peugeot: ["208", "308", "508", "2008", "3008", "5008"],
+  Renault: ["Clio", "Megane", "Captur", "Kadjar", "Zoe"],
+  Tesla: ["Model 3", "Model Y", "Model S", "Model X"],
+  Volvo: ["V40", "XC40", "XC60", "XC90", "S60", "V60"],
+  "Land Rover": ["Range Rover Evoque", "Discovery Sport", "Range Rover Sport", "Defender"],
+  MINI: ["Hatch", "Clubman", "Countryman", "Convertible"],
+  Honda: ["Civic", "Jazz", "CR-V", "HR-V"],
+  Mazda: ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-5"],
+  Skoda: ["Fabia", "Octavia", "Superb", "Kamiq", "Karoq", "Kodiaq"],
+  SEAT: ["Ibiza", "Leon", "Ateca", "Arona"],
+  Other: [],
+};
 
 export default function PostCarPage() {
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [customModel, setCustomModel] = useState("");
+  const [year, setYear] = useState("");
+  const [mileage, setMileage] = useState("");
+  const [fuel, setFuel] = useState("");
+  const [gearbox, setGearbox] = useState("");
+  const [photos, setPhotos] = useState([]);
+
+  useEffect(() => {
+    const user = localStorage.getItem("kerbUser");
+
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setIsCheckingAuth(false);
+  }, []);
+
+  const availableModels = make ? carMakes[make] || [] : [];
+
+  const valuation = useMemo(() => {
+    if (!make || !year || !mileage) return null;
+
+    const carAge = new Date().getFullYear() - Number(year);
+    const mileageNumber = Number(String(mileage).replace(/[^0-9]/g, ""));
+
+    if (!Number.isFinite(carAge) || !Number.isFinite(mileageNumber)) return null;
+
+    let base = 12000;
+
+    if (["BMW", "Mercedes", "Audi", "Land Rover", "Tesla", "Volvo"].includes(make)) {
+      base = 22000;
+    }
+
+    if (["Volkswagen", "Toyota", "Kia", "Hyundai", "Skoda"].includes(make)) {
+      base = 15000;
+    }
+
+    if (["Ford", "Vauxhall", "Peugeot", "Renault", "Nissan"].includes(make)) {
+      base = 11000;
+    }
+
+    const ageDeduction = carAge * 1100;
+    const mileageDeduction = Math.floor(mileageNumber / 10000) * 550;
+
+    if (fuel === "Electric") base += 2500;
+    if (fuel === "Hybrid") base += 1200;
+    if (gearbox === "Automatic") base += 700;
+
+    const estimate = Math.max(base - ageDeduction - mileageDeduction, 1500);
+
+    return {
+      low: Math.round((estimate * 0.9) / 100) * 100,
+      high: Math.round((estimate * 1.1) / 100) * 100,
+    };
+  }, [make, year, mileage, fuel, gearbox]);
+
+  function handlePhotoUpload(e) {
+    const files = Array.from(e.target.files || []);
+    const previews = files.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+
+    setPhotos((current) => [...current, ...previews].slice(0, 12));
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <main className="page">
+        <div className="loadingBox">Checking your account...</div>
+        <style>{styles}</style>
+      </main>
+    );
+  }
 
   if (submitted) {
     return (
@@ -14,8 +116,8 @@ export default function PostCarPage() {
           <h1>Listing request received</h1>
           <p>
             Thanks. Your car details have been received. Once Kerb is fully live,
-            this will become a proper seller listing flow with photos, pricing
-            and account management.
+            your seller dashboard will let you manage the listing, photos and
+            buyer enquiries.
           </p>
           <a href="/" className="primaryBtn">Back to homepage</a>
         </div>
@@ -37,18 +139,18 @@ export default function PostCarPage() {
           <div className="pill">Seller early access</div>
           <h1>Post your car on Kerb</h1>
           <p>
-            Add your car details and join the first sellers on Kerb. This is the
-            starting version of the seller page — later we’ll connect it to a
-            database and image upload.
+            Create your car listing with vehicle details, photos, seller
+            information and a basic guide price estimate.
           </p>
         </div>
 
         <div className="heroCard">
-          <h3>What happens next?</h3>
+          <h3>Listing checklist</h3>
           <ul>
-            <li>Submit your car details</li>
-            <li>Kerb stores seller interest</li>
-            <li>Listings go live once the marketplace launches</li>
+            <li>Choose the make and model</li>
+            <li>Add mileage, year and price</li>
+            <li>Upload clear car photos</li>
+            <li>Submit your seller details</li>
           </ul>
         </div>
       </section>
@@ -61,32 +163,95 @@ export default function PostCarPage() {
             setSubmitted(true);
           }}
         >
-          <h2>Car details</h2>
+          <div className="formHeader">
+            <div>
+              <h2>Car details</h2>
+              <p>Start with the basic information buyers care about most.</p>
+            </div>
+          </div>
 
           <div className="grid">
             <label>
               Make
-              <input placeholder="BMW, Audi, Mercedes..." required />
+              <select
+                required
+                value={make}
+                onChange={(e) => {
+                  setMake(e.target.value);
+                  setModel("");
+                  setCustomModel("");
+                }}
+              >
+                <option value="">Select make</option>
+                {Object.keys(carMakes).map((makeName) => (
+                  <option key={makeName} value={makeName}>
+                    {makeName}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label>
               Model
-              <input placeholder="3 Series, A4, Golf..." required />
+              {make === "Other" || availableModels.length === 0 ? (
+                <input
+                  placeholder="Type the model"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  required
+                />
+              ) : (
+                <>
+                  <select
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    required={!customModel}
+                  >
+                    <option value="">Select model</option>
+                    {availableModels.map((modelName) => (
+                      <option key={modelName} value={modelName}>
+                        {modelName}
+                      </option>
+                    ))}
+                    <option value="Other">Other / type manually</option>
+                  </select>
+
+                  {model === "Other" && (
+                    <input
+                      className="manualInput"
+                      placeholder="Type the model"
+                      value={customModel}
+                      onChange={(e) => setCustomModel(e.target.value)}
+                      required
+                    />
+                  )}
+                </>
+              )}
             </label>
 
             <label>
               Year
-              <input placeholder="2020" required />
+              <input
+                placeholder="2020"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                required
+              />
             </label>
 
             <label>
               Mileage
-              <input placeholder="45,000 miles" required />
+              <input
+                placeholder="45,000"
+                value={mileage}
+                onChange={(e) => setMileage(e.target.value)}
+                required
+              />
             </label>
 
             <label>
               Fuel type
-              <select required>
+              <select value={fuel} onChange={(e) => setFuel(e.target.value)} required>
                 <option value="">Select fuel type</option>
                 <option>Petrol</option>
                 <option>Diesel</option>
@@ -97,7 +262,7 @@ export default function PostCarPage() {
 
             <label>
               Gearbox
-              <select required>
+              <select value={gearbox} onChange={(e) => setGearbox(e.target.value)} required>
                 <option value="">Select gearbox</option>
                 <option>Manual</option>
                 <option>Automatic</option>
@@ -115,10 +280,49 @@ export default function PostCarPage() {
             </label>
           </div>
 
+          {valuation && (
+            <div className="valuationBox">
+              <div>
+                <span>Estimated guide price</span>
+                <strong>
+                  £{valuation.low.toLocaleString()} - £{valuation.high.toLocaleString()}
+                </strong>
+              </div>
+              <p>
+                This is a basic estimate only. A real valuation will later compare
+                similar cars listed on Kerb.
+              </p>
+            </div>
+          )}
+
           <label>
             Short description
-            <textarea placeholder="Tell buyers about condition, service history, features, MOT, etc." />
+            <textarea placeholder="Tell buyers about condition, service history, features, MOT, ownership, modifications or damage." />
           </label>
+
+          <div className="photoSection">
+            <div>
+              <h2>Photos</h2>
+              <p>Add up to 12 photos. Clear photos help buyers trust the listing.</p>
+            </div>
+
+            <label className="uploadBox">
+              <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
+              <span>📸</span>
+              <strong>Upload car photos</strong>
+              <small>Front, rear, sides, interior, wheels and dashboard</small>
+            </label>
+
+            {photos.length > 0 && (
+              <div className="photoGrid">
+                {photos.map((photo, index) => (
+                  <div className="photoPreview" key={`${photo.name}-${index}`}>
+                    <img src={photo.url} alt={photo.name} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <h2>Seller details</h2>
 
@@ -271,10 +475,23 @@ const styles = `
     box-shadow: 0 12px 30px rgba(10, 20, 40, 0.05);
   }
 
+  .formHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 18px;
+  }
+
   .formCard h2 {
-    margin: 0 0 18px;
+    margin: 0 0 8px;
     font-size: 24px;
     letter-spacing: -0.7px;
+  }
+
+  .formCard p {
+    color: #657189;
+    font-size: 14px;
   }
 
   .grid {
@@ -305,6 +522,10 @@ const styles = `
     font-family: inherit;
   }
 
+  .manualInput {
+    margin-top: 8px;
+  }
+
   textarea {
     min-height: 130px;
     resize: vertical;
@@ -316,6 +537,99 @@ const styles = `
   textarea:focus {
     border-color: #0048ff;
     box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
+  }
+
+  .valuationBox {
+    margin: -4px 0 24px;
+    background: linear-gradient(90deg, #edf4ff, #ffffff);
+    border: 1px solid #dce8ff;
+    border-radius: 20px;
+    padding: 20px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .valuationBox span {
+    display: block;
+    color: #657189;
+    font-size: 13px;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .valuationBox strong {
+    display: block;
+    color: #0048ff;
+    font-size: 30px;
+    letter-spacing: -1px;
+  }
+
+  .valuationBox p {
+    font-size: 13px;
+    color: #657189;
+  }
+
+  .photoSection {
+    border-top: 1px solid #edf1f7;
+    border-bottom: 1px solid #edf1f7;
+    padding: 26px 0;
+    margin-bottom: 26px;
+  }
+
+  .uploadBox {
+    margin-top: 18px;
+    border: 2px dashed #cfdaf0;
+    border-radius: 22px;
+    padding: 32px;
+    background: #f8fbff;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  .uploadBox:hover {
+    border-color: #0048ff;
+    background: #f3f7ff;
+  }
+
+  .uploadBox input {
+    display: none;
+  }
+
+  .uploadBox span {
+    font-size: 34px;
+  }
+
+  .uploadBox strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 18px;
+  }
+
+  .uploadBox small {
+    color: #657189;
+    font-weight: 700;
+  }
+
+  .photoGrid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .photoPreview {
+    height: 110px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e5eaf4;
+    background: #f1f4fa;
+  }
+
+  .photoPreview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .primaryBtn {
@@ -334,6 +648,7 @@ const styles = `
     box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
   }
 
+  .loadingBox,
   .successBox {
     max-width: 620px;
     margin: 120px auto 0;
@@ -365,6 +680,12 @@ const styles = `
     margin-bottom: 24px;
   }
 
+  @media (max-width: 1100px) {
+    .photoGrid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   @media (max-width: 800px) {
     .page {
       padding: 18px;
@@ -385,6 +706,10 @@ const styles = `
 
     .formCard {
       padding: 24px;
+    }
+
+    .photoGrid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 `;
