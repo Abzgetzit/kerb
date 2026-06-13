@@ -1,10 +1,140 @@
+function Icon({ name }) {
+  const icons = {
+    car: (
+      <>
+        <path d="M5 13l1.5-4.5A3 3 0 0 1 9.35 6h5.3a3 3 0 0 1 2.85 2.5L19 13" />
+        <path d="M4 13h16v4H4z" />
+        <path d="M6.5 17.5v1" />
+        <path d="M17.5 17.5v1" />
+        <circle cx="7.5" cy="15" r="1" />
+        <circle cx="16.5" cy="15" r="1" />
+      </>
+    ),
+    new: (
+      <>
+        <path d="M12 3l1.6 5.1L19 10l-5.4 1.9L12 17l-1.6-5.1L5 10l5.4-1.9L12 3z" />
+        <path d="M20 4v4" />
+        <path d="M22 6h-4" />
+      </>
+    ),
+    sell: (
+      <>
+        <path d="M7 11l3-3 4 4 3-3" />
+        <path d="M5 19h14" />
+        <path d="M6 15l4 4 8-8" />
+      </>
+    ),
+    electric: (
+      <>
+        <path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z" />
+      </>
+    ),
+    finance: (
+      <>
+        <rect x="3" y="6" width="18" height="12" rx="3" />
+        <path d="M3 10h18" />
+        <path d="M7 15h3" />
+      </>
+    ),
+    guide: (
+      <>
+        <path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 0-4-4V4z" />
+        <path d="M5 4v12" />
+        <path d="M9 8h6" />
+        <path d="M9 12h5" />
+      </>
+    ),
+    heart: (
+      <>
+        <path d="M20.8 8.6c0 5.2-8.8 10.4-8.8 10.4S3.2 13.8 3.2 8.6A4.6 4.6 0 0 1 12 6.7a4.6 4.6 0 0 1 8.8 1.9z" />
+      </>
+    ),
+    user: (
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21a8 8 0 0 1 16 0" />
+      </>
+    ),
+    plus: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v8" />
+        <path d="M8 12h8" />
+      </>
+    ),
+    location: (
+      <>
+        <path d="M12 21s7-5.1 7-11a7 7 0 1 0-14 0c0 5.9 7 11 7 11z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </>
+    ),
+    price: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M14.5 8.5h-3a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-3" />
+        <path d="M12 6.5v11" />
+      </>
+    ),
+    mileage: (
+      <>
+        <path d="M5 16a7 7 0 1 1 14 0" />
+        <path d="M12 16l4-5" />
+        <path d="M4 20h16" />
+      </>
+    ),
+    body: (
+      <>
+        <path d="M4 14h16l-2-5H6l-2 5z" />
+        <path d="M6 14v4" />
+        <path d="M18 14v4" />
+        <circle cx="8" cy="18" r="1.5" />
+        <circle cx="16" cy="18" r="1.5" />
+      </>
+    ),
+    fuel: (
+      <>
+        <path d="M7 3h7v18H7z" />
+        <path d="M9 7h3" />
+        <path d="M14 8h2l2 2v8a2 2 0 0 0 4 0v-6l-3-3" />
+      </>
+    ),
+    shield: (
+      <>
+        <path d="M12 3l8 3v6c0 5-3.4 8.2-8 9-4.6-.8-8-4-8-9V6l8-3z" />
+        <path d="M9 12l2 2 4-5" />
+      </>
+    ),
+    mail: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="3" />
+        <path d="M4 7l8 6 8-6" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      className="icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {icons[name]}
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const categories = [
-    ["🚘", "Used cars", "Browse trusted second-hand cars"],
-    ["✨", "New cars", "Explore new models and deals"],
-    ["⚡", "Electric cars", "Find electric and hybrid cars"],
-    ["🚙", "Family SUVs", "Practical cars for everyday life"],
-    ["🏁", "Performance", "Powerful cars built for driving"],
+    ["car", "Used cars", "Browse trusted second-hand cars"],
+    ["new", "New cars", "Explore new models and deals"],
+    ["electric", "Electric cars", "Find electric and hybrid cars"],
+    ["body", "Family SUVs", "Practical cars for everyday life"],
+    ["mileage", "Performance", "Powerful cars built for driving"],
   ];
 
   return (
@@ -13,18 +143,26 @@ export default function HomePage() {
         <a href="/" className="logo">Kerb</a>
 
         <nav className="navLinks">
-          <a href="#coming-soon">🚗 Browse cars</a>
-          <a href="#coming-soon">✨ New cars</a>
-          <a href="/post-car">🔁 Sell your car</a>
-          <a href="#coming-soon">⚡ Electric</a>
-          <a href="#coming-soon">💷 Finance</a>
-          <a href="#coming-soon">📘 Guides</a>
+          <a href="#coming-soon"><Icon name="car" /> Browse cars</a>
+          <a href="#coming-soon"><Icon name="new" /> New cars</a>
+          <a href="/post-car"><Icon name="sell" /> Sell your car</a>
+          <a href="#coming-soon"><Icon name="electric" /> Electric</a>
+          <a href="#coming-soon"><Icon name="finance" /> Finance</a>
+          <a href="#coming-soon"><Icon name="guide" /> Guides</a>
         </nav>
 
         <div className="navActions">
-          <button className="ghostBtn">♡ Saved</button>
-          <button className="ghostBtn">Sign in</button>
-          <a href="/post-car" className="primaryBtn">＋ Post your car</a>
+          <button className="ghostBtn">
+            <Icon name="heart" /> Saved
+          </button>
+
+          <button className="ghostBtn">
+            <Icon name="user" /> Sign in
+          </button>
+
+          <a href="/post-car" className="primaryBtn">
+            <Icon name="plus" /> Post your car
+          </a>
         </div>
       </header>
 
@@ -41,27 +179,19 @@ export default function HomePage() {
           </p>
 
           <div className="heroStats">
-            <span>✅ Private sellers</span>
-            <span>✅ Dealers</span>
-            <span>✅ Simple car search</span>
+            <span><Icon name="car" /> Private sellers</span>
+            <span><Icon name="shield" /> Approved dealers</span>
+            <span><Icon name="new" /> Simple car search</span>
           </div>
         </div>
 
-        <div className="heroVisual">
-          <div className="carMockup">
-            <div className="carTop"></div>
-            <div className="carBody">
-              <div className="window"></div>
-              <div className="window small"></div>
-            </div>
-            <div className="wheel left"></div>
-            <div className="wheel right"></div>
-          </div>
+        <div className="heroCar">
+          <img src="/cars/hero-car.png" alt="White BMW on Kerb" />
         </div>
 
         <div className="searchBox">
           <div className="filterItem">
-            <span>📍</span>
+            <Icon name="location" />
             <div>
               <small>Location</small>
               <strong>Leicester</strong>
@@ -69,7 +199,7 @@ export default function HomePage() {
           </div>
 
           <div className="filterItem">
-            <span>🚗</span>
+            <Icon name="car" />
             <div>
               <small>Make & model</small>
               <strong>Any make</strong>
@@ -77,7 +207,7 @@ export default function HomePage() {
           </div>
 
           <div className="filterItem">
-            <span>💷</span>
+            <Icon name="price" />
             <div>
               <small>Price</small>
               <strong>Any price</strong>
@@ -85,7 +215,7 @@ export default function HomePage() {
           </div>
 
           <div className="filterItem">
-            <span>⏱️</span>
+            <Icon name="mileage" />
             <div>
               <small>Mileage</small>
               <strong>Any miles</strong>
@@ -93,48 +223,64 @@ export default function HomePage() {
           </div>
 
           <div className="filterItem">
-            <span>🚙</span>
+            <Icon name="body" />
             <div>
               <small>Body type</small>
               <strong>Any</strong>
             </div>
           </div>
 
-          <button className="searchBtn" type="button">Search cars</button>
+          <button className="searchBtn" type="button">
+            Search cars
+          </button>
         </div>
       </section>
 
       <section className="categories">
         {categories.map((item, index) => (
           <div className="categoryCard" key={index}>
-            <div className="categoryIcon">{item[0]}</div>
+            <div className="categoryIcon">
+              <Icon name={item[0]} />
+            </div>
+
             <div>
               <h3>{item[1]}</h3>
               <p>{item[2]}</p>
             </div>
-            <span>›</span>
+
+            <span className="arrow">›</span>
           </div>
         ))}
       </section>
 
       <section className="launchGrid" id="coming-soon">
         <div className="emptyListings">
-          <div className="emptyIcon">🚗</div>
+          <div className="emptyIcon">
+            <Icon name="car" />
+          </div>
+
           <h2>Car listings are coming soon</h2>
+
           <p>
-            Kerb is getting ready to launch. Once sellers start posting cars,
-            listings will appear here with images, prices, mileage, location and
-            seller details.
+            Kerb is getting ready to launch. Once sellers start posting cars and
+            you approve them, listings will appear here with photos, prices,
+            mileage, location and seller details.
           </p>
 
           <div className="emptyActions">
-            <a href="/post-car" className="primaryBtn">Post your car</a>
-            <a href="#early-access" className="secondaryBtn">Join launch list</a>
+            <a href="/post-car" className="primaryBtn">
+              <Icon name="plus" /> Post your car
+            </a>
+
+            <a href="#early-access" className="secondaryBtn">
+              Join launch list
+            </a>
           </div>
         </div>
 
         <div className="sellerBox">
           <h2>Sell your car the smart way</h2>
+
           <p>
             Create a clean listing, reach serious buyers and manage enquiries
             from one simple dashboard.
@@ -145,23 +291,27 @@ export default function HomePage() {
               <strong>1</strong>
               <span>Add your car details</span>
             </div>
+
             <div>
               <strong>2</strong>
               <span>Upload photos</span>
             </div>
+
             <div>
               <strong>3</strong>
-              <span>Receive buyer enquiries</span>
+              <span>Wait for approval</span>
             </div>
           </div>
 
-          <a href="/post-car" className="primaryBtn fullBtn">Start selling</a>
+          <a href="/post-car" className="primaryBtn fullBtn">
+            Start selling
+          </a>
         </div>
       </section>
 
       <section className="trustGrid">
         <div className="trustCard">
-          <span>🛡️</span>
+          <span><Icon name="shield" /></span>
           <div>
             <h3>Trusted sellers</h3>
             <p>Built for verified private sellers and approved dealers.</p>
@@ -169,7 +319,7 @@ export default function HomePage() {
         </div>
 
         <div className="trustCard">
-          <span>💷</span>
+          <span><Icon name="price" /></span>
           <div>
             <h3>Clear pricing</h3>
             <p>Simple prices with clean vehicle information.</p>
@@ -177,7 +327,7 @@ export default function HomePage() {
         </div>
 
         <div className="trustCard">
-          <span>♡</span>
+          <span><Icon name="heart" /></span>
           <div>
             <h3>Save favourites</h3>
             <p>Buyers can save cars and compare their options.</p>
@@ -185,7 +335,7 @@ export default function HomePage() {
         </div>
 
         <div className="trustCard">
-          <span>📩</span>
+          <span><Icon name="mail" /></span>
           <div>
             <h3>Easy enquiries</h3>
             <p>Simple contact flow between buyers and sellers.</p>
@@ -219,7 +369,13 @@ export default function HomePage() {
 
         .page {
           min-height: 100vh;
-          padding: 22px 36px 40px;
+          padding: 22px 40px 40px;
+        }
+
+        .icon {
+          width: 19px;
+          height: 19px;
+          flex-shrink: 0;
         }
 
         .navbar {
@@ -232,26 +388,36 @@ export default function HomePage() {
         }
 
         .logo {
-          font-size: 36px;
-          font-weight: 900;
+          font-size: 38px;
+          font-weight: 950;
           color: #0048ff;
-          letter-spacing: -1.8px;
+          letter-spacing: -2px;
           text-decoration: none;
         }
 
         .navLinks {
           display: flex;
           align-items: center;
-          gap: 28px;
+          gap: 30px;
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 800;
           color: #12172c;
         }
 
         .navLinks a {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
           text-decoration: none;
           cursor: pointer;
           color: inherit;
+          white-space: nowrap;
+        }
+
+        .navLinks .icon {
+          width: 17px;
+          height: 17px;
+          color: #172033;
         }
 
         .navActions {
@@ -270,7 +436,10 @@ export default function HomePage() {
           background: transparent;
           color: #11182e;
           font-size: 14px;
-          font-weight: 600;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .primaryBtn {
@@ -278,12 +447,13 @@ export default function HomePage() {
           color: white;
           border-radius: 14px;
           padding: 14px 24px;
-          font-weight: 800;
+          font-weight: 900;
           box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
           text-decoration: none;
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          gap: 8px;
           border: none;
           cursor: pointer;
           font-family: inherit;
@@ -294,7 +464,7 @@ export default function HomePage() {
           color: #0048ff;
           border-radius: 14px;
           padding: 14px 24px;
-          font-weight: 800;
+          font-weight: 900;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
@@ -306,14 +476,14 @@ export default function HomePage() {
 
         .hero {
           position: relative;
-          min-height: 390px;
+          min-height: 395px;
           border-radius: 30px;
           overflow: hidden;
           background:
-            linear-gradient(90deg, rgba(246,249,255,0.98) 0%, rgba(246,249,255,0.92) 45%, rgba(231,239,252,0.8) 100%),
+            linear-gradient(90deg, rgba(246,249,255,0.98) 0%, rgba(246,249,255,0.9) 42%, rgba(231,239,252,0.78) 100%),
             radial-gradient(circle at 78% 42%, rgba(0,72,255,0.16), transparent 36%);
           border: 1px solid #e5eaf5;
-          padding: 44px 52px 100px;
+          padding: 46px 56px 104px;
           box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
         }
 
@@ -325,12 +495,12 @@ export default function HomePage() {
           border-radius: 999px;
           padding: 9px 14px;
           font-size: 13px;
-          font-weight: 900;
+          font-weight: 950;
           margin-bottom: 18px;
         }
 
         .heroText {
-          max-width: 530px;
+          max-width: 540px;
           position: relative;
           z-index: 2;
         }
@@ -339,7 +509,7 @@ export default function HomePage() {
           font-size: 56px;
           line-height: 0.98;
           margin: 0 0 18px;
-          letter-spacing: -2.6px;
+          letter-spacing: -2.8px;
         }
 
         .heroText p {
@@ -351,98 +521,52 @@ export default function HomePage() {
 
         .heroStats {
           display: flex;
-          gap: 16px;
+          gap: 18px;
           flex-wrap: wrap;
           color: #203050;
           font-size: 14px;
-          font-weight: 800;
+          font-weight: 850;
         }
 
-        .heroVisual {
-          position: absolute;
-          right: 80px;
-          top: 80px;
-          width: 440px;
-          height: 210px;
-          display: flex;
+        .heroStats span {
+          display: inline-flex;
           align-items: center;
-          justify-content: center;
+          gap: 7px;
         }
 
-        .carMockup {
-          position: relative;
-          width: 390px;
-          height: 160px;
-          filter: drop-shadow(0 30px 25px rgba(10, 20, 40, 0.18));
+        .heroStats .icon {
+          color: #0048ff;
+          width: 17px;
+          height: 17px;
         }
 
-        .carBody {
+        .heroCar {
           position: absolute;
-          left: 20px;
-          right: 20px;
-          bottom: 38px;
-          height: 76px;
-          background: linear-gradient(135deg, #ffffff, #dce8ff);
-          border: 2px solid #c6d6f7;
-          border-radius: 80px 110px 34px 34px;
+          right: 54px;
+          top: 34px;
+          width: 610px;
+          z-index: 1;
+          pointer-events: none;
         }
 
-        .carTop {
-          position: absolute;
-          left: 112px;
-          top: 22px;
-          width: 150px;
-          height: 74px;
-          background: linear-gradient(135deg, #ffffff, #dbe8ff);
-          border: 2px solid #c6d6f7;
-          border-radius: 80px 80px 12px 12px;
-        }
-
-        .window {
-          position: absolute;
-          left: 114px;
-          top: 14px;
-          width: 66px;
-          height: 32px;
-          background: #b9cdf3;
-          border-radius: 30px 8px 8px 8px;
-        }
-
-        .window.small {
-          left: 190px;
-          width: 56px;
-          border-radius: 8px 30px 8px 8px;
-        }
-
-        .wheel {
-          position: absolute;
-          bottom: 18px;
-          width: 52px;
-          height: 52px;
-          background: #071126;
-          border: 8px solid #ffffff;
-          border-radius: 50%;
-          box-shadow: inset 0 0 0 5px #394762;
-        }
-
-        .wheel.left {
-          left: 72px;
-        }
-
-        .wheel.right {
-          right: 72px;
+        .heroCar img {
+          width: 100%;
+          height: auto;
+          display: block;
+          object-fit: contain;
+          filter: drop-shadow(0 28px 22px rgba(8, 18, 38, 0.15));
         }
 
         .searchBox {
           position: absolute;
-          left: 52px;
-          right: 52px;
+          left: 56px;
+          right: 56px;
           bottom: 26px;
           z-index: 3;
           display: grid;
-          grid-template-columns: repeat(5, 1fr) 160px;
+          grid-template-columns: repeat(5, 1fr) 170px;
           gap: 16px;
-          background: rgba(255,255,255,0.86);
+          background: rgba(255,255,255,0.9);
           backdrop-filter: blur(20px);
           border: 1px solid #e4e9f3;
           border-radius: 22px;
@@ -458,10 +582,11 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           gap: 12px;
+          min-width: 0;
         }
 
-        .filterItem span {
-          font-size: 22px;
+        .filterItem .icon {
+          color: #172033;
         }
 
         .filterItem small {
@@ -469,6 +594,7 @@ export default function HomePage() {
           color: #7a8398;
           font-size: 11px;
           margin-bottom: 2px;
+          font-weight: 800;
         }
 
         .filterItem strong {
@@ -479,7 +605,7 @@ export default function HomePage() {
           border-radius: 16px;
           background: #0048ff;
           color: white;
-          font-weight: 900;
+          font-weight: 950;
           font-size: 14px;
         }
 
@@ -493,8 +619,7 @@ export default function HomePage() {
         .categoryCard {
           display: flex;
           align-items: center;
-          gap: 13px;
-          justify-content: space-between;
+          gap: 14px;
           background: white;
           border: 1px solid #e6ebf4;
           border-radius: 18px;
@@ -503,19 +628,20 @@ export default function HomePage() {
         }
 
         .categoryIcon {
-          width: 54px;
-          height: 42px;
+          width: 52px;
+          height: 46px;
           border-radius: 14px;
           background: #edf3ff;
+          color: #0048ff;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 22px;
+          flex-shrink: 0;
         }
 
         .categoryCard h3 {
           margin: 0 0 4px;
-          font-size: 14px;
+          font-size: 15px;
         }
 
         .categoryCard p {
@@ -523,6 +649,12 @@ export default function HomePage() {
           font-size: 12px;
           color: #657189;
           line-height: 1.35;
+        }
+
+        .arrow {
+          margin-left: auto;
+          font-size: 26px;
+          color: #172033;
         }
 
         .launchGrid {
@@ -554,15 +686,19 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 34px;
           margin: 0 auto 18px;
+        }
+
+        .emptyIcon .icon {
+          width: 34px;
+          height: 34px;
         }
 
         .emptyListings h2,
         .sellerBox h2 {
           margin: 0 0 10px;
-          font-size: 30px;
-          letter-spacing: -1px;
+          font-size: 31px;
+          letter-spacing: -1.1px;
         }
 
         .emptyListings p,
@@ -609,7 +745,7 @@ export default function HomePage() {
         }
 
         .sellerSteps span {
-          font-weight: 800;
+          font-weight: 850;
           color: #182238;
           font-size: 14px;
         }
@@ -640,10 +776,10 @@ export default function HomePage() {
           height: 46px;
           border-radius: 14px;
           background: #edf3ff;
+          color: #0048ff;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24px;
           flex-shrink: 0;
         }
 
@@ -701,17 +837,17 @@ export default function HomePage() {
           background: #0048ff;
           color: white;
           padding: 0 20px;
-          font-weight: 800;
+          font-weight: 850;
         }
 
-        @media (max-width: 1200px) {
+        @media (max-width: 1250px) {
           .navLinks {
             display: none;
           }
 
-          .heroVisual {
-            opacity: 0.25;
+          .heroCar {
             right: 20px;
+            opacity: 0.35;
           }
 
           .searchBox {
@@ -766,15 +902,13 @@ export default function HomePage() {
             font-size: 15px;
           }
 
-          .heroVisual {
+          .heroCar {
             position: relative;
             top: auto;
             right: auto;
             width: 100%;
-            height: 160px;
             opacity: 1;
-            margin: 10px 0;
-            transform: scale(0.8);
+            margin: 18px 0 0;
           }
 
           .searchBox {
