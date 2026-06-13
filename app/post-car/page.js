@@ -28,7 +28,12 @@ const carMakes = {
 
 export default function PostCarPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedListing, setSubmittedListing] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [customModel, setCustomModel] = useState("");
@@ -46,10 +51,18 @@ export default function PostCarPage() {
       return;
     }
 
+    try {
+      setCurrentUser(JSON.parse(user));
+    } catch {
+      setCurrentUser(null);
+    }
+
     setIsCheckingAuth(false);
   }, []);
 
   const availableModels = make ? carMakes[make] || [] : [];
+
+  const finalModel = model === "Other" ? customModel : model || customModel;
 
   const valuation = useMemo(() => {
     if (!make || !year || !mileage) return null;
@@ -95,7 +108,43 @@ export default function PostCarPage() {
       url: URL.createObjectURL(file),
     }));
 
-    setPhotos((current) => [...current, ...previews].slice(0, 12));
+    setPhotos(previews.slice(0, 12));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMessage("");
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    formData.set("model", finalModel);
+
+    if (valuation) {
+      formData.set("valuation_low", valuation.low);
+      formData.set("valuation_high", valuation.high);
+    }
+
+    try {
+      const response = await fetch("/api/post-car", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not submit listing.");
+      }
+
+      setSubmittedListing(result.listing);
+      setSubmitted(true);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (isCheckingAuth) {
@@ -115,10 +164,19 @@ export default function PostCarPage() {
           <div className="successIcon">✅</div>
           <h1>Listing request received</h1>
           <p>
-            Thanks. Your car details have been received. Once Kerb is fully live,
-            your seller dashboard will let you manage the listing, photos and
-            buyer enquiries.
+            Your car listing has been saved. It is currently marked as pending
+            and can be reviewed before being shown publicly.
           </p>
+
+          {submittedListing && (
+            <div className="listingSummary">
+              <strong>
+                {submittedListing.year} {submittedListing.make} {submittedListing.model}
+              </strong>
+              <span>{submittedListing.location}</span>
+            </div>
+          )}
+
           <a href="/" className="primaryBtn">Back to homepage</a>
         </div>
 
@@ -156,13 +214,7 @@ export default function PostCarPage() {
       </section>
 
       <section className="formSection">
-        <form
-          className="formCard"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setSubmitted(true);
-          }}
-        >
+        <form className="formCard" onSubmit={handleSubmit}>
           <div className="formHeader">
             <div>
               <h2>Car details</h2>
@@ -174,6 +226,7 @@ export default function PostCarPage() {
             <label>
               Make
               <select
+                name="make"
                 required
                 value={make}
                 onChange={(e) => {
@@ -195,6 +248,7 @@ export default function PostCarPage() {
               Model
               {make === "Other" || availableModels.length === 0 ? (
                 <input
+                  name="model_manual"
                   placeholder="Type the model"
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
@@ -219,6 +273,7 @@ export default function PostCarPage() {
                   {model === "Other" && (
                     <input
                       className="manualInput"
+                      name="model_manual"
                       placeholder="Type the model"
                       value={customModel}
                       onChange={(e) => setCustomModel(e.target.value)}
@@ -227,11 +282,13 @@ export default function PostCarPage() {
                   )}
                 </>
               )}
+              <input type="hidden" name="model" value={finalModel} />
             </label>
 
             <label>
               Year
               <input
+                name="year"
                 placeholder="2020"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
@@ -242,6 +299,7 @@ export default function PostCarPage() {
             <label>
               Mileage
               <input
+                name="mileage"
                 placeholder="45,000"
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value)}
@@ -251,7 +309,12 @@ export default function PostCarPage() {
 
             <label>
               Fuel type
-              <select value={fuel} onChange={(e) => setFuel(e.target.value)} required>
+              <select
+                name="fuel_type"
+                value={fuel}
+                onChange={(e) => setFuel(e.target.value)}
+                required
+              >
                 <option value="">Select fuel type</option>
                 <option>Petrol</option>
                 <option>Diesel</option>
@@ -262,7 +325,12 @@ export default function PostCarPage() {
 
             <label>
               Gearbox
-              <select value={gearbox} onChange={(e) => setGearbox(e.target.value)} required>
+              <select
+                name="gearbox"
+                value={gearbox}
+                onChange={(e) => setGearbox(e.target.value)}
+                required
+              >
                 <option value="">Select gearbox</option>
                 <option>Manual</option>
                 <option>Automatic</option>
@@ -271,12 +339,12 @@ export default function PostCarPage() {
 
             <label>
               Asking price
-              <input placeholder="£12,995" required />
+              <input name="asking_price" placeholder="£12,995" required />
             </label>
 
             <label>
               Location
-              <input placeholder="Leicester" required />
+              <input name="location" placeholder="Leicester" required />
             </label>
           </div>
 
@@ -295,9 +363,15 @@ export default function PostCarPage() {
             </div>
           )}
 
+          <input type="hidden" name="valuation_low" value={valuation?.low || ""} />
+          <input type="hidden" name="valuation_high" value={valuation?.high || ""} />
+
           <label>
             Short description
-            <textarea placeholder="Tell buyers about condition, service history, features, MOT, ownership, modifications or damage." />
+            <textarea
+              name="description"
+              placeholder="Tell buyers about condition, service history, features, MOT, ownership, modifications or damage."
+            />
           </label>
 
           <div className="photoSection">
@@ -307,7 +381,13 @@ export default function PostCarPage() {
             </div>
 
             <label className="uploadBox">
-              <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
+              <input
+                name="photos"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+              />
               <span>📸</span>
               <strong>Upload car photos</strong>
               <small>Front, rear, sides, interior, wheels and dashboard</small>
@@ -329,22 +409,33 @@ export default function PostCarPage() {
           <div className="grid">
             <label>
               Full name
-              <input placeholder="Your name" required />
+              <input
+                name="seller_name"
+                placeholder="Your name"
+                defaultValue={currentUser?.name || ""}
+                required
+              />
             </label>
 
             <label>
               Email address
-              <input type="email" placeholder="you@example.com" required />
+              <input
+                name="seller_email"
+                type="email"
+                placeholder="you@example.com"
+                defaultValue={currentUser?.email || ""}
+                required
+              />
             </label>
 
             <label>
               Phone number
-              <input placeholder="07..." required />
+              <input name="seller_phone" placeholder="07..." required />
             </label>
 
             <label>
               Seller type
-              <select required>
+              <select name="seller_type" required>
                 <option value="">Select seller type</option>
                 <option>Private seller</option>
                 <option>Dealer</option>
@@ -352,8 +443,10 @@ export default function PostCarPage() {
             </label>
           </div>
 
-          <button className="primaryBtn" type="submit">
-            Submit listing request
+          {errorMessage && <div className="errorBox">{errorMessage}</div>}
+
+          <button className="primaryBtn" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting listing..." : "Submit listing request"}
           </button>
         </form>
       </section>
@@ -632,6 +725,16 @@ const styles = `
     object-fit: cover;
   }
 
+  .errorBox {
+    background: #fff1f1;
+    color: #b42318;
+    border: 1px solid #ffd1d1;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-weight: 800;
+    margin-bottom: 18px;
+  }
+
   .primaryBtn {
     display: inline-flex;
     align-items: center;
@@ -646,6 +749,11 @@ const styles = `
     text-decoration: none;
     cursor: pointer;
     box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
+  }
+
+  .primaryBtn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
   }
 
   .loadingBox,
@@ -678,6 +786,25 @@ const styles = `
 
   .successBox p {
     margin-bottom: 24px;
+  }
+
+  .listingSummary {
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 20px 0;
+    display: grid;
+    gap: 5px;
+  }
+
+  .listingSummary strong {
+    font-size: 18px;
+  }
+
+  .listingSummary span {
+    color: #657189;
+    font-weight: 700;
   }
 
   @media (max-width: 1100px) {
