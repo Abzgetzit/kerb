@@ -92,8 +92,129 @@ function getYearText(car) {
   return "";
 }
 
-function Icon({ children }) {
-  return <span className="icon">{children}</span>;
+function SvgIcon({ name }) {
+  const icons = {
+    car: (
+      <>
+        <path d="M5 17h14l-1.5-5h-11L5 17Z" />
+        <path d="M7 17v2" />
+        <path d="M17 17v2" />
+        <path d="M7 12l1.5-4h7L17 12" />
+      </>
+    ),
+    new: (
+      <>
+        <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />
+        <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
+      </>
+    ),
+    sell: (
+      <>
+        <path d="M4 7h10l6 6-7 7-9-9V7Z" />
+        <path d="M8 11h.01" />
+      </>
+    ),
+    electric: <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8Z" />,
+    finance: (
+      <>
+        <path d="M4 7h16v10H4z" />
+        <path d="M8 11h8" />
+        <path d="M8 14h4" />
+      </>
+    ),
+    guides: (
+      <>
+        <path d="M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Z" />
+        <path d="M9 8h6" />
+        <path d="M9 12h6" />
+      </>
+    ),
+    heart: (
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />
+    ),
+    user: (
+      <>
+        <path d="M20 21a8 8 0 0 0-16 0" />
+        <circle cx="12" cy="7" r="4" />
+      </>
+    ),
+    plus: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v8" />
+        <path d="M8 12h8" />
+      </>
+    ),
+    location: (
+      <>
+        <path d="M12 21s7-5.2 7-12a7 7 0 0 0-14 0c0 6.8 7 12 7 12Z" />
+        <circle cx="12" cy="9" r="2.5" />
+      </>
+    ),
+    price: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M15 9.5A3 3 0 0 0 12.4 8H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-1.4A3 3 0 0 1 9 14.5" />
+        <path d="M12 6v12" />
+      </>
+    ),
+    mileage: (
+      <>
+        <path d="M4 14a8 8 0 0 1 16 0" />
+        <path d="M12 14l4-4" />
+        <path d="M4 14h16" />
+      </>
+    ),
+    body: (
+      <>
+        <path d="M5 16h14l-1.2-4.5a3 3 0 0 0-2.9-2.2H9.1a3 3 0 0 0-2.9 2.2L5 16Z" />
+        <circle cx="8" cy="17" r="2" />
+        <circle cx="16" cy="17" r="2" />
+      </>
+    ),
+    fuel: (
+      <>
+        <path d="M7 3h8v18H7z" />
+        <path d="M15 8h2.5L20 10.5V18a2 2 0 0 1-2 2h-1" />
+        <path d="M9 7h4" />
+      </>
+    ),
+    sliders: (
+      <>
+        <path d="M4 7h16" />
+        <path d="M4 17h16" />
+        <circle cx="9" cy="7" r="2" />
+        <circle cx="15" cy="17" r="2" />
+      </>
+    ),
+    shield: (
+      <>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+        <path d="M9 12l2 2 4-5" />
+      </>
+    ),
+    camera: (
+      <>
+        <path d="M4 8h4l2-3h4l2 3h4v11H4z" />
+        <circle cx="12" cy="13" r="3" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      className="svg-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {icons[name]}
+    </svg>
+  );
 }
 
 export default function BrowsePage() {
@@ -191,30 +312,50 @@ export default function BrowsePage() {
 
           <nav className="nav">
             <Link href="/browse" className="nav-item active">
-              <span>🚘</span> Browse cars
+              <SvgIcon name="car" />
+              Browse cars
             </Link>
+
             <Link href="/browse" className="nav-item">
-              <span>🆕</span> New cars
+              <SvgIcon name="new" />
+              New cars
             </Link>
+
             <Link href="/post-car" className="nav-item">
-              <span>🔁</span> Sell your car
+              <SvgIcon name="sell" />
+              Sell your car
             </Link>
+
             <Link href="/browse" className="nav-item">
-              <span>⚡</span> Electric
+              <SvgIcon name="electric" />
+              Electric
             </Link>
+
             <Link href="/browse" className="nav-item">
-              <span>💷</span> Finance
+              <SvgIcon name="finance" />
+              Finance
             </Link>
+
             <Link href="/browse" className="nav-item">
-              <span>📋</span> Guides
+              <SvgIcon name="guides" />
+              Guides
             </Link>
           </nav>
 
           <div className="top-actions">
-            <button className="saved-button">♡ Saved</button>
-            <button className="signin-button">Sign in</button>
+            <button className="saved-button" type="button">
+              <SvgIcon name="heart" />
+              Saved
+            </button>
+
+            <button className="signin-button" type="button">
+              <SvgIcon name="user" />
+              Sign in
+            </button>
+
             <Link href="/post-car" className="post-button">
-              + Post your car
+              <SvgIcon name="plus" />
+              Post your car
             </Link>
           </div>
         </header>
@@ -222,16 +363,16 @@ export default function BrowsePage() {
         <section className="filters-section">
           <div className="filters-grid">
             <div className="filter-card">
-              <Icon>📍</Icon>
+              <SvgIcon name="location" />
               <div>
                 <p>Location</p>
-                <strong>Leicester (50 mi)</strong>
+                <strong>Leicester</strong>
               </div>
               <span className="chevron">⌄</span>
             </div>
 
             <div className="filter-card">
-              <Icon>🚗</Icon>
+              <SvgIcon name="car" />
               <div>
                 <p>Make & model</p>
                 <strong>Any make</strong>
@@ -240,7 +381,7 @@ export default function BrowsePage() {
             </div>
 
             <div className="filter-card">
-              <Icon>£</Icon>
+              <SvgIcon name="price" />
               <div>
                 <p>Price</p>
                 <strong>Any price</strong>
@@ -249,7 +390,7 @@ export default function BrowsePage() {
             </div>
 
             <div className="filter-card">
-              <Icon>⏱</Icon>
+              <SvgIcon name="mileage" />
               <div>
                 <p>Mileage</p>
                 <strong>Any miles</strong>
@@ -258,7 +399,7 @@ export default function BrowsePage() {
             </div>
 
             <div className="filter-card">
-              <Icon>🚙</Icon>
+              <SvgIcon name="body" />
               <div>
                 <p>Body type</p>
                 <strong>Any</strong>
@@ -267,7 +408,7 @@ export default function BrowsePage() {
             </div>
 
             <div className="filter-card">
-              <Icon>⛽</Icon>
+              <SvgIcon name="fuel" />
               <div>
                 <p>Fuel type</p>
                 <strong>Any</strong>
@@ -275,7 +416,10 @@ export default function BrowsePage() {
               <span className="chevron">⌄</span>
             </div>
 
-            <button className="filter-button">☷ Filter</button>
+            <button className="filter-button" type="button">
+              <SvgIcon name="sliders" />
+              Filter
+            </button>
           </div>
 
           <div className="search-row">
@@ -339,9 +483,11 @@ export default function BrowsePage() {
                 const mileage = getMileage(car);
                 const year = getYearText(car);
                 const location = car.location || car.city || car.postcode || "";
-                const price = car.price || car.asking_price || car.listing_price;
+                const price =
+                  car.price || car.asking_price || car.listing_price;
                 const sellerType =
-                  car.seller_type || (index % 2 === 0 ? "Approved dealer" : "Private seller");
+                  car.seller_type ||
+                  (index % 2 === 0 ? "Approved dealer" : "Private seller");
 
                 return (
                   <article className="car-card" key={car.id || index}>
@@ -361,14 +507,20 @@ export default function BrowsePage() {
                             : "seller-badge dealer"
                         }
                       >
+                        <SvgIcon name="shield" />
                         {sellerType.toLowerCase().includes("private")
-                          ? "▣ Private seller"
-                          : "▣ Approved dealer"}
+                          ? "Private seller"
+                          : "Approved dealer"}
                       </div>
 
-                      <button className="heart-button">♡</button>
+                      <button className="heart-button" type="button">
+                        <SvgIcon name="heart" />
+                      </button>
 
-                      <div className="photo-count">▣ 1/20</div>
+                      <div className="photo-count">
+                        <SvgIcon name="camera" />
+                        1/20
+                      </div>
                     </div>
 
                     <div className="card-body">
@@ -377,7 +529,7 @@ export default function BrowsePage() {
 
                       <div className="price-location">
                         <strong>{formatPrice(price)}</strong>
-                        {location && <span>📍 {location}</span>}
+                        {location && <span>{location}</span>}
                       </div>
 
                       <div className="specs">
@@ -426,8 +578,18 @@ export default function BrowsePage() {
         .browse-page {
           min-height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(0, 72, 255, 0.06), transparent 34%),
+            radial-gradient(
+              circle at top left,
+              rgba(0, 72, 255, 0.06),
+              transparent 34%
+            ),
             #f8faff;
+        }
+
+        .svg-icon {
+          width: 20px;
+          height: 20px;
+          flex: 0 0 auto;
         }
 
         .topbar {
@@ -473,6 +635,11 @@ export default function BrowsePage() {
           white-space: nowrap;
         }
 
+        .nav-item .svg-icon {
+          width: 18px;
+          height: 18px;
+        }
+
         .nav-item.active {
           color: #0b45ff;
           background: #eef3ff;
@@ -492,6 +659,15 @@ export default function BrowsePage() {
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .saved-button .svg-icon,
+        .signin-button .svg-icon {
+          width: 19px;
+          height: 19px;
         }
 
         .post-button {
@@ -499,6 +675,7 @@ export default function BrowsePage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          gap: 9px;
           padding: 0 25px;
           border-radius: 16px;
           background: #083cff;
@@ -507,6 +684,11 @@ export default function BrowsePage() {
           font-weight: 900;
           box-shadow: 0 12px 26px rgba(8, 60, 255, 0.22);
           white-space: nowrap;
+        }
+
+        .post-button .svg-icon {
+          width: 20px;
+          height: 20px;
         }
 
         .filters-section {
@@ -533,15 +715,10 @@ export default function BrowsePage() {
           min-width: 0;
         }
 
-        .icon {
-          width: 30px;
-          height: 30px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 19px;
+        .filter-card .svg-icon {
+          width: 24px;
+          height: 24px;
           color: #11182f;
-          flex: 0 0 auto;
         }
 
         .filter-card div {
@@ -581,6 +758,10 @@ export default function BrowsePage() {
           font-weight: 950;
           cursor: pointer;
           box-shadow: 0 12px 26px rgba(8, 60, 255, 0.22);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
         }
 
         .search-row {
@@ -699,11 +880,17 @@ export default function BrowsePage() {
           height: 30px;
           display: inline-flex;
           align-items: center;
+          gap: 6px;
           padding: 0 12px;
           border-radius: 8px;
           font-size: 12px;
           font-weight: 950;
           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .seller-badge .svg-icon {
+          width: 14px;
+          height: 14px;
         }
 
         .seller-badge.dealer {
@@ -720,16 +907,22 @@ export default function BrowsePage() {
           position: absolute;
           right: 12px;
           top: 12px;
-          width: 34px;
-          height: 34px;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
           border: none;
           background: rgba(16, 22, 42, 0.3);
           color: white;
-          font-size: 25px;
-          line-height: 1;
           cursor: pointer;
           backdrop-filter: blur(5px);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .heart-button .svg-icon {
+          width: 21px;
+          height: 21px;
         }
 
         .photo-count {
@@ -739,12 +932,18 @@ export default function BrowsePage() {
           height: 26px;
           display: inline-flex;
           align-items: center;
+          gap: 5px;
           padding: 0 9px;
           border-radius: 7px;
           background: white;
           color: #151b32;
           font-size: 12px;
           font-weight: 900;
+        }
+
+        .photo-count .svg-icon {
+          width: 13px;
+          height: 13px;
         }
 
         .card-body {
