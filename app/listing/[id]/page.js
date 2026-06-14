@@ -96,7 +96,10 @@ function getFeatures(car) {
       const parsed = JSON.parse(car.features);
       if (Array.isArray(parsed)) return parsed;
     } catch {
-      return car.features.split(",").map((item) => item.trim()).filter(Boolean);
+      return car.features
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
     }
   }
 
@@ -270,6 +273,17 @@ export default function ListingPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
+  const [isSendingEnquiry, setIsSendingEnquiry] = useState(false);
+  const [enquirySuccess, setEnquirySuccess] = useState("");
+  const [enquiryError, setEnquiryError] = useState("");
+  const [enquiryForm, setEnquiryForm] = useState({
+    buyer_name: "",
+    buyer_email: "",
+    buyer_phone: "",
+    message: "Hi, is this car still available?",
+  });
+
   useEffect(() => {
     async function loadListing() {
       setLoading(true);
@@ -306,9 +320,7 @@ export default function ListingPage() {
 
   const title = car ? getTitle(car) : "";
   const subtitle = car ? getSubtitle(car) : "";
-  const price = car
-    ? car.asking_price || car.price || car.listing_price
-    : "";
+  const price = car ? car.asking_price || car.price || car.listing_price : "";
   const mileage = car ? car.mileage || car.miles : "";
   const fuel = car ? car.fuel_type || car.fuel : "";
   const gearbox = car ? car.gearbox || car.transmission : "";
@@ -316,7 +328,6 @@ export default function ListingPage() {
   const location = car ? car.location || car.city || car.postcode : "";
   const sellerType = car ? car.seller_type || "Private seller" : "";
   const sellerPhone = car ? car.seller_phone || car.phone : "";
-  const sellerEmail = car ? car.seller_email || car.email : "";
   const sellerName = car ? car.seller_name || "Kerb seller" : "";
   const year = car ? car.year || car.registration_year : "";
 
@@ -328,6 +339,48 @@ export default function ListingPage() {
     setMainPhotoIndex((current) =>
       current === 0 ? photos.length - 1 : current - 1
     );
+  }
+
+  async function submitEnquiry(event) {
+    event.preventDefault();
+
+    setIsSendingEnquiry(true);
+    setEnquirySuccess("");
+    setEnquiryError("");
+
+    try {
+      const response = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listing_id: id,
+          buyer_name: enquiryForm.buyer_name,
+          buyer_email: enquiryForm.buyer_email,
+          buyer_phone: enquiryForm.buyer_phone,
+          message: enquiryForm.message,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not send enquiry.");
+      }
+
+      setEnquirySuccess("Enquiry sent. The seller can now contact you.");
+      setEnquiryForm({
+        buyer_name: "",
+        buyer_email: "",
+        buyer_phone: "",
+        message: "Hi, is this car still available?",
+      });
+    } catch (error) {
+      setEnquiryError(error.message || "Something went wrong.");
+    } finally {
+      setIsSendingEnquiry(false);
+    }
   }
 
   if (loading) {
@@ -434,7 +487,9 @@ export default function ListingPage() {
                   <button
                     type="button"
                     key={`${photo}-${index}`}
-                    className={`thumb ${index === mainPhotoIndex ? "active" : ""}`}
+                    className={`thumb ${
+                      index === mainPhotoIndex ? "active" : ""
+                    }`}
                     onClick={() => setMainPhotoIndex(index)}
                   >
                     <img
@@ -477,7 +532,9 @@ export default function ListingPage() {
               <div className="spec-row">
                 <div>
                   <SvgIcon name="mileage" />
-                  {mileage ? `${formatNumber(mileage)} miles` : "Mileage not set"}
+                  {mileage
+                    ? `${formatNumber(mileage)} miles`
+                    : "Mileage not set"}
                 </div>
 
                 <div>
@@ -557,22 +614,18 @@ export default function ListingPage() {
             <section className="contact-card">
               <h2>Contact the seller</h2>
 
-              {sellerEmail ? (
-                <a
-                  className="primary-contact"
-                  href={`mailto:${sellerEmail}?subject=Kerb enquiry about ${encodeURIComponent(
-                    title
-                  )}`}
-                >
-                  <SvgIcon name="message" />
-                  Message seller
-                </a>
-              ) : (
-                <button className="primary-contact" type="button">
-                  <SvgIcon name="message" />
-                  Message seller
-                </button>
-              )}
+              <button
+                className="primary-contact"
+                type="button"
+                onClick={() => {
+                  setIsEnquiryOpen(true);
+                  setEnquirySuccess("");
+                  setEnquiryError("");
+                }}
+              >
+                <SvgIcon name="message" />
+                Message seller
+              </button>
 
               <button className="outline-contact" type="button">
                 <SvgIcon name="shield" />
@@ -621,7 +674,9 @@ export default function ListingPage() {
               </div>
 
               <p>
-                {location ? `${location} · Kerb seller` : "Kerb approved seller"}
+                {location
+                  ? `${location} · Kerb seller`
+                  : "Kerb approved seller"}
               </p>
 
               <Link href="/browse" className="seller-link">
@@ -645,6 +700,104 @@ export default function ListingPage() {
             </section>
           </aside>
         </section>
+
+        {isEnquiryOpen && (
+          <div className="modal-backdrop">
+            <div className="enquiry-modal">
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setIsEnquiryOpen(false)}
+              >
+                ×
+              </button>
+
+              <h2>Message the seller</h2>
+              <p>
+                Send an enquiry about <strong>{title}</strong>. Your details
+                will be saved securely on Kerb.
+              </p>
+
+              <form onSubmit={submitEnquiry} className="enquiry-form">
+                <label>
+                  Your name
+                  <input
+                    value={enquiryForm.buyer_name}
+                    onChange={(event) =>
+                      setEnquiryForm((current) => ({
+                        ...current,
+                        buyer_name: event.target.value,
+                      }))
+                    }
+                    placeholder="Enter your name"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Your email
+                  <input
+                    type="email"
+                    value={enquiryForm.buyer_email}
+                    onChange={(event) =>
+                      setEnquiryForm((current) => ({
+                        ...current,
+                        buyer_email: event.target.value,
+                      }))
+                    }
+                    placeholder="Enter your email"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Your phone
+                  <input
+                    value={enquiryForm.buyer_phone}
+                    onChange={(event) =>
+                      setEnquiryForm((current) => ({
+                        ...current,
+                        buyer_phone: event.target.value,
+                      }))
+                    }
+                    placeholder="Enter your phone number"
+                  />
+                </label>
+
+                <label>
+                  Message
+                  <textarea
+                    value={enquiryForm.message}
+                    onChange={(event) =>
+                      setEnquiryForm((current) => ({
+                        ...current,
+                        message: event.target.value,
+                      }))
+                    }
+                    placeholder="Write your message"
+                    required
+                  />
+                </label>
+
+                {enquirySuccess && (
+                  <div className="success-message">{enquirySuccess}</div>
+                )}
+
+                {enquiryError && (
+                  <div className="error-message">{enquiryError}</div>
+                )}
+
+                <button
+                  className="send-enquiry-button"
+                  type="submit"
+                  disabled={isSendingEnquiry}
+                >
+                  {isSendingEnquiry ? "Sending..." : "Send enquiry"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
 
       <style jsx global>{styles}</style>
@@ -731,7 +884,8 @@ const styles = `
 
   button,
   input,
-  select {
+  select,
+  textarea {
     font-family: inherit;
   }
 
@@ -1424,6 +1578,124 @@ const styles = `
     border-radius: 12px;
     padding: 14px 20px;
     font-weight: 900;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(8, 15, 35, 0.55);
+    display: grid;
+    place-items: center;
+    padding: 20px;
+  }
+
+  .enquiry-modal {
+    width: min(520px, 100%);
+    position: relative;
+    background: white;
+    border: 1px solid #e4eaf4;
+    border-radius: 22px;
+    padding: 30px;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+  }
+
+  .modal-close {
+    position: absolute;
+    right: 18px;
+    top: 16px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: #f2f5fb;
+    color: #101832;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .enquiry-modal h2 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    letter-spacing: -0.8px;
+  }
+
+  .enquiry-modal p {
+    margin: 0 0 22px;
+    color: #4f5b76;
+    line-height: 1.55;
+  }
+
+  .enquiry-form {
+    display: grid;
+    gap: 14px;
+  }
+
+  .enquiry-form label {
+    display: grid;
+    gap: 8px;
+    color: #101832;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .enquiry-form input,
+  .enquiry-form textarea {
+    width: 100%;
+    border: 1px solid #dfe6f1;
+    border-radius: 13px;
+    background: #fbfcff;
+    color: #101832;
+    padding: 14px 15px;
+    font-size: 15px;
+    outline: none;
+  }
+
+  .enquiry-form textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .enquiry-form input:focus,
+  .enquiry-form textarea:focus {
+    border-color: #0b45ff;
+    box-shadow: 0 0 0 4px rgba(11, 69, 255, 0.1);
+  }
+
+  .success-message {
+    background: #eafaf0;
+    color: #137333;
+    border: 1px solid #bce8ca;
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-weight: 850;
+  }
+
+  .error-message {
+    background: #fff1f1;
+    color: #b42318;
+    border: 1px solid #ffd1d1;
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-weight: 850;
+  }
+
+  .send-enquiry-button {
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    background: #0b45ff;
+    color: white;
+    font-size: 15px;
+    font-weight: 950;
+    cursor: pointer;
+    box-shadow: 0 12px 26px rgba(11, 69, 255, 0.22);
+  }
+
+  .send-enquiry-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
   }
 
   @media (max-width: 1450px) {
