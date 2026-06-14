@@ -1,0 +1,144 @@
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+const supabase =
+  supabaseUrl && serviceRoleKey
+    ? createClient(supabaseUrl, serviceRoleKey)
+    : null;
+
+const VALID_STATUSES = ["new", "contacted", "closed"];
+
+function checkAdmin(request) {
+  const suppliedPassword = request.headers.get("x-admin-password");
+
+  if (!adminPassword) {
+    return "ADMIN_PASSWORD is missing in Vercel environment variables.";
+  }
+
+  if (!suppliedPassword || suppliedPassword !== adminPassword) {
+    return "Unauthorised.";
+  }
+
+  if (!supabase) {
+    return "Supabase admin client is not configured.";
+  }
+
+  return "";
+}
+
+function cleanStatus(status) {
+  return String(status || "new").trim().toLowerCase();
+}
+
+export async function GET(request) {
+  const authError = checkAdmin(request);
+
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("kerb_enquiries")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ enquiries: data || [] });
+}
+
+export async function PATCH(request) {
+  const authError = checkAdmin(request);
+
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 }
+    );
+  }
+
+  const id = body?.id;
+  const status = cleanStatus(body?.status);
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Enquiry id is required." },
+      { status: 400 }
+    );
+  }
+
+  if (!VALID_STATUSES.includes(status)) {
+    return NextResponse.json(
+      { error: "Invalid enquiry status." },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("kerb_enquiries")
+    .update({ status })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ enquiry: data });
+}
+
+export async function DELETE(request) {
+  const authError = checkAdmin(request);
+
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 }
+    );
+  }
+
+  const id = body?.id;
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Enquiry id is required." },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("kerb_enquiries")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ deleted: true, enquiry: data });
+}
