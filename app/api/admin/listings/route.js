@@ -1,112 +1,144 @@
 import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
 
-function getSupabase() {
-  const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (!rawSupabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing Supabase environment variables.");
-  }
+const supabase =
+  supabaseUrl && serviceRoleKey
+    ? createClient(supabaseUrl, serviceRoleKey)
+    : null;
 
-  const supabaseUrl = rawSupabaseUrl
-    .trim()
-    .replace("/rest/v1", "")
-    .replace(/\/$/, "");
+const VALID_STATUSES = ["pending", "approved", "sold", "rejected"];
 
-  return createClient(supabaseUrl, serviceRoleKey);
-}
-
-function checkAdminPassword(request) {
-  const adminPassword = process.env.ADMIN_PASSWORD;
+function checkAdmin(request) {
   const suppliedPassword = request.headers.get("x-admin-password");
 
   if (!adminPassword) {
-    return false;
+    return "ADMIN_PASSWORD is missing in Vercel environment variables.";
   }
 
-  return suppliedPassword === adminPassword;
+  if (!suppliedPassword || suppliedPassword !== adminPassword) {
+    return "Unauthorised.";
+  }
+
+  if (!supabase) {
+    return "Supabase admin client is not configured.";
+  }
+
+  return "";
+}
+
+function cleanStatus(status) {
+  return String(status || "pending").trim().toLowerCase();
 }
 
 export async function GET(request) {
-  try {
-    if (!checkAdminPassword(request)) {
-      return Response.json(
-        { error: "Unauthorised admin access." },
-        { status: 401 }
-      );
-    }
+  const authError = checkAdmin(request);
 
-    const supabase = getSupabase();
-
-    const { data, error } = await supabase
-      .from("kerb_listings")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      return Response.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return Response.json({
-      success: true,
-      listings: data,
-    });
-  } catch (error) {
-    return Response.json(
-      { error: error.message || "Something went wrong." },
-      { status: 500 }
-    );
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
   }
+
+  const { data, error } = await supabase
+    .from("kerb_listings")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ listings: data || [] });
 }
 
 export async function PATCH(request) {
+  const authError = checkAdmin(request);
+
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
+  }
+
+  let body;
+
   try {
-    if (!checkAdminPassword(request)) {
-      return Response.json(
-        { error: "Unauthorised admin access." },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const { id, status } = body;
-
-    const allowedStatuses = ["pending", "approved", "rejected", "sold"];
-
-    if (!id || !allowedStatuses.includes(status)) {
-      return Response.json(
-        { error: "Invalid listing ID or status." },
-        { status: 400 }
-      );
-    }
-
-    const supabase = getSupabase();
-
-    const { data, error } = await supabase
-      .from("kerb_listings")
-      .update({ status })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      return Response.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return Response.json({
-      success: true,
-      listing: data,
-    });
-  } catch (error) {
-    return Response.json(
-      { error: error.message || "Something went wrong." },
-      { status: 500 }
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 }
     );
   }
+
+  const id = body?.id;
+  const status = cleanStatus(body?.status);
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Listing id is required." },
+      { status: 400 }
+    );
+  }
+
+  if (!VALID_STATUSES.includes(status)) {
+    return NextResponse.json(
+      { error: "Invalid listing status." },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("kerb_listings")
+    .update({ status })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ listing: data });
+}
+
+export async function DELETE(request) {
+  const authError = checkAdmin(request);
+
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 }
+    );
+  }
+
+  const id = body?.id;
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Listing id is required." },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("kerb_listings")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ deleted: true, listing: data });
 }
