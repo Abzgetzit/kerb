@@ -336,7 +336,7 @@ export default function BrowsePage() {
               Finance
             </Link>
 
-            <Link href="/browse" className="nav-item">
+            <Link href="/browse" className="nav-item guides-link">
               <SvgIcon name="guides" />
               Guides
             </Link>
@@ -469,7 +469,10 @@ export default function BrowsePage() {
           {!loading && !errorMessage && visibleCars.length === 0 && (
             <div className="empty-box">
               <h2>No cars found</h2>
-              <p>Approved listings will appear here once they are live.</p>
+              <p>
+                Once you approve a listing in your admin page, it will appear
+                here.
+              </p>
               <Link href="/post-car">Post your car</Link>
             </div>
           )}
@@ -584,6 +587,7 @@ export default function BrowsePage() {
               transparent 34%
             ),
             #f8faff;
+          overflow-x: hidden;
         }
 
         .svg-icon {
@@ -594,16 +598,18 @@ export default function BrowsePage() {
 
         .topbar {
           height: 92px;
-          padding: 0 30px;
+          padding: 0 22px;
           display: flex;
           align-items: center;
-          gap: 28px;
+          gap: 18px;
           background: rgba(255, 255, 255, 0.92);
           border-bottom: 1px solid #e9edf6;
           position: sticky;
           top: 0;
           z-index: 20;
           backdrop-filter: blur(16px);
+          width: 100%;
+          max-width: 100vw;
         }
 
         .logo {
@@ -612,27 +618,31 @@ export default function BrowsePage() {
           font-weight: 950;
           letter-spacing: -2px;
           color: #0b45ff;
-          margin-right: 52px;
+          margin-right: 24px;
+          flex: 0 0 auto;
         }
 
         .nav {
           display: flex;
           align-items: center;
-          gap: 16px;
-          flex: 1;
+          gap: 8px;
+          flex: 1 1 auto;
+          min-width: 0;
+          overflow: hidden;
         }
 
         .nav-item {
           height: 50px;
           display: inline-flex;
           align-items: center;
-          gap: 10px;
-          padding: 0 18px;
+          gap: 8px;
+          padding: 0 12px;
           border-radius: 16px;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 800;
           color: #1b2240;
           white-space: nowrap;
+          flex: 0 0 auto;
         }
 
         .nav-item .svg-icon {
@@ -648,7 +658,8 @@ export default function BrowsePage() {
         .top-actions {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 10px;
+          flex: 0 0 auto;
         }
 
         .saved-button,
@@ -656,12 +667,13 @@ export default function BrowsePage() {
           border: none;
           background: transparent;
           color: #4b5575;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 700;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
           gap: 8px;
+          padding: 0;
         }
 
         .saved-button .svg-icon,
@@ -676,14 +688,15 @@ export default function BrowsePage() {
           align-items: center;
           justify-content: center;
           gap: 9px;
-          padding: 0 25px;
+          padding: 0 18px;
           border-radius: 16px;
           background: #083cff;
           color: white;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 900;
           box-shadow: 0 12px 26px rgba(8, 60, 255, 0.22);
           white-space: nowrap;
+          flex: 0 0 auto;
         }
 
         .post-button .svg-icon {
@@ -692,12 +705,12 @@ export default function BrowsePage() {
         }
 
         .filters-section {
-          padding: 26px 30px 0;
+          padding: 26px 32px 0;
         }
 
         .filters-grid {
           display: grid;
-          grid-template-columns: repeat(6, minmax(150px, 1fr)) 150px;
+          grid-template-columns: repeat(6, minmax(130px, 1fr)) 160px;
           gap: 20px;
           align-items: center;
         }
@@ -773,7 +786,7 @@ export default function BrowsePage() {
         }
 
         .search-input {
-          width: min(520px, 100%);
+          width: min(560px, 100%);
           height: 46px;
           border: 1px solid #e5ebf5;
           border-radius: 14px;
@@ -792,7 +805,7 @@ export default function BrowsePage() {
 
         .sort-box {
           height: 46px;
-          min-width: 230px;
+          min-width: 250px;
           background: white;
           border: 1px solid #e5ebf5;
           border-radius: 16px;
@@ -821,7 +834,7 @@ export default function BrowsePage() {
         }
 
         .results-section {
-          padding: 20px 30px 50px;
+          padding: 20px 32px 50px;
         }
 
         .results-heading {
@@ -1080,21 +1093,39 @@ export default function BrowsePage() {
           }
         }
 
-        @media (max-width: 1300px) {
+        @media (max-width: 1450px) {
           .topbar {
-            gap: 18px;
+            padding: 0 18px;
+            gap: 12px;
           }
 
           .logo {
-            margin-right: 20px;
+            margin-right: 16px;
           }
 
           .nav {
-            gap: 8px;
+            gap: 6px;
           }
 
           .nav-item {
-            padding: 0 12px;
+            padding: 0 10px;
+            font-size: 13px;
+          }
+
+          .saved-button,
+          .signin-button {
+            font-size: 13px;
+          }
+
+          .post-button {
+            padding: 0 15px;
+            font-size: 13px;
+          }
+        }
+
+        @media (max-width: 1280px) {
+          .guides-link {
+            display: none;
           }
 
           .filters-grid {
@@ -1106,11 +1137,13 @@ export default function BrowsePage() {
           }
         }
 
-        @media (max-width: 950px) {
+        @media (max-width: 1050px) {
           .topbar {
             height: auto;
+            min-height: 92px;
             padding: 18px;
             flex-wrap: wrap;
+            overflow: visible;
           }
 
           .logo {
