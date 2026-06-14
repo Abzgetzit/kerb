@@ -280,29 +280,33 @@ export default function AdminListingsPage() {
   }
 
   return (
-    <main className="page">
-      <header className="navbar">
-        <a href="/" className="logo">
-          Kerb
+  <main className="page">
+    <header className="navbar">
+      <a href="/" className="logo">
+        Kerb
+      </a>
+
+      <div className="navActions">
+        <a className="secondaryLink" href="/admin/enquiries">
+          View enquiries
         </a>
 
-        <div className="navActions">
-          <a className="secondaryLink" href="/browse" target="_blank">
-            View browse page
-          </a>
+        <a className="secondaryLink" href="/browse" target="_blank">
+          View browse page
+        </a>
 
-          <button
-            className="secondaryBtn"
-            onClick={() => fetchListings(savedPassword)}
-          >
-            Refresh
-          </button>
+        <button
+          className="secondaryBtn"
+          onClick={() => fetchListings(savedPassword)}
+        >
+          Refresh
+        </button>
 
-          <button className="ghostBtn" onClick={handleLogout}>
-            Log out
-          </button>
-        </div>
-      </header>
+        <button className="ghostBtn" onClick={handleLogout}>
+          Log out
+        </button>
+      </div>
+    </header>
 
       <section className="hero">
         <div>
