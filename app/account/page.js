@@ -34,7 +34,26 @@ function normaliseStatus(status) {
 function getTitle(car) {
   if (car.title) return car.title;
 
-  return [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing";
+  return (
+    [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing"
+  );
+}
+
+function createKerbUserFromAccount(result) {
+  const account = result?.account || {};
+
+  return {
+    id: account.id || account.user_id || result?.id || result?.user_id || "",
+    email: result?.email || account.email || "",
+    name:
+      account.name ||
+      account.full_name ||
+      account.fullName ||
+      result?.name ||
+      result?.full_name ||
+      "",
+    created_at: account.created_at || result?.created_at || "",
+  };
 }
 
 export default function AccountPage() {
@@ -43,6 +62,16 @@ export default function AccountPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  function syncKerbUser(result) {
+    const kerbUser = createKerbUserFromAccount(result);
+
+    if (kerbUser.email) {
+      localStorage.setItem("kerbUser", JSON.stringify(kerbUser));
+      localStorage.setItem("kerbAccountEmail", kerbUser.email);
+      window.dispatchEvent(new Event("kerb-auth-change"));
+    }
+  }
+
   async function loadAccount() {
     setIsLoading(true);
     setErrorMessage("");
@@ -50,6 +79,8 @@ export default function AccountPage() {
     const token = localStorage.getItem("kerbSessionToken");
 
     if (!token) {
+      localStorage.removeItem("kerbUser");
+      localStorage.removeItem("kerbAccountEmail");
       window.location.href = "/login";
       return;
     }
@@ -66,9 +97,11 @@ export default function AccountPage() {
       if (!response.ok) {
         localStorage.removeItem("kerbSessionToken");
         localStorage.removeItem("kerbAccountEmail");
+        localStorage.removeItem("kerbUser");
         throw new Error(result.error || "Could not load account.");
       }
 
+      syncKerbUser(result);
       setAccountData(result);
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
@@ -84,7 +117,17 @@ export default function AccountPage() {
   function logout() {
     localStorage.removeItem("kerbSessionToken");
     localStorage.removeItem("kerbAccountEmail");
+    localStorage.removeItem("kerbUser");
+    window.dispatchEvent(new Event("kerb-auth-change"));
     window.location.href = "/";
+  }
+
+  function goToPostCar() {
+    if (accountData) {
+      syncKerbUser(accountData);
+    }
+
+    window.location.href = "/post-car";
   }
 
   const stats = useMemo(() => {
@@ -141,7 +184,11 @@ export default function AccountPage() {
 
         <div className="navActions">
           <Link href="/browse">Browse cars</Link>
-          <Link href="/post-car">Post your car</Link>
+
+          <button type="button" onClick={goToPostCar}>
+            Post your car
+          </button>
+
           <button type="button" onClick={logout}>
             Log out
           </button>
@@ -227,11 +274,22 @@ export default function AccountPage() {
             <p>Use these to manage your Kerb activity.</p>
 
             <div className="quickActions">
-              <Link href="/post-car">Post a car</Link>
-              <Link href="/browse">Browse cars</Link>
+              <button
+                type="button"
+                className="primaryQuickAction"
+                onClick={goToPostCar}
+              >
+                Post a car
+              </button>
+
+              <Link href="/browse" className="primaryQuickAction">
+                Browse cars
+              </Link>
+
               <button type="button" onClick={() => setActiveTab("listings")}>
                 View my listings
               </button>
+
               <button type="button" onClick={() => setActiveTab("received")}>
                 View received enquiries
               </button>
@@ -260,15 +318,22 @@ export default function AccountPage() {
         <section className="contentSection">
           <div className="sectionHeader">
             <h2>My listings</h2>
-            <Link href="/post-car">Post another car</Link>
+
+            <button
+              type="button"
+              className="sectionButton"
+              onClick={goToPostCar}
+            >
+              Post another car
+            </button>
           </div>
 
           {accountData.my_listings.length === 0 ? (
             <EmptyBox
               title="No listings yet"
-              text="When you post a car using this email address, it will appear here."
-              link="/post-car"
-              linkText="Post your car"
+              text="When you post a car using this account, it will appear here."
+              buttonText="Post your car"
+              onButtonClick={goToPostCar}
             />
           ) : (
             <div className="cardsGrid">
@@ -288,7 +353,9 @@ export default function AccountPage() {
                   <div className="detailsGrid">
                     <div>
                       <span>Price</span>
-                      <strong>{formatPrice(car.price || car.asking_price)}</strong>
+                      <strong>
+                        {formatPrice(car.price || car.asking_price)}
+                      </strong>
                     </div>
 
                     <div>
@@ -334,11 +401,7 @@ export default function AccountPage() {
           ) : (
             <div className="cardsGrid">
               {accountData.sent_enquiries.map((enquiry) => (
-                <EnquiryCard
-                  key={enquiry.id}
-                  enquiry={enquiry}
-                  mode="sent"
-                />
+                <EnquiryCard key={enquiry.id} enquiry={enquiry} mode="sent" />
               ))}
             </div>
           )}
@@ -353,8 +416,8 @@ export default function AccountPage() {
             <EmptyBox
               title="No enquiries received"
               text="When buyers message your listings, their enquiries will appear here."
-              link="/post-car"
-              linkText="Post a car"
+              buttonText="Post a car"
+              onButtonClick={goToPostCar}
             />
           ) : (
             <div className="cardsGrid">
@@ -375,15 +438,22 @@ export default function AccountPage() {
   );
 }
 
-function EmptyBox({ title, text, link, linkText }) {
+function EmptyBox({ title, text, link, linkText, buttonText, onButtonClick }) {
   return (
     <div className="emptyBox">
       <h3>{title}</h3>
       <p>{text}</p>
+
       {link && (
         <Link href={link} className="primaryLink">
           {linkText}
         </Link>
+      )}
+
+      {buttonText && (
+        <button type="button" className="primaryLink" onClick={onButtonClick}>
+          {buttonText}
+        </button>
       )}
     </div>
   );
@@ -656,6 +726,7 @@ const styles = `
   .quickActions button,
   .primaryLink,
   .sectionHeader a,
+  .sectionButton,
   .cardLink,
   .cardActions a {
     border: none;
@@ -673,6 +744,15 @@ const styles = `
   .quickActions button {
     background: #eef3ff;
     color: #0048ff;
+  }
+
+  .quickActions .primaryQuickAction {
+    background: #0048ff;
+    color: white;
+  }
+
+  .sectionButton {
+    font-family: inherit;
   }
 
   .contentSection {
