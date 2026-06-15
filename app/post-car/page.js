@@ -44,17 +44,20 @@ export default function PostCarPage() {
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
-    const user = localStorage.getItem("kerbUser");
+    const savedUser = localStorage.getItem("kerbUser");
 
-    if (!user) {
+    if (!savedUser) {
       window.location.href = "/login";
       return;
     }
 
     try {
-      setCurrentUser(JSON.parse(user));
+      const parsedUser = JSON.parse(savedUser);
+      setCurrentUser(parsedUser);
     } catch {
-      setCurrentUser(null);
+      localStorage.removeItem("kerbUser");
+      window.location.href = "/login";
+      return;
     }
 
     setIsCheckingAuth(false);
@@ -101,6 +104,12 @@ export default function PostCarPage() {
     };
   }, [make, year, mileage, fuel, gearbox]);
 
+  function handleLogout() {
+    localStorage.removeItem("kerbUser");
+    window.dispatchEvent(new Event("kerb-auth-change"));
+    window.location.href = "/";
+  }
+
   function handlePhotoUpload(e) {
     const files = Array.from(e.target.files || []);
     const previews = files.map((file) => ({
@@ -120,6 +129,23 @@ export default function PostCarPage() {
     const formData = new FormData(form);
 
     formData.set("model", finalModel);
+
+    if (currentUser?.id) {
+      formData.set("account_id", currentUser.id);
+    }
+
+    if (currentUser?.email) {
+      formData.set("account_email", currentUser.email);
+      formData.set("seller_email", currentUser.email);
+    }
+
+    if (currentUser?.name) {
+      formData.set("account_name", currentUser.name);
+    }
+
+    if (currentUser?.full_name && !currentUser?.name) {
+      formData.set("account_name", currentUser.full_name);
+    }
 
     if (valuation) {
       formData.set("valuation_low", valuation.low);
@@ -177,7 +203,10 @@ export default function PostCarPage() {
             </div>
           )}
 
-          <a href="/" className="primaryBtn">Back to homepage</a>
+          <div className="successActions">
+            <a href="/account" className="secondaryBtn">My account</a>
+            <a href="/browse" className="primaryBtn">Browse cars</a>
+          </div>
         </div>
 
         <style>{styles}</style>
@@ -189,7 +218,14 @@ export default function PostCarPage() {
     <main className="page">
       <header className="navbar">
         <a href="/" className="logo">Kerb</a>
-        <a href="/" className="backLink">← Back home</a>
+
+        <div className="navActions">
+          <a href="/browse" className="navLink">Browse cars</a>
+          <a href="/account" className="accountButton">My account</a>
+          <button className="logoutButton" type="button" onClick={handleLogout}>
+            Log out
+          </button>
+        </div>
       </header>
 
       <section className="hero">
@@ -412,7 +448,11 @@ export default function PostCarPage() {
               <input
                 name="seller_name"
                 placeholder="Your name"
-                defaultValue={currentUser?.name || ""}
+                defaultValue={
+                  currentUser?.name ||
+                  currentUser?.full_name ||
+                  ""
+                }
                 required
               />
             </label>
@@ -424,6 +464,7 @@ export default function PostCarPage() {
                 type="email"
                 placeholder="you@example.com"
                 defaultValue={currentUser?.email || ""}
+                readOnly={Boolean(currentUser?.email)}
                 required
               />
             </label>
@@ -479,6 +520,7 @@ const styles = `
     align-items: center;
     justify-content: space-between;
     margin-bottom: 22px;
+    gap: 18px;
   }
 
   .logo {
@@ -489,10 +531,43 @@ const styles = `
     text-decoration: none;
   }
 
-  .backLink {
-    color: #172033;
+  .navActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .navLink,
+  .accountButton,
+  .logoutButton {
+    font-size: 14px;
+    font-weight: 900;
     text-decoration: none;
-    font-weight: 800;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .navLink {
+    color: #172033;
+  }
+
+  .accountButton {
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef3ff;
+    color: #0048ff;
+    padding: 0 16px;
+    border-radius: 13px;
+  }
+
+  .logoutButton {
+    color: #c01818;
+    padding: 0;
   }
 
   .hero {
@@ -615,6 +690,12 @@ const styles = `
     font-family: inherit;
   }
 
+  input[readonly] {
+    background: #f1f4fa;
+    color: #5d6778;
+    cursor: not-allowed;
+  }
+
   .manualInput {
     margin-top: 8px;
   }
@@ -735,12 +816,11 @@ const styles = `
     margin-bottom: 18px;
   }
 
-  .primaryBtn {
+  .primaryBtn,
+  .secondaryBtn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #0048ff;
-    color: white;
     border: none;
     border-radius: 14px;
     padding: 15px 26px;
@@ -748,7 +828,17 @@ const styles = `
     font-size: 15px;
     text-decoration: none;
     cursor: pointer;
+  }
+
+  .primaryBtn {
+    background: #0048ff;
+    color: white;
     box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
+  }
+
+  .secondaryBtn {
+    background: #eef3ff;
+    color: #0048ff;
   }
 
   .primaryBtn:disabled {
@@ -788,6 +878,14 @@ const styles = `
     margin-bottom: 24px;
   }
 
+  .successActions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
   .listingSummary {
     background: #f7f9fd;
     border: 1px solid #e5eaf4;
@@ -816,6 +914,17 @@ const styles = `
   @media (max-width: 800px) {
     .page {
       padding: 18px;
+    }
+
+    .navbar {
+      height: auto;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .navActions {
+      width: 100%;
+      flex-wrap: wrap;
     }
 
     .hero {
