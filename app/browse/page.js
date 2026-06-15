@@ -348,10 +348,10 @@ export default function BrowsePage() {
               Saved
             </button>
 
-            <button className="signin-button" type="button">
+            <Link href="/login" className="signin-button">
               <SvgIcon name="user" />
               Sign in
-            </button>
+            </Link>
 
             <Link href="/post-car" className="post-button">
               <SvgIcon name="plus" />
@@ -674,6 +674,7 @@ export default function BrowsePage() {
           align-items: center;
           gap: 8px;
           padding: 0;
+          text-decoration: none;
         }
 
         .saved-button .svg-icon,
