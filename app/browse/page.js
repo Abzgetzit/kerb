@@ -37,7 +37,9 @@ function getSubtitle(car) {
     car.variant,
     car.engine_size,
     car.fuel,
+    car.fuel_type,
     car.transmission,
+    car.gearbox,
     car.body_type,
   ]
     .filter(Boolean)
@@ -46,34 +48,69 @@ function getSubtitle(car) {
   return subtitle || "Used car listed on Kerb";
 }
 
+function normaliseImageUrl(value) {
+  if (!value) return "";
+
+  const image = String(value).trim();
+
+  if (!image) return "";
+
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("/")
+  ) {
+    return image;
+  }
+
+  return image;
+}
+
+function parseImageField(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.map(normaliseImageUrl).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map(normaliseImageUrl).filter(Boolean);
+      }
+
+      if (typeof parsed === "string") {
+        return [normaliseImageUrl(parsed)].filter(Boolean);
+      }
+    } catch {
+      return [normaliseImageUrl(trimmed)].filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
+function getListingImages(car) {
+  const images = [
+    ...parseImageField(car.image_url),
+    ...parseImageField(car.photo_url),
+    ...parseImageField(car.main_photo_url),
+    ...parseImageField(car.cover_image_url),
+    ...parseImageField(car.photos),
+    ...parseImageField(car.images),
+  ];
+
+  return [...new Set(images)].filter(Boolean);
+}
+
 function getImage(car) {
-  if (car.image_url) return car.image_url;
-  if (car.photo_url) return car.photo_url;
-  if (car.main_photo_url) return car.main_photo_url;
-  if (car.cover_image_url) return car.cover_image_url;
-
-  if (Array.isArray(car.photos) && car.photos[0]) return car.photos[0];
-  if (Array.isArray(car.images) && car.images[0]) return car.images[0];
-
-  if (typeof car.photos === "string" && car.photos.trim()) {
-    try {
-      const parsed = JSON.parse(car.photos);
-      if (Array.isArray(parsed) && parsed[0]) return parsed[0];
-    } catch {
-      return car.photos;
-    }
-  }
-
-  if (typeof car.images === "string" && car.images.trim()) {
-    try {
-      const parsed = JSON.parse(car.images);
-      if (Array.isArray(parsed) && parsed[0]) return parsed[0];
-    } catch {
-      return car.images;
-    }
-  }
-
-  return "/cars/hero-car.png";
+  return getListingImages(car)[0] || "/cars/hero-car.png";
 }
 
 function getMileage(car) {
@@ -223,6 +260,7 @@ export default function BrowsePage() {
   const [sort, setSort] = useState("newest");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     async function loadCars() {
@@ -255,6 +293,41 @@ export default function BrowsePage() {
     loadCars();
   }, []);
 
+  useEffect(() => {
+    function syncKerbUser() {
+      const savedUser = localStorage.getItem("kerbUser");
+
+      if (!savedUser) {
+        setCurrentUser(null);
+        return;
+      }
+
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("kerbUser");
+        setCurrentUser(null);
+      }
+    }
+
+    syncKerbUser();
+
+    window.addEventListener("storage", syncKerbUser);
+    window.addEventListener("kerb-auth-change", syncKerbUser);
+
+    return () => {
+      window.removeEventListener("storage", syncKerbUser);
+      window.removeEventListener("kerb-auth-change", syncKerbUser);
+    };
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("kerbUser");
+    setCurrentUser(null);
+    window.dispatchEvent(new Event("kerb-auth-change"));
+    window.location.href = "/";
+  }
+
   const visibleCars = useMemo(() => {
     let list = [...cars];
 
@@ -269,7 +342,9 @@ export default function BrowsePage() {
           car.variant,
           car.year,
           car.fuel,
+          car.fuel_type,
           car.transmission,
+          car.gearbox,
           car.location,
           car.city,
           car.postcode,
@@ -284,11 +359,19 @@ export default function BrowsePage() {
     }
 
     if (sort === "price-low") {
-      list.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+      list.sort(
+        (a, b) =>
+          Number(a.price || a.asking_price || a.listing_price || 0) -
+          Number(b.price || b.asking_price || b.listing_price || 0)
+      );
     }
 
     if (sort === "price-high") {
-      list.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+      list.sort(
+        (a, b) =>
+          Number(b.price || b.asking_price || b.listing_price || 0) -
+          Number(a.price || a.asking_price || a.listing_price || 0)
+      );
     }
 
     if (sort === "mileage-low") {
@@ -348,10 +431,27 @@ export default function BrowsePage() {
               Saved
             </button>
 
-            <Link href="/login" className="signin-button">
-              <SvgIcon name="user" />
-              Sign in
-            </Link>
+            {currentUser ? (
+              <>
+                <Link href="/account" className="signin-button">
+                  <SvgIcon name="user" />
+                  My account
+                </Link>
+
+                <button
+                  className="logout-button"
+                  type="button"
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <Link href="/login" className="signin-button">
+                <SvgIcon name="user" />
+                Sign in
+              </Link>
+            )}
 
             <Link href="/post-car" className="post-button">
               <SvgIcon name="plus" />
@@ -482,7 +582,9 @@ export default function BrowsePage() {
               {visibleCars.map((car, index) => {
                 const title = getTitle(car);
                 const subtitle = getSubtitle(car);
+                const images = getListingImages(car);
                 const image = getImage(car);
+                const photoCount = images.length || 1;
                 const mileage = getMileage(car);
                 const year = getYearText(car);
                 const location = car.location || car.city || car.postcode || "";
@@ -505,13 +607,13 @@ export default function BrowsePage() {
 
                       <div
                         className={
-                          sellerType.toLowerCase().includes("private")
+                          String(sellerType).toLowerCase().includes("private")
                             ? "seller-badge private"
                             : "seller-badge dealer"
                         }
                       >
                         <SvgIcon name="shield" />
-                        {sellerType.toLowerCase().includes("private")
+                        {String(sellerType).toLowerCase().includes("private")
                           ? "Private seller"
                           : "Approved dealer"}
                       </div>
@@ -522,7 +624,7 @@ export default function BrowsePage() {
 
                       <div className="photo-count">
                         <SvgIcon name="camera" />
-                        1/20
+                        {`1/${photoCount}`}
                       </div>
                     </div>
 
@@ -539,7 +641,13 @@ export default function BrowsePage() {
                         {mileage && <span>{mileage}</span>}
                         {year && <span>{year}</span>}
                         {car.fuel && <span>{car.fuel}</span>}
+                        {car.fuel_type && !car.fuel && (
+                          <span>{car.fuel_type}</span>
+                        )}
                         {car.transmission && <span>{car.transmission}</span>}
+                        {car.gearbox && !car.transmission && (
+                          <span>{car.gearbox}</span>
+                        )}
                       </div>
 
                       <Link href={`/listing/${car.id}`} className="view-link">
@@ -663,7 +771,8 @@ export default function BrowsePage() {
         }
 
         .saved-button,
-        .signin-button {
+        .signin-button,
+        .logout-button {
           border: none;
           background: transparent;
           color: #4b5575;
@@ -675,12 +784,17 @@ export default function BrowsePage() {
           gap: 8px;
           padding: 0;
           text-decoration: none;
+          white-space: nowrap;
         }
 
         .saved-button .svg-icon,
         .signin-button .svg-icon {
           width: 19px;
           height: 19px;
+        }
+
+        .logout-button {
+          color: #c01818;
         }
 
         .post-button {
@@ -1114,7 +1228,8 @@ export default function BrowsePage() {
           }
 
           .saved-button,
-          .signin-button {
+          .signin-button,
+          .logout-button {
             font-size: 13px;
           }
 
@@ -1163,7 +1278,8 @@ export default function BrowsePage() {
           }
 
           .saved-button,
-          .signin-button {
+          .signin-button,
+          .logout-button {
             display: none;
           }
 
