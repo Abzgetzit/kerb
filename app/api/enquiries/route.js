@@ -1,16 +1,30 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const resendApiKey = process.env.RESEND_API_KEY;
+const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <onboarding@resend.dev>";
 
 const supabase =
   supabaseUrl && serviceRoleKey
     ? createClient(supabaseUrl, serviceRoleKey)
     : null;
 
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
+
 function clean(value) {
   return String(value || "").trim();
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function getListingTitle(listing) {
@@ -18,6 +32,72 @@ function getListingTitle(listing) {
     .filter(Boolean)
     .join(" ")
     .trim();
+}
+
+function createSellerEmailHtml({
+  buyerName,
+  buyerEmail,
+  buyerPhone,
+  message,
+  listingTitle,
+  listingUrl,
+}) {
+  return `
+    <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
+      <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:18px; padding:28px; border:1px solid #e5eaf4;">
+        <h1 style="margin:0 0 12px; color:#071126; font-size:26px;">New enquiry on Kerb</h1>
+
+        <p style="margin:0 0 22px; color:#59657a; line-height:1.6;">
+          Someone has sent an enquiry about <strong>${escapeHtml(listingTitle)}</strong>.
+        </p>
+
+        <div style="background:#f7f9fd; border:1px solid #e5eaf4; border-radius:14px; padding:18px; margin-bottom:18px;">
+          <p style="margin:0 0 8px;"><strong>Buyer name:</strong> ${escapeHtml(buyerName)}</p>
+          <p style="margin:0 0 8px;"><strong>Buyer email:</strong> ${escapeHtml(buyerEmail)}</p>
+          <p style="margin:0;"><strong>Buyer phone:</strong> ${escapeHtml(buyerPhone || "Not provided")}</p>
+        </div>
+
+        <div style="background:#f7f9fd; border:1px solid #e5eaf4; border-radius:14px; padding:18px; margin-bottom:22px;">
+          <p style="margin:0 0 8px;"><strong>Message:</strong></p>
+          <p style="margin:0; color:#172033; line-height:1.6;">${escapeHtml(message)}</p>
+        </div>
+
+        <a href="${escapeHtml(listingUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
+          View listing
+        </a>
+
+        <p style="margin:24px 0 0; color:#7a8499; font-size:13px;">
+          Reply directly to the buyer using their email or phone number above.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+function createBuyerEmailHtml({ buyerName, listingTitle, listingUrl }) {
+  return `
+    <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
+      <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:18px; padding:28px; border:1px solid #e5eaf4;">
+        <h1 style="margin:0 0 12px; color:#071126; font-size:26px;">Your enquiry has been sent</h1>
+
+        <p style="margin:0 0 18px; color:#59657a; line-height:1.6;">
+          Hi ${escapeHtml(buyerName)}, your enquiry about <strong>${escapeHtml(listingTitle)}</strong> has been sent to the seller.
+        </p>
+
+        <p style="margin:0 0 22px; color:#59657a; line-height:1.6;">
+          The seller can now contact you directly using the details you provided.
+        </p>
+
+        <a href="${escapeHtml(listingUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
+          View listing
+        </a>
+
+        <p style="margin:24px 0 0; color:#7a8499; font-size:13px;">
+          Thanks for using Kerb.
+        </p>
+      </div>
+    </div>
+  `;
 }
 
 export async function POST(request) {
@@ -86,7 +166,11 @@ export async function POST(request) {
     );
   }
 
-  const listingTitle = listing.title || getListingTitle(listing) || "Kerb listing";
+  const listingTitle =
+    listing.title || getListingTitle(listing) || "Kerb listing";
+
+  const sellerEmail = clean(listing.seller_email);
+  const sellerPhone = clean(listing.seller_phone);
 
   const { data: enquiry, error: enquiryError } = await supabase
     .from("kerb_enquiries")
@@ -96,8 +180,8 @@ export async function POST(request) {
       buyer_email: buyerEmail,
       buyer_phone: buyerPhone || null,
       message,
-      seller_email: listing.seller_email || null,
-      seller_phone: listing.seller_phone || null,
+      seller_email: sellerEmail || null,
+      seller_phone: sellerPhone || null,
       listing_title: listingTitle,
       status: "new",
     })
@@ -105,14 +189,73 @@ export async function POST(request) {
     .single();
 
   if (enquiryError) {
-    return NextResponse.json(
-      { error: enquiryError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: enquiryError.message }, { status: 500 });
+  }
+
+  const siteUrl =
+    request.headers.get("origin") ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://kerb.vercel.app";
+
+  const listingUrl = `${siteUrl}/listing/${listingId}`;
+
+  const emailResults = {
+    seller_email_sent: false,
+    buyer_email_sent: false,
+    seller_email_error: "",
+    buyer_email_error: "",
+  };
+
+  if (resend) {
+    if (sellerEmail) {
+      try {
+        await resend.emails.send({
+          from: fromEmail,
+          to: sellerEmail,
+          replyTo: buyerEmail,
+          subject: `New enquiry about ${listingTitle}`,
+          html: createSellerEmailHtml({
+            buyerName,
+            buyerEmail,
+            buyerPhone,
+            message,
+            listingTitle,
+            listingUrl,
+          }),
+        });
+
+        emailResults.seller_email_sent = true;
+      } catch (error) {
+        console.error("Seller email error:", error);
+        emailResults.seller_email_error =
+          error?.message || "Seller email could not be sent.";
+      }
+    }
+
+    try {
+      await resend.emails.send({
+        from: fromEmail,
+        to: buyerEmail,
+        replyTo: sellerEmail || undefined,
+        subject: `Your Kerb enquiry has been sent`,
+        html: createBuyerEmailHtml({
+          buyerName,
+          listingTitle,
+          listingUrl,
+        }),
+      });
+
+      emailResults.buyer_email_sent = true;
+    } catch (error) {
+      console.error("Buyer email error:", error);
+      emailResults.buyer_email_error =
+        error?.message || "Buyer confirmation email could not be sent.";
+    }
   }
 
   return NextResponse.json({
     success: true,
     enquiry,
+    emails: emailResults,
   });
 }
