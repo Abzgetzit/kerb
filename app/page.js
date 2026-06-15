@@ -221,13 +221,13 @@ export default async function HomePage() {
         </nav>
 
         <div className="navActions">
-          <button className="ghostBtn">
+          <button className="ghostBtn" type="button">
             <Icon name="heart" /> Saved
           </button>
 
-          <button className="ghostBtn">
+          <a href="/login" className="ghostBtn">
             <Icon name="user" /> Sign in
-          </button>
+          </a>
 
           <a href="/post-car" className="primaryBtn">
             <Icon name="plus" /> Post your car
@@ -364,7 +364,7 @@ export default async function HomePage() {
                     <div className="listingFooter">
                       <strong>{formatPrice(car.price)}</strong>
 
-                      <a href={`/cars/${car.id}`} className="viewCarBtn">
+                      <a href={`/listing/${car.id}`} className="viewCarBtn">
                         View car
                       </a>
                     </div>
@@ -560,6 +560,11 @@ export default async function HomePage() {
           display: inline-flex;
           align-items: center;
           gap: 8px;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
+          text-decoration: none;
+          white-space: nowrap;
         }
 
         .primaryBtn {
