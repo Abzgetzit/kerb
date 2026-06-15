@@ -1,22 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function LoginPage() {
+  const [mode, setMode] = useState("login");
+  const [step, setStep] = useState("form");
+
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [code, setCode] = useState("");
-  const [step, setStep] = useState("email");
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  async function sendCode(event) {
+  useEffect(() => {
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (token) {
+      window.location.href = "/account";
+    }
+  }, []);
+
+  function resetMessages() {
+    setSuccessMessage("");
+    setErrorMessage("");
+  }
+
+  function saveLogin(result) {
+    localStorage.setItem("kerbSessionToken", result.session_token);
+    localStorage.setItem("kerbAccountEmail", result.account.email);
+    window.location.href = "/account";
+  }
+
+  async function createAccount(event) {
     event.preventDefault();
 
     setIsLoading(true);
-    setSuccessMessage("");
-    setErrorMessage("");
+    resetMessages();
+
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+          email: cleanEmail,
+          password,
+          confirm_password: confirmPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not create account.");
+      }
+
+      saveLogin(result);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function loginWithPassword(event) {
+    event.preventDefault();
+
+    setIsLoading(true);
+    resetMessages();
+
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not sign in.");
+      }
+
+      saveLogin(result);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function sendCode(event) {
+    if (event) {
+      event.preventDefault();
+    }
+
+    setIsLoading(true);
+    resetMessages();
 
     const cleanEmail = email.trim().toLowerCase();
 
@@ -57,8 +155,7 @@ export default function LoginPage() {
     event.preventDefault();
 
     setIsLoading(true);
-    setSuccessMessage("");
-    setErrorMessage("");
+    resetMessages();
 
     try {
       const response = await fetch("/api/auth/verify-code", {
@@ -78,15 +175,21 @@ export default function LoginPage() {
         throw new Error(result.error || "Invalid login code.");
       }
 
-      localStorage.setItem("kerbSessionToken", result.session_token);
-      localStorage.setItem("kerbAccountEmail", result.account.email);
-
-      window.location.href = "/account";
+      saveLogin(result);
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function switchMode(nextMode) {
+    setMode(nextMode);
+    setStep("form");
+    setPassword("");
+    setConfirmPassword("");
+    setCode("");
+    resetMessages();
   }
 
   return (
@@ -98,14 +201,162 @@ export default function LoginPage() {
 
         <div className="pill">Kerb account</div>
 
-        <h1>Sign in to Kerb</h1>
+        <h1>
+          {mode === "register"
+            ? "Create your account"
+            : mode === "code"
+            ? "Sign in with code"
+            : "Sign in to Kerb"}
+        </h1>
 
         <p>
-          Enter your email and we’ll send you a 6-digit login code. If you do
-          not have an account yet, we’ll create one automatically.
+          {mode === "register"
+            ? "Create one Kerb account to manage your listings, saved cars and enquiries."
+            : mode === "code"
+            ? "Forgot your password? Enter your email and we’ll send a 6-digit login code."
+            : "Use your email and password to access your Kerb account."}
         </p>
 
-        {step === "email" ? (
+        <div className="modeTabs">
+          <button
+            type="button"
+            className={mode === "login" ? "active" : ""}
+            onClick={() => switchMode("login")}
+          >
+            Sign in
+          </button>
+
+          <button
+            type="button"
+            className={mode === "register" ? "active" : ""}
+            onClick={() => switchMode("register")}
+          >
+            Create account
+          </button>
+
+          <button
+            type="button"
+            className={mode === "code" ? "active" : ""}
+            onClick={() => switchMode("code")}
+          >
+            Email code
+          </button>
+        </div>
+
+        {mode === "register" && (
+          <form onSubmit={createAccount} className="loginForm">
+            <label>
+              Full name
+              <input
+                type="text"
+                placeholder="Your full name"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Phone number
+              <input
+                type="tel"
+                placeholder="07..."
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Email address
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Password
+              <input
+                type="password"
+                placeholder="Create a password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Confirm password
+              <input
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+              />
+            </label>
+
+            {successMessage && (
+              <div className="successBox">{successMessage}</div>
+            )}
+
+            {errorMessage && <div className="errorBox">{errorMessage}</div>}
+
+            <button className="primaryButton" type="submit" disabled={isLoading}>
+              {isLoading ? "Creating account..." : "Create account"}
+            </button>
+          </form>
+        )}
+
+        {mode === "login" && (
+          <form onSubmit={loginWithPassword} className="loginForm">
+            <label>
+              Email address
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Password
+              <input
+                type="password"
+                placeholder="Your password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </label>
+
+            {successMessage && (
+              <div className="successBox">{successMessage}</div>
+            )}
+
+            {errorMessage && <div className="errorBox">{errorMessage}</div>}
+
+            <button className="primaryButton" type="submit" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
+
+            <button
+              className="textButton"
+              type="button"
+              onClick={() => switchMode("code")}
+            >
+              Forgot password? Use email code
+            </button>
+          </form>
+        )}
+
+        {mode === "code" && step === "form" && (
           <form onSubmit={sendCode} className="loginForm">
             <label>
               Email address
@@ -128,7 +379,9 @@ export default function LoginPage() {
               {isLoading ? "Sending code..." : "Send login code"}
             </button>
           </form>
-        ) : (
+        )}
+
+        {mode === "code" && step === "code" && (
           <form onSubmit={verifyCode} className="loginForm">
             <label>
               Enter 6-digit code
@@ -147,10 +400,9 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setStep("email");
+                  setStep("form");
                   setCode("");
-                  setSuccessMessage("");
-                  setErrorMessage("");
+                  resetMessages();
                 }}
               >
                 Change email
@@ -164,7 +416,7 @@ export default function LoginPage() {
             {errorMessage && <div className="errorBox">{errorMessage}</div>}
 
             <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Checking code..." : "Sign in"}
+              {isLoading ? "Checking code..." : "Sign in with code"}
             </button>
 
             <button
@@ -211,7 +463,7 @@ const styles = `
   }
 
   .loginCard {
-    width: min(620px, 100%);
+    width: min(660px, 100%);
     background: white;
     border: 1px solid #e5eaf4;
     border-radius: 30px;
@@ -251,7 +503,34 @@ const styles = `
   p {
     color: #59657a;
     line-height: 1.6;
-    margin: 0 0 26px;
+    margin: 0 0 24px;
+  }
+
+  .modeTabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    background: #f4f7fc;
+    border: 1px solid #e5eaf4;
+    border-radius: 18px;
+    padding: 8px;
+    margin-bottom: 22px;
+  }
+
+  .modeTabs button {
+    border: none;
+    border-radius: 13px;
+    background: transparent;
+    color: #5d687d;
+    font-weight: 950;
+    padding: 13px 10px;
+    cursor: pointer;
+  }
+
+  .modeTabs button.active {
+    background: #0048ff;
+    color: white;
+    box-shadow: 0 8px 20px rgba(0, 72, 255, 0.18);
   }
 
   .loginForm {
@@ -305,6 +584,16 @@ const styles = `
   .secondaryButton:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+  }
+
+  .textButton {
+    border: none;
+    background: transparent;
+    color: #0048ff;
+    font-weight: 950;
+    cursor: pointer;
+    width: fit-content;
+    padding: 4px 0;
   }
 
   .successBox {
@@ -364,6 +653,10 @@ const styles = `
 
     h1 {
       font-size: 36px;
+    }
+
+    .modeTabs {
+      grid-template-columns: 1fr;
     }
   }
 `;
