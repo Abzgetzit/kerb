@@ -850,10 +850,10 @@ function Header() {
           Saved
         </button>
 
-        <button type="button">
+        <Link href="/login" className="signin-link">
           <SvgIcon name="user" />
           Sign in
-        </button>
+        </Link>
 
         <Link href="/post-car" className="post-button">
           <SvgIcon name="plus" />
@@ -953,7 +953,8 @@ const styles = `
     gap: 22px;
   }
 
-  .top-actions button {
+  .top-actions button,
+  .signin-link {
     border: none;
     background: transparent;
     display: inline-flex;
@@ -963,6 +964,7 @@ const styles = `
     font-size: 14px;
     font-weight: 750;
     cursor: pointer;
+    text-decoration: none;
   }
 
   .post-button {
@@ -1748,7 +1750,8 @@ const styles = `
       padding-bottom: 4px;
     }
 
-    .top-actions button {
+    .top-actions button,
+    .signin-link {
       display: none;
     }
 
