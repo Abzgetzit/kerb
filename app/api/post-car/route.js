@@ -1,5 +1,31 @@
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+
+function cleanText(value) {
+  if (value === null || value === undefined) return null;
+
+  const text = String(value).trim();
+
+  return text || null;
+}
+
+function cleanNumber(value) {
+  if (!value) return null;
+
+  const number = Number(String(value).replace(/[^0-9.]/g, ""));
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function getFileExtension(fileName = "") {
+  const extension = String(fileName).split(".").pop();
+
+  if (!extension || extension === fileName) return "jpg";
+
+  return extension.toLowerCase();
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -16,22 +42,27 @@ export async function POST(request) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const photos = formData.getAll("photos");
+    const photos = formData
+      .getAll("photos")
+      .filter((photo) => photo && typeof photo !== "string" && photo.size > 0)
+      .slice(0, 12);
+
     const photoUrls = [];
 
     for (const photo of photos) {
-      if (!photo || typeof photo === "string" || photo.size === 0) continue;
-
-      const fileExt = photo.name.split(".").pop();
+      const fileExt = getFileExtension(photo.name);
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `listings/${fileName}`;
 
+      const arrayBuffer = await photo.arrayBuffer();
+      const fileBuffer = Buffer.from(arrayBuffer);
+
       const { error: uploadError } = await supabase.storage
         .from("kerb-car-photos")
-        .upload(filePath, photo, {
+        .upload(filePath, fileBuffer, {
           cacheControl: "3600",
           upsert: false,
-          contentType: photo.type,
+          contentType: photo.type || "image/jpeg",
         });
 
       if (uploadError) {
@@ -45,37 +76,56 @@ export async function POST(request) {
         .from("kerb-car-photos")
         .getPublicUrl(filePath);
 
-      photoUrls.push(publicUrlData.publicUrl);
+      if (publicUrlData?.publicUrl) {
+        photoUrls.push(publicUrlData.publicUrl);
+      }
     }
 
-    const cleanNumber = (value) => {
-      if (!value) return null;
-      const number = Number(String(value).replace(/[^0-9.]/g, ""));
-      return Number.isFinite(number) ? number : null;
-    };
+    const sellerEmail =
+      cleanText(formData.get("seller_email")) ||
+      cleanText(formData.get("account_email"));
+
+    const sellerName =
+      cleanText(formData.get("seller_name")) ||
+      cleanText(formData.get("account_name"));
+
+    const make = cleanText(formData.get("make"));
+    const model = cleanText(formData.get("model"));
+    const year = cleanNumber(formData.get("year"));
+    const mileage = cleanNumber(formData.get("mileage"));
+    const fuelType = cleanText(formData.get("fuel_type"));
+    const gearbox = cleanText(formData.get("gearbox"));
+    const askingPrice = cleanNumber(formData.get("asking_price"));
+    const location = cleanText(formData.get("location"));
 
     const listing = {
       status: "pending",
 
-      seller_name: formData.get("seller_name"),
-      seller_email: formData.get("seller_email"),
-      seller_phone: formData.get("seller_phone"),
-      seller_type: formData.get("seller_type"),
+      account_id: cleanText(formData.get("account_id")),
+      account_email: cleanText(formData.get("account_email")),
+      account_name: cleanText(formData.get("account_name")),
 
-      make: formData.get("make"),
-      model: formData.get("model"),
-      year: cleanNumber(formData.get("year")),
-      mileage: cleanNumber(formData.get("mileage")),
-      fuel_type: formData.get("fuel_type"),
-      gearbox: formData.get("gearbox"),
-      asking_price: cleanNumber(formData.get("asking_price")),
-      location: formData.get("location"),
+      seller_name: sellerName,
+      seller_email: sellerEmail,
+      seller_phone: cleanText(formData.get("seller_phone")),
+      seller_type: cleanText(formData.get("seller_type")),
 
-      description: formData.get("description"),
+      make,
+      model,
+      year,
+      mileage,
+      fuel_type: fuelType,
+      gearbox,
+      asking_price: askingPrice,
+      location,
+
+      description: cleanText(formData.get("description")),
 
       valuation_low: cleanNumber(formData.get("valuation_low")),
       valuation_high: cleanNumber(formData.get("valuation_high")),
 
+      image_url: photoUrls[0] || null,
+      photos: photoUrls,
       photo_urls: photoUrls,
     };
 
