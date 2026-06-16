@@ -12,6 +12,19 @@ const supabase =
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
 
+const currentYear = new Date().getFullYear();
+
+const defaultFilters = {
+  location: "",
+  make: "",
+  priceMax: "",
+  mileageMax: "",
+  bodyType: "",
+  fuel: "",
+  condition: "",
+  finance: "",
+};
+
 function formatPrice(value) {
   const number = Number(value);
 
@@ -103,7 +116,9 @@ function getListingImages(car) {
     ...parseImageField(car.main_photo_url),
     ...parseImageField(car.cover_image_url),
     ...parseImageField(car.photos),
+    ...parseImageField(car.photo_urls),
     ...parseImageField(car.images),
+    ...parseImageField(car.image_urls),
   ];
 
   return [...new Set(images)].filter(Boolean);
@@ -127,6 +142,39 @@ function getYearText(car) {
   if (car.year) return String(car.year);
   if (car.registration_year) return String(car.registration_year);
   return "";
+}
+
+function getCarPrice(car) {
+  return Number(car.price || car.asking_price || car.listing_price || 0);
+}
+
+function getCarMileage(car) {
+  return Number(car.mileage || car.miles || 0);
+}
+
+function includesText(value, query) {
+  return String(value || "").toLowerCase().includes(String(query || "").toLowerCase());
+}
+
+function carHasFinance(car) {
+  const financeText = [
+    car.finance,
+    car.finance_available,
+    car.finance_option,
+    car.finance_options,
+    car.payment_options,
+    car.seller_finance,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    car.finance === true ||
+    car.finance_available === true ||
+    financeText.includes("finance") ||
+    financeText.includes("available")
+  );
 }
 
 function SvgIcon({ name }) {
@@ -258,9 +306,39 @@ export default function BrowsePage() {
   const [cars, setCars] = useState([]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
+  const [filters, setFilters] = useState(defaultFilters);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    function applyUrlFilters() {
+      const params = new URLSearchParams(window.location.search);
+
+      const urlFilters = {
+        location: params.get("location") || "",
+        make: params.get("make") || "",
+        priceMax: params.get("priceMax") || "",
+        mileageMax: params.get("mileageMax") || "",
+        bodyType: params.get("body_type") || params.get("bodyType") || "",
+        fuel: params.get("fuel") || "",
+        condition: params.get("condition") || "",
+        finance: params.get("finance") || "",
+      };
+
+      setFilters(urlFilters);
+      setSearch(params.get("keyword") || params.get("q") || "");
+      setSort(params.get("sort") || "newest");
+    }
+
+    applyUrlFilters();
+
+    window.addEventListener("popstate", applyUrlFilters);
+
+    return () => {
+      window.removeEventListener("popstate", applyUrlFilters);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadCars() {
@@ -296,18 +374,24 @@ export default function BrowsePage() {
   useEffect(() => {
     function syncKerbUser() {
       const savedUser = localStorage.getItem("kerbUser");
+      const savedEmail = localStorage.getItem("kerbAccountEmail");
+      const token = localStorage.getItem("kerbSessionToken");
 
-      if (!savedUser) {
-        setCurrentUser(null);
+      if (savedUser) {
+        try {
+          setCurrentUser(JSON.parse(savedUser));
+          return;
+        } catch {
+          localStorage.removeItem("kerbUser");
+        }
+      }
+
+      if (token && savedEmail) {
+        setCurrentUser({ email: savedEmail });
         return;
       }
 
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem("kerbUser");
-        setCurrentUser(null);
-      }
+      setCurrentUser(null);
     }
 
     syncKerbUser();
@@ -321,69 +405,173 @@ export default function BrowsePage() {
     };
   }, []);
 
+  function updateUrl(nextFilters = filters, nextSearch = search, nextSort = sort) {
+    const params = new URLSearchParams();
+
+    if (nextFilters.location) params.set("location", nextFilters.location);
+    if (nextFilters.make) params.set("make", nextFilters.make);
+    if (nextFilters.priceMax) params.set("priceMax", nextFilters.priceMax);
+    if (nextFilters.mileageMax) params.set("mileageMax", nextFilters.mileageMax);
+    if (nextFilters.bodyType) params.set("body_type", nextFilters.bodyType);
+    if (nextFilters.fuel) params.set("fuel", nextFilters.fuel);
+    if (nextFilters.condition) params.set("condition", nextFilters.condition);
+    if (nextFilters.finance) params.set("finance", nextFilters.finance);
+    if (nextSearch.trim()) params.set("keyword", nextSearch.trim());
+    if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
+
+    const query = params.toString();
+    const nextUrl = query ? `/browse?${query}` : "/browse";
+
+    window.history.pushState({}, "", nextUrl);
+  }
+
+  function setFilter(key, value) {
+    const nextFilters = {
+      ...filters,
+      [key]: value,
+    };
+
+    setFilters(nextFilters);
+    updateUrl(nextFilters);
+  }
+
+  function applyPreset(event, presetFilters = {}, nextSearch = "") {
+    event.preventDefault();
+
+    const nextFilters = {
+      ...defaultFilters,
+      ...presetFilters,
+    };
+
+    setFilters(nextFilters);
+    setSearch(nextSearch);
+    setSort("newest");
+    updateUrl(nextFilters, nextSearch, "newest");
+  }
+
+  function clearFilters() {
+    setFilters(defaultFilters);
+    setSearch("");
+    setSort("newest");
+    window.history.pushState({}, "", "/browse");
+  }
+
   function handleLogout() {
+    localStorage.removeItem("kerbSessionToken");
+    localStorage.removeItem("kerbAccountEmail");
     localStorage.removeItem("kerbUser");
     setCurrentUser(null);
     window.dispatchEvent(new Event("kerb-auth-change"));
     window.location.href = "/";
   }
 
+  const availableMakes = useMemo(() => {
+    return [...new Set(cars.map((car) => car.make).filter(Boolean))].sort();
+  }, [cars]);
+
   const visibleCars = useMemo(() => {
     let list = [...cars];
 
     const query = search.trim().toLowerCase();
 
-    if (query) {
-      list = list.filter((car) => {
-        const searchableText = [
-          car.title,
-          car.make,
-          car.model,
-          car.variant,
-          car.year,
-          car.fuel,
-          car.fuel_type,
-          car.transmission,
-          car.gearbox,
-          car.location,
-          car.city,
-          car.postcode,
-          car.body_type,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
+    list = list.filter((car) => {
+      const searchableText = [
+        car.title,
+        car.make,
+        car.model,
+        car.variant,
+        car.year,
+        car.fuel,
+        car.fuel_type,
+        car.transmission,
+        car.gearbox,
+        car.location,
+        car.city,
+        car.postcode,
+        car.body_type,
+        car.description,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-        return searchableText.includes(query);
-      });
-    }
+      if (query && !searchableText.includes(query)) return false;
+
+      if (
+        filters.location &&
+        !includesText(
+          [car.location, car.city, car.postcode].filter(Boolean).join(" "),
+          filters.location
+        )
+      ) {
+        return false;
+      }
+
+      if (filters.make && !includesText(car.make, filters.make)) {
+        return false;
+      }
+
+      if (filters.priceMax) {
+        const price = getCarPrice(car);
+        if (!price || price > Number(filters.priceMax)) return false;
+      }
+
+      if (filters.mileageMax) {
+        const mileage = getCarMileage(car);
+        if (!mileage || mileage > Number(filters.mileageMax)) return false;
+      }
+
+      if (filters.bodyType && !includesText(car.body_type, filters.bodyType)) {
+        return false;
+      }
+
+      if (filters.fuel) {
+        const fuel = String(car.fuel || car.fuel_type || "").toLowerCase();
+
+        if (filters.fuel === "electric-hybrid") {
+          if (!fuel.includes("electric") && !fuel.includes("hybrid")) return false;
+        } else if (!fuel.includes(filters.fuel.toLowerCase())) {
+          return false;
+        }
+      }
+
+      if (filters.condition === "new") {
+        const condition = String(car.condition || "").toLowerCase();
+        const year = Number(car.year || car.registration_year || 0);
+        const isNewCar =
+          condition.includes("new") ||
+          condition.includes("nearly new") ||
+          year >= currentYear - 1;
+
+        if (!isNewCar) return false;
+      }
+
+      if (filters.finance === "true" && !carHasFinance(car)) {
+        return false;
+      }
+
+      return true;
+    });
 
     if (sort === "price-low") {
-      list.sort(
-        (a, b) =>
-          Number(a.price || a.asking_price || a.listing_price || 0) -
-          Number(b.price || b.asking_price || b.listing_price || 0)
-      );
+      list.sort((a, b) => getCarPrice(a) - getCarPrice(b));
     }
 
     if (sort === "price-high") {
-      list.sort(
-        (a, b) =>
-          Number(b.price || b.asking_price || b.listing_price || 0) -
-          Number(a.price || a.asking_price || a.listing_price || 0)
-      );
+      list.sort((a, b) => getCarPrice(b) - getCarPrice(a));
     }
 
     if (sort === "mileage-low") {
-      list.sort(
-        (a, b) =>
-          Number(a.mileage || a.miles || 0) -
-          Number(b.mileage || b.miles || 0)
-      );
+      list.sort((a, b) => getCarMileage(a) - getCarMileage(b));
     }
 
     return list;
-  }, [cars, search, sort]);
+  }, [cars, search, sort, filters]);
+
+  const hasActiveFilters =
+    search.trim() ||
+    sort !== "newest" ||
+    Object.values(filters).some(Boolean);
 
   return (
     <>
@@ -394,12 +582,24 @@ export default function BrowsePage() {
           </Link>
 
           <nav className="nav">
-            <Link href="/browse" className="nav-item active">
+            <Link
+              href="/browse"
+              className={
+                !hasActiveFilters ? "nav-item active" : "nav-item"
+              }
+              onClick={(event) => applyPreset(event)}
+            >
               <SvgIcon name="car" />
               Browse cars
             </Link>
 
-            <Link href="/browse" className="nav-item">
+            <Link
+              href="/browse?condition=new"
+              className={
+                filters.condition === "new" ? "nav-item active" : "nav-item"
+              }
+              onClick={(event) => applyPreset(event, { condition: "new" })}
+            >
               <SvgIcon name="new" />
               New cars
             </Link>
@@ -409,27 +609,42 @@ export default function BrowsePage() {
               Sell your car
             </Link>
 
-            <Link href="/browse" className="nav-item">
+            <Link
+              href="/browse?fuel=electric"
+              className={
+                filters.fuel === "electric" ? "nav-item active" : "nav-item"
+              }
+              onClick={(event) => applyPreset(event, { fuel: "electric" })}
+            >
               <SvgIcon name="electric" />
               Electric
             </Link>
 
-            <Link href="/browse" className="nav-item">
+            <Link
+              href="/browse?finance=true"
+              className={
+                filters.finance === "true" ? "nav-item active" : "nav-item"
+              }
+              onClick={(event) => applyPreset(event, { finance: "true" })}
+            >
               <SvgIcon name="finance" />
               Finance
             </Link>
 
-            <Link href="/browse" className="nav-item guides-link">
+            <Link href="/#guides" className="nav-item guides-link">
               <SvgIcon name="guides" />
               Guides
             </Link>
           </nav>
 
           <div className="top-actions">
-            <button className="saved-button" type="button">
+            <Link
+              href={currentUser ? "/account" : "/login"}
+              className="saved-button"
+            >
               <SvgIcon name="heart" />
               Saved
-            </button>
+            </Link>
 
             {currentUser ? (
               <>
@@ -462,61 +677,121 @@ export default function BrowsePage() {
 
         <section className="filters-section">
           <div className="filters-grid">
-            <div className="filter-card">
+            <label className="filter-card">
               <SvgIcon name="location" />
               <div>
                 <p>Location</p>
-                <strong>Leicester</strong>
+                <select
+                  value={filters.location}
+                  onChange={(event) => setFilter("location", event.target.value)}
+                >
+                  <option value="">Any location</option>
+                  <option value="Leicester">Leicester</option>
+                  <option value="Birmingham">Birmingham</option>
+                  <option value="London">London</option>
+                  <option value="Manchester">Manchester</option>
+                  <option value="Nottingham">Nottingham</option>
+                </select>
               </div>
-              <span className="chevron">⌄</span>
-            </div>
+            </label>
 
-            <div className="filter-card">
+            <label className="filter-card">
               <SvgIcon name="car" />
               <div>
                 <p>Make & model</p>
-                <strong>Any make</strong>
+                <select
+                  value={filters.make}
+                  onChange={(event) => setFilter("make", event.target.value)}
+                >
+                  <option value="">Any make</option>
+                  {availableMakes.map((make) => (
+                    <option key={make} value={make}>
+                      {make}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <span className="chevron">⌄</span>
-            </div>
+            </label>
 
-            <div className="filter-card">
+            <label className="filter-card">
               <SvgIcon name="price" />
               <div>
                 <p>Price</p>
-                <strong>Any price</strong>
+                <select
+                  value={filters.priceMax}
+                  onChange={(event) => setFilter("priceMax", event.target.value)}
+                >
+                  <option value="">Any price</option>
+                  <option value="5000">Up to £5,000</option>
+                  <option value="10000">Up to £10,000</option>
+                  <option value="20000">Up to £20,000</option>
+                  <option value="30000">Up to £30,000</option>
+                  <option value="50000">Up to £50,000</option>
+                </select>
               </div>
-              <span className="chevron">⌄</span>
-            </div>
+            </label>
 
-            <div className="filter-card">
+            <label className="filter-card">
               <SvgIcon name="mileage" />
               <div>
                 <p>Mileage</p>
-                <strong>Any miles</strong>
+                <select
+                  value={filters.mileageMax}
+                  onChange={(event) =>
+                    setFilter("mileageMax", event.target.value)
+                  }
+                >
+                  <option value="">Any miles</option>
+                  <option value="10000">Up to 10,000</option>
+                  <option value="30000">Up to 30,000</option>
+                  <option value="60000">Up to 60,000</option>
+                  <option value="100000">Up to 100,000</option>
+                </select>
               </div>
-              <span className="chevron">⌄</span>
-            </div>
+            </label>
 
-            <div className="filter-card">
+            <label className="filter-card">
               <SvgIcon name="body" />
               <div>
                 <p>Body type</p>
-                <strong>Any</strong>
+                <select
+                  value={filters.bodyType}
+                  onChange={(event) => setFilter("bodyType", event.target.value)}
+                >
+                  <option value="">Any body</option>
+                  <option value="SUV">SUV</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="Saloon">Saloon</option>
+                  <option value="Estate">Estate</option>
+                  <option value="Coupe">Coupe</option>
+                  <option value="Convertible">Convertible</option>
+                </select>
               </div>
-              <span className="chevron">⌄</span>
-            </div>
+            </label>
 
-            <div className="filter-card">
+            <label className="filter-card">
               <SvgIcon name="fuel" />
               <div>
                 <p>Fuel type</p>
-                <strong>Any</strong>
+                <select
+                  value={filters.fuel}
+                  onChange={(event) => setFilter("fuel", event.target.value)}
+                >
+                  <option value="">Any fuel</option>
+                  <option value="petrol">Petrol</option>
+                  <option value="diesel">Diesel</option>
+                  <option value="hybrid">Hybrid</option>
+                  <option value="electric">Electric</option>
+                  <option value="electric-hybrid">Electric & hybrid</option>
+                </select>
               </div>
-              <span className="chevron">⌄</span>
-            </div>
+            </label>
 
-            <button className="filter-button" type="button">
+            <button
+              className="filter-button"
+              type="button"
+              onClick={() => updateUrl()}
+            >
               <SvgIcon name="sliders" />
               Filter
             </button>
@@ -525,7 +800,10 @@ export default function BrowsePage() {
           <div className="search-row">
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                updateUrl(filters, event.target.value, sort);
+              }}
               placeholder="Search make, model, fuel, location..."
               className="search-input"
             />
@@ -534,7 +812,10 @@ export default function BrowsePage() {
               <span>Sort by</span>
               <select
                 value={sort}
-                onChange={(event) => setSort(event.target.value)}
+                onChange={(event) => {
+                  setSort(event.target.value);
+                  updateUrl(filters, search, event.target.value);
+                }}
               >
                 <option value="newest">Newest first</option>
                 <option value="price-low">Price: low to high</option>
@@ -542,6 +823,12 @@ export default function BrowsePage() {
                 <option value="mileage-low">Lowest mileage</option>
               </select>
             </div>
+
+            {hasActiveFilters && (
+              <button type="button" className="clear-button" onClick={clearFilters}>
+                Clear filters
+              </button>
+            )}
           </div>
         </section>
 
@@ -570,10 +857,14 @@ export default function BrowsePage() {
             <div className="empty-box">
               <h2>No cars found</h2>
               <p>
-                Once you approve a listing in your admin page, it will appear
-                here.
+                Try clearing your filters or post a new listing for review.
               </p>
-              <Link href="/post-car">Post your car</Link>
+              <div className="empty-actions">
+                <button type="button" onClick={clearFilters}>
+                  Clear filters
+                </button>
+                <Link href="/post-car">Post your car</Link>
+              </div>
             </div>
           )}
 
@@ -618,9 +909,12 @@ export default function BrowsePage() {
                           : "Approved dealer"}
                       </div>
 
-                      <button className="heart-button" type="button">
+                      <Link
+                        href={currentUser ? "/account" : "/login"}
+                        className="heart-button"
+                      >
                         <SvgIcon name="heart" />
-                      </button>
+                      </Link>
 
                       <div className="photo-count">
                         <SvgIcon name="camera" />
@@ -861,19 +1155,16 @@ export default function BrowsePage() {
           font-weight: 600;
         }
 
-        .filter-card strong {
-          display: block;
+        .filter-card select {
+          width: 100%;
+          border: none;
+          outline: none;
+          background: transparent;
           color: #12182f;
           font-size: 13px;
           font-weight: 900;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .chevron {
-          color: #1d2540;
-          font-size: 18px;
+          cursor: pointer;
+          padding: 0;
         }
 
         .filter-button {
@@ -946,6 +1237,16 @@ export default function BrowsePage() {
           font-size: 14px;
           font-weight: 900;
           cursor: pointer;
+        }
+
+        .clear-button {
+          height: 46px;
+          border-radius: 14px;
+          background: #eef3ff;
+          color: #0b45ff;
+          padding: 0 18px;
+          font-weight: 950;
+          white-space: nowrap;
         }
 
         .results-section {
@@ -1178,7 +1479,16 @@ export default function BrowsePage() {
           font-weight: 600;
         }
 
-        .empty-box a {
+        .empty-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .empty-actions a,
+        .empty-actions button {
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -1188,6 +1498,11 @@ export default function BrowsePage() {
           background: #083cff;
           color: white;
           font-weight: 950;
+        }
+
+        .empty-actions button {
+          background: #eef3ff;
+          color: #0b45ff;
         }
 
         .skeleton-card {
@@ -1304,7 +1619,8 @@ export default function BrowsePage() {
           }
 
           .search-input,
-          .sort-box {
+          .sort-box,
+          .clear-button {
             width: 100%;
           }
 
