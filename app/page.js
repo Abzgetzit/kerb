@@ -1,9 +1,16 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 function Icon({ name }) {
   const icons = {
@@ -135,103 +142,280 @@ function Icon({ name }) {
   );
 }
 
-function getListingImage(car) {
-  const directImage =
-    car.main_photo ||
-    car.photo_url ||
-    car.image_url ||
-    car.cover_image ||
-    car.main_image;
+function normaliseImageUrl(value) {
+  if (!value) return "";
 
-  if (directImage) return directImage;
+  const image = String(value).trim();
 
-  const possibleArrays = [
-    car.photos,
-    car.photo_urls,
-    car.image_urls,
-    car.images,
-  ];
+  if (!image) return "";
 
-  for (const item of possibleArrays) {
-    if (Array.isArray(item) && item.length > 0) {
-      return item[0];
-    }
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("/")
+  ) {
+    return image;
+  }
 
-    if (typeof item === "string") {
-      try {
-        const parsed = JSON.parse(item);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed[0];
-        }
-      } catch {
-        if (item.startsWith("http")) return item;
+  return image;
+}
+
+function parseImageField(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.map(normaliseImageUrl).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map(normaliseImageUrl).filter(Boolean);
       }
+
+      if (typeof parsed === "string") {
+        return [normaliseImageUrl(parsed)].filter(Boolean);
+      }
+    } catch {
+      return [normaliseImageUrl(trimmed)].filter(Boolean);
     }
   }
 
-  return "/cars/hero-car.png";
+  return [];
+}
+
+function getListingImage(car) {
+  const images = [
+    ...parseImageField(car.main_photo),
+    ...parseImageField(car.photo_url),
+    ...parseImageField(car.image_url),
+    ...parseImageField(car.cover_image),
+    ...parseImageField(car.main_image),
+    ...parseImageField(car.photos),
+    ...parseImageField(car.photo_urls),
+    ...parseImageField(car.image_urls),
+    ...parseImageField(car.images),
+  ];
+
+  return [...new Set(images)].filter(Boolean)[0] || "/cars/hero-car.png";
 }
 
 function formatPrice(value) {
   const number = Number(value);
+
   if (!Number.isFinite(number) || number <= 0) return "POA";
+
   return `£${number.toLocaleString("en-GB")}`;
 }
 
 function formatMileage(value) {
   const number = Number(value);
+
   if (!Number.isFinite(number)) return "Mileage TBC";
+
   return `${number.toLocaleString("en-GB")} miles`;
 }
 
 function carTitle(car) {
-  return [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing";
+  return (
+    [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing"
+  );
 }
 
-export default async function HomePage() {
-  const { data } = await supabase
-    .from("kerb_listings")
-    .select("*")
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
-    .limit(6);
-
-  const approvedListings = data || [];
+export default function HomePage() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [approvedListings, setApprovedListings] = useState([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(true);
+  const [listingError, setListingError] = useState("");
+  const [email, setEmail] = useState("");
+  const [newsletterMessage, setNewsletterMessage] = useState("");
 
   const categories = [
-    ["car", "Used cars", "Browse trusted second-hand cars"],
-    ["new", "New cars", "Explore new models and deals"],
-    ["electric", "Electric cars", "Find electric and hybrid cars"],
-    ["body", "Family SUVs", "Practical cars for everyday life"],
-    ["mileage", "Performance", "Powerful cars built for driving"],
+    [
+      "car",
+      "Used cars",
+      "Browse trusted second-hand cars",
+      "/browse",
+    ],
+    [
+      "new",
+      "New cars",
+      "Browse newer cars listed on Kerb",
+      "/browse?condition=new",
+    ],
+    [
+      "electric",
+      "Electric cars",
+      "Find electric and hybrid cars",
+      "/browse?fuel=electric",
+    ],
+    [
+      "body",
+      "Family SUVs",
+      "Practical cars for everyday life",
+      "/browse?body_type=SUV",
+    ],
+    [
+      "mileage",
+      "Performance",
+      "Powerful cars built for driving",
+      "/browse?keyword=performance",
+    ],
   ];
+
+  useEffect(() => {
+    function syncKerbUser() {
+      const savedUser = localStorage.getItem("kerbUser");
+      const savedEmail = localStorage.getItem("kerbAccountEmail");
+      const token = localStorage.getItem("kerbSessionToken");
+
+      if (savedUser) {
+        try {
+          setCurrentUser(JSON.parse(savedUser));
+          return;
+        } catch {
+          localStorage.removeItem("kerbUser");
+        }
+      }
+
+      if (token && savedEmail) {
+        setCurrentUser({ email: savedEmail });
+        return;
+      }
+
+      setCurrentUser(null);
+    }
+
+    syncKerbUser();
+
+    window.addEventListener("storage", syncKerbUser);
+    window.addEventListener("kerb-auth-change", syncKerbUser);
+
+    return () => {
+      window.removeEventListener("storage", syncKerbUser);
+      window.removeEventListener("kerb-auth-change", syncKerbUser);
+    };
+  }, []);
+
+  useEffect(() => {
+    async function loadApprovedListings() {
+      setIsLoadingListings(true);
+      setListingError("");
+
+      if (!supabase) {
+        setApprovedListings([]);
+        setListingError("Supabase environment variables are missing.");
+        setIsLoadingListings(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("kerb_listings")
+        .select("*")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (error) {
+        console.error("Homepage listings error:", error);
+        setApprovedListings([]);
+        setListingError(error.message);
+      } else {
+        setApprovedListings(data || []);
+      }
+
+      setIsLoadingListings(false);
+    }
+
+    loadApprovedListings();
+  }, []);
+
+  function logout() {
+    localStorage.removeItem("kerbSessionToken");
+    localStorage.removeItem("kerbAccountEmail");
+    localStorage.removeItem("kerbUser");
+    window.dispatchEvent(new Event("kerb-auth-change"));
+    window.location.href = "/";
+  }
+
+  function handleNewsletterSubmit(event) {
+    event.preventDefault();
+
+    const cleanEmail = email.trim();
+
+    if (!cleanEmail) {
+      setNewsletterMessage("Enter your email first.");
+      return;
+    }
+
+    localStorage.setItem("kerbLaunchEmail", cleanEmail);
+    setNewsletterMessage("Nice — you are on the Kerb early access list.");
+    setEmail("");
+  }
 
   return (
     <main className="page">
       <header className="navbar">
-        <a href="/" className="logo">Kerb</a>
+        <Link href="/" className="logo">
+          Kerb
+        </Link>
 
         <nav className="navLinks">
-          <a href="/browse"><Icon name="car" /> Browse cars</a>
-          <a href="#coming-soon"><Icon name="new" /> New cars</a>
-          <a href="/post-car"><Icon name="sell" /> Sell your car</a>
-          <a href="#coming-soon"><Icon name="electric" /> Electric</a>
-          <a href="#coming-soon"><Icon name="finance" /> Finance</a>
-          <a href="#coming-soon"><Icon name="guide" /> Guides</a>
+          <Link href="/browse">
+            <Icon name="car" /> Browse cars
+          </Link>
+
+          <Link href="/browse?condition=new">
+            <Icon name="new" /> New cars
+          </Link>
+
+          <Link href="/post-car">
+            <Icon name="sell" /> Sell your car
+          </Link>
+
+          <Link href="/browse?fuel=electric">
+            <Icon name="electric" /> Electric
+          </Link>
+
+          <Link href="/browse?finance=true">
+            <Icon name="finance" /> Finance
+          </Link>
+
+          <a href="#guides">
+            <Icon name="guide" /> Guides
+          </a>
         </nav>
 
         <div className="navActions">
-          <button className="ghostBtn" type="button">
+          <Link href={currentUser ? "/account" : "/login"} className="ghostBtn">
             <Icon name="heart" /> Saved
-          </button>
+          </Link>
 
-          <a href="/login" className="ghostBtn">
-            <Icon name="user" /> Sign in
-          </a>
+          {currentUser ? (
+            <>
+              <Link href="/account" className="ghostBtn">
+                <Icon name="user" /> My account
+              </Link>
 
-          <a href="/post-car" className="primaryBtn">
+              <button className="ghostBtn logoutBtn" type="button" onClick={logout}>
+                Log out
+              </button>
+            </>
+          ) : (
+            <Link href="/login" className="ghostBtn">
+              <Icon name="user" /> Sign in
+            </Link>
+          )}
+
+          <Link href="/post-car" className="primaryBtn">
             <Icon name="plus" /> Post your car
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -248,9 +432,15 @@ export default async function HomePage() {
           </p>
 
           <div className="heroStats">
-            <span><Icon name="car" /> Private sellers</span>
-            <span><Icon name="shield" /> Approved dealers</span>
-            <span><Icon name="new" /> Simple car search</span>
+            <span>
+              <Icon name="car" /> Private sellers
+            </span>
+            <span>
+              <Icon name="shield" /> Approved dealers
+            </span>
+            <span>
+              <Icon name="new" /> Simple car search
+            </span>
           </div>
         </div>
 
@@ -260,55 +450,55 @@ export default async function HomePage() {
         </div>
 
         <div className="searchBox">
-          <div className="filterItem">
+          <Link className="filterItem" href="/browse?location=Leicester">
             <Icon name="location" />
             <div>
               <small>Location</small>
               <strong>Leicester</strong>
             </div>
-          </div>
+          </Link>
 
-          <div className="filterItem">
+          <Link className="filterItem" href="/browse">
             <Icon name="car" />
             <div>
               <small>Make & model</small>
               <strong>Any make</strong>
             </div>
-          </div>
+          </Link>
 
-          <div className="filterItem">
+          <Link className="filterItem" href="/browse?sort=price-low">
             <Icon name="price" />
             <div>
               <small>Price</small>
               <strong>Any price</strong>
             </div>
-          </div>
+          </Link>
 
-          <div className="filterItem">
+          <Link className="filterItem" href="/browse?sort=mileage-low">
             <Icon name="mileage" />
             <div>
               <small>Mileage</small>
               <strong>Any miles</strong>
             </div>
-          </div>
+          </Link>
 
-          <div className="filterItem">
+          <Link className="filterItem" href="/browse?body_type=Any">
             <Icon name="body" />
             <div>
               <small>Body type</small>
               <strong>Any</strong>
             </div>
-          </div>
+          </Link>
 
-          <a className="searchBtn" href="/browse">
+          <Link className="searchBtn" href="/browse">
             Search cars
-          </a>
+          </Link>
         </div>
       </section>
 
       <section className="categories">
         {categories.map((item, index) => (
-          <div className="categoryCard" key={index}>
+          <Link className="categoryCard" href={item[3]} key={index}>
             <div className="categoryIcon">
               <Icon name={item[0]} />
             </div>
@@ -319,11 +509,11 @@ export default async function HomePage() {
             </div>
 
             <span className="arrow">›</span>
-          </div>
+          </Link>
         ))}
       </section>
 
-      <section className="launchGrid" id="coming-soon">
+      <section className="launchGrid" id="latest-cars">
         <div className="listingsPanel">
           <div className="sectionTitleRow">
             <div>
@@ -331,12 +521,23 @@ export default async function HomePage() {
               <h2>Latest cars on Kerb</h2>
             </div>
 
-            <a href="/browse" className="browseAllLink">
+            <Link href="/browse" className="browseAllLink">
               Browse all cars →
-            </a>
+            </Link>
           </div>
 
-          {approvedListings.length > 0 ? (
+          {listingError && <div className="errorBox">{listingError}</div>}
+
+          {isLoadingListings && (
+            <div className="loadingListings">
+              <div />
+              <div />
+              <div />
+              <div />
+            </div>
+          )}
+
+          {!isLoadingListings && !listingError && approvedListings.length > 0 ? (
             <div className="homeListingsGrid">
               {approvedListings.map((car) => (
                 <article className="listingCard" key={car.id}>
@@ -345,6 +546,9 @@ export default async function HomePage() {
                       src={getListingImage(car)}
                       alt={carTitle(car)}
                       className="listingImage"
+                      onError={(event) => {
+                        event.currentTarget.src = "/cars/hero-car.png";
+                      }}
                     />
                   </div>
 
@@ -352,7 +556,8 @@ export default async function HomePage() {
                     <div>
                       <h3>{carTitle(car)}</h3>
                       <p className="listingLocation">
-                        <Icon name="location" /> {car.location || "Location TBC"}
+                        <Icon name="location" />{" "}
+                        {car.location || "Location TBC"}
                       </p>
                     </div>
 
@@ -362,17 +567,19 @@ export default async function HomePage() {
                     </div>
 
                     <div className="listingFooter">
-                      <strong>{formatPrice(car.price)}</strong>
+                      <strong>{formatPrice(car.price || car.asking_price)}</strong>
 
-                      <a href={`/listing/${car.id}`} className="viewCarBtn">
+                      <Link href={`/listing/${car.id}`} className="viewCarBtn">
                         View car
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </article>
               ))}
             </div>
-          ) : (
+          ) : null}
+
+          {!isLoadingListings && !listingError && approvedListings.length === 0 && (
             <div className="emptyListings">
               <div className="emptyIcon">
                 <Icon name="car" />
@@ -386,9 +593,9 @@ export default async function HomePage() {
               </p>
 
               <div className="emptyActions">
-                <a href="/post-car" className="primaryBtn">
+                <Link href="/post-car" className="primaryBtn">
                   <Icon name="plus" /> Post your car
-                </a>
+                </Link>
 
                 <a href="#early-access" className="secondaryBtn">
                   Join launch list
@@ -423,15 +630,17 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <a href="/post-car" className="primaryBtn fullBtn">
+          <Link href="/post-car" className="primaryBtn fullBtn">
             Start selling
-          </a>
+          </Link>
         </div>
       </section>
 
       <section className="trustGrid">
         <div className="trustCard">
-          <span><Icon name="shield" /></span>
+          <span>
+            <Icon name="shield" />
+          </span>
           <div>
             <h3>Trusted sellers</h3>
             <p>Built for verified private sellers and approved dealers.</p>
@@ -439,7 +648,9 @@ export default async function HomePage() {
         </div>
 
         <div className="trustCard">
-          <span><Icon name="price" /></span>
+          <span>
+            <Icon name="price" />
+          </span>
           <div>
             <h3>Clear pricing</h3>
             <p>Simple prices with clean vehicle information.</p>
@@ -447,7 +658,9 @@ export default async function HomePage() {
         </div>
 
         <div className="trustCard">
-          <span><Icon name="heart" /></span>
+          <span>
+            <Icon name="heart" />
+          </span>
           <div>
             <h3>Save favourites</h3>
             <p>Buyers can save cars and compare their options.</p>
@@ -455,7 +668,9 @@ export default async function HomePage() {
         </div>
 
         <div className="trustCard">
-          <span><Icon name="mail" /></span>
+          <span>
+            <Icon name="mail" />
+          </span>
           <div>
             <h3>Easy enquiries</h3>
             <p>Simple contact flow between buyers and sellers.</p>
@@ -463,16 +678,53 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="guidesSection" id="guides">
+        <div className="sectionTitleRow">
+          <div>
+            <span className="sectionKicker">Kerb guides</span>
+            <h2>Helpful car guides</h2>
+          </div>
+        </div>
+
+        <div className="guidesGrid">
+          <Link href="/post-car" className="guideCard">
+            <Icon name="sell" />
+            <h3>How to sell your car</h3>
+            <p>Start a listing, add photos and manage buyer enquiries.</p>
+          </Link>
+
+          <Link href="/browse" className="guideCard">
+            <Icon name="shield" />
+            <h3>Buying safely</h3>
+            <p>Browse approved listings and contact sellers directly.</p>
+          </Link>
+
+          <Link href="/browse?fuel=electric" className="guideCard">
+            <Icon name="electric" />
+            <h3>Electric cars</h3>
+            <p>Filter Kerb listings to find electric and hybrid cars.</p>
+          </Link>
+        </div>
+      </section>
+
       <section className="newsletter" id="early-access">
         <div>
           <h3>Get early access to Kerb</h3>
           <p>Be notified when the first cars go live.</p>
+          {newsletterMessage && (
+            <span className="newsletterMessage">{newsletterMessage}</span>
+          )}
         </div>
 
-        <div className="emailBox">
-          <input placeholder="Enter your email address" />
-          <button type="button">Notify me</button>
-        </div>
+        <form className="emailBox" onSubmit={handleNewsletterSubmit}>
+          <input
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+          />
+          <button type="submit">Notify me</button>
+        </form>
       </section>
 
       <style>{`
@@ -565,6 +817,10 @@ export default async function HomePage() {
           font-family: inherit;
           text-decoration: none;
           white-space: nowrap;
+        }
+
+        .logoutBtn {
+          color: #c01818;
         }
 
         .primaryBtn {
@@ -735,6 +991,8 @@ export default async function HomePage() {
           align-items: center;
           gap: 12px;
           min-width: 0;
+          text-decoration: none;
+          color: inherit;
         }
 
         .filterItem .icon {
@@ -781,6 +1039,14 @@ export default async function HomePage() {
           border-radius: 18px;
           padding: 16px;
           box-shadow: 0 8px 25px rgba(10, 20, 40, 0.04);
+          text-decoration: none;
+          color: inherit;
+          transition: 0.2s ease;
+        }
+
+        .categoryCard:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 16px 35px rgba(10, 20, 40, 0.08);
         }
 
         .categoryIcon {
@@ -821,7 +1087,8 @@ export default async function HomePage() {
         }
 
         .listingsPanel,
-        .sellerBox {
+        .sellerBox,
+        .guidesSection {
           background: white;
           border: 1px solid #e6ebf4;
           border-radius: 24px;
@@ -1078,6 +1345,49 @@ export default async function HomePage() {
           line-height: 1.45;
         }
 
+        .guidesSection {
+          margin-top: 20px;
+        }
+
+        .guidesGrid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .guideCard {
+          border: 1px solid #e7edf6;
+          background: #f8fbff;
+          border-radius: 18px;
+          padding: 20px;
+          text-decoration: none;
+          color: inherit;
+          transition: 0.2s ease;
+        }
+
+        .guideCard:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 16px 35px rgba(10, 20, 40, 0.08);
+        }
+
+        .guideCard .icon {
+          color: #0048ff;
+          width: 28px;
+          height: 28px;
+          margin-bottom: 12px;
+        }
+
+        .guideCard h3 {
+          margin: 0 0 8px;
+        }
+
+        .guideCard p {
+          margin: 0;
+          color: #657189;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
         .newsletter {
           margin-top: 14px;
           background: white;
@@ -1098,6 +1408,14 @@ export default async function HomePage() {
           margin: 0;
           color: #657189;
           font-size: 13px;
+        }
+
+        .newsletterMessage {
+          display: block;
+          color: #0048ff;
+          font-weight: 900;
+          font-size: 13px;
+          margin-top: 8px;
         }
 
         .emailBox {
@@ -1121,6 +1439,39 @@ export default async function HomePage() {
           color: white;
           padding: 0 20px;
           font-weight: 850;
+        }
+
+        .loadingListings {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+        }
+
+        .loadingListings div {
+          height: 290px;
+          border-radius: 20px;
+          background: linear-gradient(90deg, #eef2f7, #ffffff, #eef2f7);
+          background-size: 200% 100%;
+          animation: shimmer 1.2s infinite;
+          border: 1px solid #e5ebf5;
+        }
+
+        .errorBox {
+          background: #fff1f1;
+          color: #c01818;
+          border: 1px solid #ffd1d1;
+          border-radius: 16px;
+          padding: 16px;
+          font-weight: 800;
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
         }
 
         @media (max-width: 1250px) {
@@ -1156,6 +1507,10 @@ export default async function HomePage() {
 
           .trustGrid {
             grid-template-columns: repeat(2, 1fr);
+          }
+
+          .guidesGrid {
+            grid-template-columns: 1fr;
           }
         }
 
@@ -1225,12 +1580,14 @@ export default async function HomePage() {
 
           .categories,
           .trustGrid,
-          .homeListingsGrid {
+          .homeListingsGrid,
+          .loadingListings {
             grid-template-columns: 1fr;
           }
 
           .listingsPanel,
-          .sellerBox {
+          .sellerBox,
+          .guidesSection {
             padding: 24px;
           }
 
