@@ -41,26 +41,34 @@ export default function PostCarPage() {
   const [mileage, setMileage] = useState("");
   const [fuel, setFuel] = useState("");
   const [gearbox, setGearbox] = useState("");
+  const [bodyType, setBodyType] = useState("");
+  const [condition, setCondition] = useState("");
+  const [financeAvailable, setFinanceAvailable] = useState("false");
   const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("kerbUser");
+    const savedEmail = localStorage.getItem("kerbAccountEmail");
+    const token = localStorage.getItem("kerbSessionToken");
 
-    if (!savedUser) {
-      window.location.href = "/login";
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setCurrentUser(parsedUser);
+        setIsCheckingAuth(false);
+        return;
+      } catch {
+        localStorage.removeItem("kerbUser");
+      }
+    }
+
+    if (token && savedEmail) {
+      setCurrentUser({ email: savedEmail });
+      setIsCheckingAuth(false);
       return;
     }
 
-    try {
-      const parsedUser = JSON.parse(savedUser);
-      setCurrentUser(parsedUser);
-    } catch {
-      localStorage.removeItem("kerbUser");
-      window.location.href = "/login";
-      return;
-    }
-
-    setIsCheckingAuth(false);
+    window.location.href = "/login";
   }, []);
 
   const availableModels = make ? carMakes[make] || [] : [];
@@ -95,6 +103,8 @@ export default function PostCarPage() {
     if (fuel === "Electric") base += 2500;
     if (fuel === "Hybrid") base += 1200;
     if (gearbox === "Automatic") base += 700;
+    if (condition === "New") base += 2500;
+    if (condition === "Nearly new") base += 1500;
 
     const estimate = Math.max(base - ageDeduction - mileageDeduction, 1500);
 
@@ -102,9 +112,11 @@ export default function PostCarPage() {
       low: Math.round((estimate * 0.9) / 100) * 100,
       high: Math.round((estimate * 1.1) / 100) * 100,
     };
-  }, [make, year, mileage, fuel, gearbox]);
+  }, [make, year, mileage, fuel, gearbox, condition]);
 
   function handleLogout() {
+    localStorage.removeItem("kerbSessionToken");
+    localStorage.removeItem("kerbAccountEmail");
     localStorage.removeItem("kerbUser");
     window.dispatchEvent(new Event("kerb-auth-change"));
     window.location.href = "/";
@@ -129,6 +141,9 @@ export default function PostCarPage() {
     const formData = new FormData(form);
 
     formData.set("model", finalModel);
+    formData.set("body_type", bodyType);
+    formData.set("condition", condition);
+    formData.set("finance_available", financeAvailable);
 
     if (currentUser?.id) {
       formData.set("account_id", currentUser.id);
@@ -241,8 +256,8 @@ export default function PostCarPage() {
         <div className="heroCard">
           <h3>Listing checklist</h3>
           <ul>
-            <li>Choose the make and model</li>
-            <li>Add mileage, year and price</li>
+            <li>Choose the make, model and body type</li>
+            <li>Add mileage, year, condition and price</li>
             <li>Upload clear car photos</li>
             <li>Submit your seller details</li>
           </ul>
@@ -344,6 +359,47 @@ export default function PostCarPage() {
             </label>
 
             <label>
+              Body type
+              <select
+                name="body_type"
+                value={bodyType}
+                onChange={(e) => setBodyType(e.target.value)}
+                required
+              >
+                <option value="">Select body type</option>
+                <option>Hatchback</option>
+                <option>Saloon</option>
+                <option>Estate</option>
+                <option>SUV</option>
+                <option>Coupe</option>
+                <option>Convertible</option>
+                <option>MPV</option>
+                <option>Pickup</option>
+                <option>Van</option>
+                <option>Other</option>
+              </select>
+            </label>
+
+            <label>
+              Condition
+              <select
+                name="condition"
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                required
+              >
+                <option value="">Select condition</option>
+                <option>New</option>
+                <option>Nearly new</option>
+                <option>Used</option>
+                <option>Excellent</option>
+                <option>Good</option>
+                <option>Fair</option>
+                <option>Needs work</option>
+              </select>
+            </label>
+
+            <label>
               Fuel type
               <select
                 name="fuel_type"
@@ -382,6 +438,27 @@ export default function PostCarPage() {
               Location
               <input name="location" placeholder="Leicester" required />
             </label>
+
+            <label>
+              Finance available from seller/dealer?
+              <select
+                name="finance_available"
+                value={financeAvailable}
+                onChange={(e) => setFinanceAvailable(e.target.value)}
+                required
+              >
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="infoBox">
+            <strong>Finance note</strong>
+            <p>
+              This only tells buyers whether the seller or dealer may offer finance.
+              Kerb does not provide finance or sell cars directly.
+            </p>
           </div>
 
           {valuation && (
@@ -711,6 +788,28 @@ const styles = `
   textarea:focus {
     border-color: #0048ff;
     box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
+  }
+
+  .infoBox {
+    margin: -4px 0 24px;
+    background: #f8fbff;
+    border: 1px solid #dce8ff;
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .infoBox strong {
+    display: block;
+    color: #0048ff;
+    font-size: 14px;
+    font-weight: 950;
+    margin-bottom: 4px;
+  }
+
+  .infoBox p {
+    color: #657189;
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   .valuationBox {
