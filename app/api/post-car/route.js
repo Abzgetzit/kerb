@@ -18,6 +18,15 @@ function cleanNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function cleanBoolean(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+
+  const text = String(value || "").trim().toLowerCase();
+
+  return text === "true" || text === "yes" || text === "1";
+}
+
 function getFileExtension(fileName = "") {
   const extension = String(fileName).split(".").pop();
 
@@ -93,10 +102,15 @@ export async function POST(request) {
     const model = cleanText(formData.get("model"));
     const year = cleanNumber(formData.get("year"));
     const mileage = cleanNumber(formData.get("mileage"));
+    const bodyType = cleanText(formData.get("body_type"));
+    const condition = cleanText(formData.get("condition"));
     const fuelType = cleanText(formData.get("fuel_type"));
     const gearbox = cleanText(formData.get("gearbox"));
     const askingPrice = cleanNumber(formData.get("asking_price"));
     const location = cleanText(formData.get("location"));
+    const financeAvailable = cleanBoolean(formData.get("finance_available"));
+
+    const title = [year, make, model].filter(Boolean).join(" ");
 
     const listing = {
       status: "pending",
@@ -110,14 +124,20 @@ export async function POST(request) {
       seller_phone: cleanText(formData.get("seller_phone")),
       seller_type: cleanText(formData.get("seller_type")),
 
+      title: title || null,
       make,
       model,
       year,
       mileage,
+      body_type: bodyType,
+      condition,
       fuel_type: fuelType,
       gearbox,
       asking_price: askingPrice,
+      price: askingPrice,
       location,
+
+      finance_available: financeAvailable,
 
       description: cleanText(formData.get("description")),
 
