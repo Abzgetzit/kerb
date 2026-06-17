@@ -16,7 +16,7 @@ const supabase =
 function formatPrice(value) {
   const number = Number(value);
 
-  if (!Number.isFinite(number)) return "Price on request";
+  if (!Number.isFinite(number) || number <= 0) return "Price on request";
 
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -28,21 +28,20 @@ function formatPrice(value) {
 function formatNumber(value) {
   const number = Number(value);
 
-  if (!Number.isFinite(number)) return value || "Not set";
+  if (!Number.isFinite(number)) return value || "";
 
   return new Intl.NumberFormat("en-GB").format(number);
 }
 
 function getTitle(car) {
-  const title = [car.make, car.model].filter(Boolean).join(" ").trim();
+  const title = [car.year, car.make, car.model].filter(Boolean).join(" ").trim();
 
   return car.title || title || "Car listing";
 }
 
 function getSubtitle(car) {
   return [
-    car.engine_size,
-    car.variant,
+    car.condition,
     car.fuel_type || car.fuel,
     car.gearbox || car.transmission,
     car.body_type,
@@ -51,50 +50,83 @@ function getSubtitle(car) {
     .join(" ");
 }
 
-function getPhotos(car) {
-  const fields = [car.photo_urls, car.photos, car.image_urls, car.images];
+function normaliseImageUrl(value) {
+  if (!value) return "";
 
-  for (const field of fields) {
-    if (Array.isArray(field) && field.length > 0) return field.filter(Boolean);
+  const image = String(value).trim();
 
-    if (typeof field === "string" && field.trim()) {
-      try {
-        const parsed = JSON.parse(field);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.filter(Boolean);
-        }
-      } catch {
-        return [field];
+  if (!image) return "";
+
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("/")
+  ) {
+    return image;
+  }
+
+  return image;
+}
+
+function parseImageField(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.map(normaliseImageUrl).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map(normaliseImageUrl).filter(Boolean);
       }
+
+      if (typeof parsed === "string") {
+        return [normaliseImageUrl(parsed)].filter(Boolean);
+      }
+    } catch {
+      return [normaliseImageUrl(trimmed)].filter(Boolean);
     }
   }
 
-  const single =
-    car.image_url ||
-    car.photo_url ||
-    car.main_photo_url ||
-    car.cover_image_url;
+  return [];
+}
 
-  return single ? [single] : ["/cars/hero-car.png"];
+function getPhotos(car) {
+  const photos = [
+    ...parseImageField(car.image_url),
+    ...parseImageField(car.photo_url),
+    ...parseImageField(car.main_photo_url),
+    ...parseImageField(car.cover_image_url),
+    ...parseImageField(car.photo_urls),
+    ...parseImageField(car.photos),
+    ...parseImageField(car.image_urls),
+    ...parseImageField(car.images),
+  ];
+
+  const uniquePhotos = [...new Set(photos)].filter(Boolean);
+
+  return uniquePhotos.length > 0 ? uniquePhotos : ["/cars/hero-car.png"];
 }
 
 function getFeatures(car) {
-  const fallback = [
-    "Apple CarPlay",
-    "Parking sensors",
-    "Bluetooth",
-    "Cruise control",
-    "Service history",
-  ];
-
   if (Array.isArray(car.features) && car.features.length > 0) {
-    return car.features;
+    return car.features.filter(Boolean);
   }
 
   if (typeof car.features === "string" && car.features.trim()) {
     try {
       const parsed = JSON.parse(car.features);
-      if (Array.isArray(parsed)) return parsed;
+
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean);
+      }
     } catch {
       return car.features
         .split(",")
@@ -103,7 +135,7 @@ function getFeatures(car) {
     }
   }
 
-  return fallback;
+  return [];
 }
 
 function SvgIcon({ name }) {
@@ -216,25 +248,16 @@ function SvgIcon({ name }) {
         <path d="M8 6h8" />
       </>
     ),
-    engine: (
+    body: (
       <>
-        <path d="M4 10h3l2-3h6l2 3h3v8H4z" />
-        <path d="M9 7V4" />
-        <path d="M15 7V4" />
-        <path d="M3 13H1" />
-        <path d="M23 13h-2" />
+        <path d="M5 16h14l-1.2-4.5a3 3 0 0 0-2.9-2.2H9.1a3 3 0 0 0-2.9 2.2L5 16Z" />
+        <circle cx="8" cy="17" r="2" />
+        <circle cx="16" cy="17" r="2" />
       </>
     ),
-    seats: (
+    condition: (
       <>
-        <path d="M7 11V6a3 3 0 0 1 6 0v5" />
-        <path d="M5 11h11a3 3 0 0 1 3 3v5H5z" />
-      </>
-    ),
-    doors: (
-      <>
-        <path d="M6 3h10l3 6v12H6z" />
-        <path d="M9 12h4" />
+        <path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.4 7.2 18l.9-5.4-3.9-3.8 5.4-.8L12 3Z" />
       </>
     ),
     location: (
@@ -243,8 +266,25 @@ function SvgIcon({ name }) {
         <circle cx="12" cy="9" r="2.5" />
       </>
     ),
-    star: (
-      <path d="M12 2l3 6 6.5.9-4.7 4.6 1.1 6.5L12 17l-5.9 3 1.1-6.5-4.7-4.6L9 8l3-6Z" />
+    trash: (
+      <>
+        <path d="M3 6h18" />
+        <path d="M8 6V4h8v2" />
+        <path d="M6 6l1 15h10l1-15" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+      </>
+    ),
+    edit: (
+      <>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+      </>
+    ),
+    sold: (
+      <>
+        <path d="M20 6 9 17l-5-5" />
+      </>
     ),
   };
 
@@ -272,6 +312,10 @@ export default function ListingPage() {
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [actionMessage, setActionMessage] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [isSendingEnquiry, setIsSendingEnquiry] = useState(false);
@@ -283,6 +327,40 @@ export default function ListingPage() {
     buyer_phone: "",
     message: "Hi, is this car still available?",
   });
+
+  useEffect(() => {
+    function syncKerbUser() {
+      const savedUser = localStorage.getItem("kerbUser");
+      const savedEmail = localStorage.getItem("kerbAccountEmail");
+      const token = localStorage.getItem("kerbSessionToken");
+
+      if (savedUser) {
+        try {
+          setCurrentUser(JSON.parse(savedUser));
+          return;
+        } catch {
+          localStorage.removeItem("kerbUser");
+        }
+      }
+
+      if (token && savedEmail) {
+        setCurrentUser({ email: savedEmail });
+        return;
+      }
+
+      setCurrentUser(null);
+    }
+
+    syncKerbUser();
+
+    window.addEventListener("storage", syncKerbUser);
+    window.addEventListener("kerb-auth-change", syncKerbUser);
+
+    return () => {
+      window.removeEventListener("storage", syncKerbUser);
+      window.removeEventListener("kerb-auth-change", syncKerbUser);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadListing() {
@@ -324,21 +402,174 @@ export default function ListingPage() {
   const mileage = car ? car.mileage || car.miles : "";
   const fuel = car ? car.fuel_type || car.fuel : "";
   const gearbox = car ? car.gearbox || car.transmission : "";
-  const engine = car ? car.engine_size || car.engine : "";
+  const bodyType = car ? car.body_type : "";
+  const condition = car ? car.condition : "";
   const location = car ? car.location || car.city || car.postcode : "";
-  const sellerType = car ? car.seller_type || "Private seller" : "";
+  const sellerType = car ? car.seller_type || "Seller" : "";
   const sellerPhone = car ? car.seller_phone || car.phone : "";
-  const sellerName = car ? car.seller_name || "Kerb seller" : "";
   const year = car ? car.year || car.registration_year : "";
+  const financeAvailable = car ? car.finance_available === true : false;
+  const status = car ? String(car.status || "").toLowerCase() : "";
+
+  const currentEmail = String(currentUser?.email || "").toLowerCase();
+  const ownerEmails = [
+    car?.account_email,
+    car?.seller_email,
+  ]
+    .filter(Boolean)
+    .map((email) => String(email).toLowerCase());
+
+  const isSellerOwner = Boolean(currentEmail && ownerEmails.includes(currentEmail));
+
+  const specItems = [
+    mileage
+      ? {
+          icon: "mileage",
+          label: "Mileage",
+          value: `${formatNumber(mileage)} miles`,
+        }
+      : null,
+    fuel
+      ? {
+          icon: "fuel",
+          label: "Fuel",
+          value: fuel,
+        }
+      : null,
+    gearbox
+      ? {
+          icon: "gearbox",
+          label: "Gearbox",
+          value: gearbox,
+        }
+      : null,
+    bodyType
+      ? {
+          icon: "body",
+          label: "Body type",
+          value: bodyType,
+        }
+      : null,
+    condition
+      ? {
+          icon: "condition",
+          label: "Condition",
+          value: condition,
+        }
+      : null,
+    location
+      ? {
+          icon: "location",
+          label: "Location",
+          value: location,
+        }
+      : null,
+    financeAvailable
+      ? {
+          icon: "finance",
+          label: "Finance",
+          value: "Seller/dealer finance available",
+        }
+      : null,
+  ].filter(Boolean);
 
   function nextPhoto() {
+    if (photos.length <= 1) return;
     setMainPhotoIndex((current) => (current + 1) % photos.length);
   }
 
   function previousPhoto() {
+    if (photos.length <= 1) return;
     setMainPhotoIndex((current) =>
       current === 0 ? photos.length - 1 : current - 1
     );
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("kerbSessionToken");
+    localStorage.removeItem("kerbAccountEmail");
+    localStorage.removeItem("kerbUser");
+    window.dispatchEvent(new Event("kerb-auth-change"));
+    window.location.href = "/";
+  }
+
+  async function shareListing() {
+    const shareUrl = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          url: shareUrl,
+        });
+      } catch {
+        return;
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      setActionMessage("Listing link copied.");
+    }
+  }
+
+  async function runOwnerAction(action) {
+    setActionMessage("");
+    setActionError("");
+
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) {
+      setActionError("Please sign in again to manage this listing.");
+      return;
+    }
+
+    if (action === "delete") {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this listing? This cannot be undone."
+      );
+
+      if (!confirmed) return;
+    }
+
+    setIsActionLoading(true);
+
+    try {
+      const response = await fetch("/api/listing-owner-action", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({
+          listing_id: id,
+          action,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not update listing.");
+      }
+
+      if (action === "delete") {
+        window.location.href = "/account";
+        return;
+      }
+
+      setCar(result.listing);
+      setActionMessage(
+        action === "sold"
+          ? "Listing marked as sold."
+          : "Listing updated successfully."
+      );
+    } catch (error) {
+      setActionError(
+        error.message ||
+          "Could not update listing. We need to add the owner action API route next."
+      );
+    } finally {
+      setIsActionLoading(false);
+    }
   }
 
   async function submitEnquiry(event) {
@@ -386,7 +617,7 @@ export default function ListingPage() {
   if (loading) {
     return (
       <main className="listing-page">
-        <Header />
+        <Header currentUser={currentUser} onLogout={handleLogout} />
         <section className="loading-box">Loading listing...</section>
         <style jsx global>{styles}</style>
       </main>
@@ -396,7 +627,7 @@ export default function ListingPage() {
   if (errorMessage || !car) {
     return (
       <main className="listing-page">
-        <Header />
+        <Header currentUser={currentUser} onLogout={handleLogout} />
         <section className="empty-box">
           <h1>Listing not found</h1>
           <p>{errorMessage || "This listing is no longer available."}</p>
@@ -410,28 +641,29 @@ export default function ListingPage() {
   return (
     <>
       <main className="listing-page">
-        <Header />
+        <Header currentUser={currentUser} onLogout={handleLogout} />
 
         <section className="breadcrumb-row">
           <Link href="/browse" className="back-link">
             <SvgIcon name="back" />
-            Back to results
+            Back to cars
           </Link>
 
           <span className="divider" />
 
           <Link href="/">Home</Link>
           <span>›</span>
-          <Link href="/browse">Search results</Link>
+          <Link href="/browse">Browse cars</Link>
           <span>›</span>
           <strong>{title}</strong>
 
           <div className="save-share">
-            <button type="button">
+            <Link href={currentUser ? "/account" : "/login"}>
               <SvgIcon name="heart" />
               Save
-            </button>
-            <button type="button">
+            </Link>
+
+            <button type="button" onClick={shareListing}>
               <SvgIcon name="share" />
               Share
             </button>
@@ -440,7 +672,7 @@ export default function ListingPage() {
 
         <section className="main-layout">
           <div className="left-column">
-            <section className="gallery-grid">
+            <section className="gallery-card">
               <div className="main-photo">
                 <img
                   src={photos[mainPhotoIndex]}
@@ -450,7 +682,7 @@ export default function ListingPage() {
                   }}
                 />
 
-                <div className="reserve-pill">Available to reserve</div>
+                {status === "sold" && <div className="sold-ribbon">Sold</div>}
 
                 {photos.length > 1 && (
                   <>
@@ -472,147 +704,165 @@ export default function ListingPage() {
                   </>
                 )}
 
-                <button type="button" className="view-photos">
-                  <SvgIcon name="camera" />
-                  View all photos
-                </button>
-
                 <div className="photo-position">
                   {mainPhotoIndex + 1} / {photos.length}
                 </div>
               </div>
 
-              <div className="thumb-grid">
-                {photos.slice(0, 5).map((photo, index) => (
-                  <button
-                    type="button"
-                    key={`${photo}-${index}`}
-                    className={`thumb ${
-                      index === mainPhotoIndex ? "active" : ""
-                    }`}
-                    onClick={() => setMainPhotoIndex(index)}
-                  >
-                    <img
-                      src={photo}
-                      alt={`${title} ${index + 1}`}
-                      onError={(event) => {
-                        event.currentTarget.src = "/cars/hero-car.png";
-                      }}
-                    />
-
-                    {index === 4 && photos.length > 5 && (
-                      <span className="more-photos">+{photos.length - 5}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="title-section">
-              {year && <span className="year-pill">{year}</span>}
-
-              <div className="title-row">
-                <div>
-                  <h1>{title}</h1>
-                  <p>{subtitle || "Used car listed on Kerb"}</p>
+              {photos.length > 1 && (
+                <div className="thumb-row">
+                  {photos.slice(0, 6).map((photo, index) => (
+                    <button
+                      type="button"
+                      key={`${photo}-${index}`}
+                      className={`thumb ${
+                        index === mainPhotoIndex ? "active" : ""
+                      }`}
+                      onClick={() => setMainPhotoIndex(index)}
+                    >
+                      <img
+                        src={photo}
+                        alt={`${title} ${index + 1}`}
+                        onError={(event) => {
+                          event.currentTarget.src = "/cars/hero-car.png";
+                        }}
+                      />
+                    </button>
+                  ))}
                 </div>
-
-                <div className="rating">
-                  <strong>4.7</strong>
-                  <span>★★★★★</span>
-                  <small>(Kerb listing)</small>
-                </div>
-              </div>
-
-              <div className="price-row">
-                <h2>{formatPrice(price)}</h2>
-                <span>Great price</span>
-              </div>
-
-              <div className="spec-row">
-                <div>
-                  <SvgIcon name="mileage" />
-                  {mileage
-                    ? `${formatNumber(mileage)} miles`
-                    : "Mileage not set"}
-                </div>
-
-                <div>
-                  <SvgIcon name="fuel" />
-                  {fuel || "Fuel not set"}
-                </div>
-
-                <div>
-                  <SvgIcon name="gearbox" />
-                  {gearbox || "Gearbox not set"}
-                </div>
-
-                <div>
-                  <SvgIcon name="engine" />
-                  {engine || "Engine not set"}
-                </div>
-
-                <div>
-                  <SvgIcon name="seats" />
-                  {car.seats ? `${car.seats} seats` : "Seats not set"}
-                </div>
-
-                <div>
-                  <SvgIcon name="doors" />
-                  {car.doors ? `${car.doors} doors` : "Doors not set"}
-                </div>
-
-                <div>
-                  <SvgIcon name="location" />
-                  {location || "Location not set"}
-                </div>
-              </div>
-            </section>
-
-            <section className="features-card">
-              {features.slice(0, 6).map((feature, index) => (
-                <div key={`${feature}-${index}`}>
-                  <SvgIcon name={index % 2 === 0 ? "star" : "shield"} />
-                  {feature}
-                </div>
-              ))}
-
-              {features.length > 6 && (
-                <button type="button">View all features ›</button>
               )}
             </section>
 
-            <section className="tabs-card">
-              <div className="tabs">
-                <button className="active" type="button">
-                  Overview
-                </button>
-                <button type="button">Vehicle history</button>
-                <button type="button">Finance</button>
-                <button type="button">Running costs</button>
-                <button type="button">Insurance</button>
-                <button type="button">Delivery & collection</button>
+            <section className="title-section">
+              <div className="title-top">
+                {year && <span className="year-pill">{year}</span>}
+                {status === "sold" && <span className="status-pill sold">Sold</span>}
+                {status === "pending" && (
+                  <span className="status-pill pending">Pending approval</span>
+                )}
               </div>
 
-              <div className="overview">
-                <h3>About this car</h3>
-                <p>
-                  {car.description ||
-                    "This car has been listed on Kerb by a seller. Contact the seller for more information, viewings and availability."}
-                </p>
+              <h1>{title}</h1>
 
-                <div className="tag-row">
-                  {features.slice(0, 5).map((feature, index) => (
-                    <span key={`${feature}-tag-${index}`}>{feature}</span>
+              {subtitle && <p className="subtitle">{subtitle}</p>}
+
+              <h2>{formatPrice(price)}</h2>
+
+              {specItems.length > 0 && (
+                <div className="spec-grid">
+                  {specItems.map((item) => (
+                    <div className="spec-item" key={item.label}>
+                      <SvgIcon name={item.icon} />
+                      <div>
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
+              )}
             </section>
+
+            <section className="details-card">
+              <h2>About this car</h2>
+
+              <p>
+                {car.description ||
+                  "No description has been added by the seller yet."}
+              </p>
+            </section>
+
+            {features.length > 0 && (
+              <section className="details-card">
+                <h2>Features</h2>
+
+                <div className="feature-grid">
+                  {features.map((feature, index) => (
+                    <span key={`${feature}-${index}`}>
+                      <SvgIcon name="shield" />
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           <aside className="right-column">
+            {isSellerOwner && (
+              <section className="owner-card">
+                <h2>Manage your listing</h2>
+
+                <p>
+                  These controls are only shown because this listing belongs to
+                  your signed-in account.
+                </p>
+
+                {actionMessage && (
+                  <div className="success-message">{actionMessage}</div>
+                )}
+
+                {actionError && (
+                  <div className="error-message">{actionError}</div>
+                )}
+
+                <div className="owner-actions">
+                  <Link href={`/listing/${id}/edit`} className="owner-button">
+                    <SvgIcon name="edit" />
+                    Edit listing
+                  </Link>
+
+                  {status !== "sold" && (
+                    <button
+                      type="button"
+                      className="owner-button"
+                      onClick={() => runOwnerAction("sold")}
+                      disabled={isActionLoading}
+                    >
+                      <SvgIcon name="sold" />
+                      Mark as sold
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="owner-button danger"
+                    onClick={() => runOwnerAction("delete")}
+                    disabled={isActionLoading}
+                  >
+                    <SvgIcon name="trash" />
+                    Delete listing
+                  </button>
+                </div>
+              </section>
+            )}
+
             <section className="contact-card">
               <h2>Contact the seller</h2>
+
+              <div className="seller-mini">
+                <div className="seller-icon">
+                  <SvgIcon name="shield" />
+                </div>
+
+                <div>
+                  <strong>{sellerType}</strong>
+                  {location && <span>{location}</span>}
+                </div>
+              </div>
+
+              {financeAvailable && (
+                <div className="finance-note">
+                  <SvgIcon name="finance" />
+                  <div>
+                    <strong>Finance available</strong>
+                    <span>
+                      This may be available from the seller or dealer. Kerb does
+                      not provide finance directly.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <button
                 className="primary-contact"
@@ -627,76 +877,19 @@ export default function ListingPage() {
                 Message seller
               </button>
 
-              <button className="outline-contact" type="button">
-                <SvgIcon name="shield" />
-                Reserve this car
-              </button>
-
               {sellerPhone ? (
                 <a className="phone-box" href={`tel:${sellerPhone}`}>
                   <SvgIcon name="phone" />
                   <strong>{sellerPhone}</strong>
-                  <span>Mon–Fri 9am–6pm · Sat 10am–4pm</span>
+                  <span>Call the seller directly</span>
                 </a>
               ) : (
-                <div className="phone-box">
+                <div className="phone-box inactive">
                   <SvgIcon name="phone" />
                   <strong>Phone not provided</strong>
                   <span>Message the seller instead</span>
                 </div>
               )}
-
-              <div className="trust-box">
-                <SvgIcon name="shield" />
-                <div>
-                  <strong>Trusted seller</strong>
-                  <span>Typically replies within 2 hours</span>
-                </div>
-              </div>
-            </section>
-
-            <section className="seller-card">
-              <div className="seller-logo">
-                {sellerName.slice(0, 1).toUpperCase()}
-              </div>
-
-              <h2>{sellerName}</h2>
-
-              <div className="dealer-badge">
-                <SvgIcon name="shield" />
-                {sellerType}
-              </div>
-
-              <div className="seller-rating">
-                <strong>4.7</strong>
-                <span>★★★★★</span>
-                <small>(128 reviews)</small>
-              </div>
-
-              <p>
-                {location
-                  ? `${location} · Kerb seller`
-                  : "Kerb approved seller"}
-              </p>
-
-              <Link href="/browse" className="seller-link">
-                View all cars →
-              </Link>
-
-              <div className="seller-benefits">
-                <div>
-                  <SvgIcon name="shield" />
-                  Warranty available
-                </div>
-                <div>
-                  <SvgIcon name="car" />
-                  Part exchange
-                </div>
-                <div>
-                  <SvgIcon name="location" />
-                  Home delivery
-                </div>
-              </div>
             </section>
           </aside>
         </section>
@@ -714,8 +907,8 @@ export default function ListingPage() {
 
               <h2>Message the seller</h2>
               <p>
-                Send an enquiry about <strong>{title}</strong>. Your details
-                will be saved securely on Kerb.
+                Send an enquiry about <strong>{title}</strong>. The seller can
+                reply using your contact details.
               </p>
 
               <form onSubmit={submitEnquiry} className="enquiry-form">
@@ -805,7 +998,7 @@ export default function ListingPage() {
   );
 }
 
-function Header() {
+function Header({ currentUser, onLogout }) {
   return (
     <header className="topbar">
       <Link href="/" className="logo">
@@ -818,7 +1011,7 @@ function Header() {
           Browse cars
         </Link>
 
-        <Link href="/browse" className="nav-item">
+        <Link href="/browse?condition=new" className="nav-item">
           <SvgIcon name="new" />
           New cars
         </Link>
@@ -828,32 +1021,45 @@ function Header() {
           Sell your car
         </Link>
 
-        <Link href="/browse" className="nav-item">
+        <Link href="/browse?fuel=electric" className="nav-item">
           <SvgIcon name="electric" />
           Electric
         </Link>
 
-        <Link href="/browse" className="nav-item">
+        <Link href="/browse?finance=true" className="nav-item">
           <SvgIcon name="finance" />
           Finance
         </Link>
 
-        <Link href="/browse" className="nav-item guides-link">
+        <Link href="/#guides" className="nav-item guides-link">
           <SvgIcon name="guides" />
           Guides
         </Link>
       </nav>
 
       <div className="top-actions">
-        <button type="button">
+        <Link href={currentUser ? "/account" : "/login"} className="saved-link">
           <SvgIcon name="heart" />
           Saved
-        </button>
-
-        <Link href="/login" className="signin-link">
-          <SvgIcon name="user" />
-          Sign in
         </Link>
+
+        {currentUser ? (
+          <>
+            <Link href="/account" className="signin-link">
+              <SvgIcon name="user" />
+              My account
+            </Link>
+
+            <button type="button" className="logout-link" onClick={onLogout}>
+              Log out
+            </button>
+          </>
+        ) : (
+          <Link href="/login" className="signin-link">
+            <SvgIcon name="user" />
+            Sign in
+          </Link>
+        )}
 
         <Link href="/post-car" className="post-button">
           <SvgIcon name="plus" />
@@ -871,7 +1077,7 @@ const styles = `
 
   body {
     margin: 0;
-    background: #fbfcff;
+    background: #f7f9fd;
     color: #101832;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system,
       BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -884,7 +1090,6 @@ const styles = `
 
   button,
   input,
-  select,
   textarea {
     font-family: inherit;
   }
@@ -893,7 +1098,7 @@ const styles = `
     min-height: 100vh;
     background:
       radial-gradient(circle at top left, rgba(0, 72, 255, 0.05), transparent 30%),
-      #fbfcff;
+      #f7f9fd;
   }
 
   .svg-icon {
@@ -903,11 +1108,11 @@ const styles = `
   }
 
   .topbar {
-    height: 82px;
-    padding: 0 72px;
+    min-height: 82px;
+    padding: 0 44px;
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 22px;
     background: rgba(255, 255, 255, 0.96);
     border-bottom: 1px solid #e7edf7;
     position: sticky;
@@ -922,23 +1127,27 @@ const styles = `
     font-weight: 950;
     color: #0b45ff;
     letter-spacing: -2px;
-    margin-right: auto;
+    white-space: nowrap;
   }
 
   .nav {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .nav-item {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     color: #111a36;
     font-size: 14px;
     font-weight: 850;
     white-space: nowrap;
+    padding: 10px 8px;
   }
 
   .nav-item .svg-icon {
@@ -947,14 +1156,15 @@ const styles = `
   }
 
   .top-actions {
-    margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 22px;
+    gap: 14px;
+    margin-left: auto;
   }
 
-  .top-actions button,
-  .signin-link {
+  .saved-link,
+  .signin-link,
+  .logout-link {
     border: none;
     background: transparent;
     display: inline-flex;
@@ -965,6 +1175,11 @@ const styles = `
     font-weight: 750;
     cursor: pointer;
     text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .logout-link {
+    color: #c01818;
   }
 
   .post-button {
@@ -973,7 +1188,7 @@ const styles = `
     align-items: center;
     justify-content: center;
     gap: 9px;
-    padding: 0 22px;
+    padding: 0 20px;
     border-radius: 13px;
     background: #0b45ff;
     color: white;
@@ -984,12 +1199,12 @@ const styles = `
   }
 
   .breadcrumb-row {
-    max-width: 1760px;
+    max-width: 1380px;
     margin: 0 auto;
-    padding: 32px 68px 26px;
+    padding: 24px 28px 18px;
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 12px;
     color: #44506c;
     font-size: 14px;
     font-weight: 700;
@@ -1017,9 +1232,10 @@ const styles = `
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 26px;
+    gap: 18px;
   }
 
+  .save-share a,
   .save-share button {
     border: none;
     background: transparent;
@@ -1033,26 +1249,46 @@ const styles = `
   }
 
   .main-layout {
-    max-width: 1760px;
+    max-width: 1380px;
     margin: 0 auto;
-    padding: 0 68px 70px;
+    padding: 0 28px 60px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 510px;
-    gap: 46px;
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 26px;
     align-items: start;
   }
 
-  .gallery-grid {
+  .left-column {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
-    gap: 14px;
+    gap: 18px;
+  }
+
+  .right-column {
+    display: grid;
+    gap: 18px;
+    position: sticky;
+    top: 104px;
+  }
+
+  .gallery-card,
+  .title-section,
+  .details-card,
+  .contact-card,
+  .owner-card {
+    background: white;
+    border: 1px solid #e4eaf4;
+    border-radius: 20px;
+    box-shadow: 0 12px 34px rgba(18, 32, 70, 0.06);
+  }
+
+  .gallery-card {
+    overflow: hidden;
   }
 
   .main-photo {
     position: relative;
-    height: 410px;
+    height: 460px;
     overflow: hidden;
-    border-radius: 12px;
     background: #eef2f7;
   }
 
@@ -1064,20 +1300,16 @@ const styles = `
     display: block;
   }
 
-  .reserve-pill {
+  .sold-ribbon {
     position: absolute;
-    left: 20px;
-    top: 20px;
-    height: 34px;
-    padding: 0 18px;
-    border-radius: 8px;
-    background: white;
-    color: #15203b;
-    display: inline-flex;
-    align-items: center;
-    font-size: 14px;
-    font-weight: 800;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    left: 18px;
+    top: 18px;
+    background: #101832;
+    color: white;
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 950;
   }
 
   .gallery-arrow {
@@ -1099,34 +1331,11 @@ const styles = `
   }
 
   .gallery-arrow.left {
-    left: 20px;
+    left: 18px;
   }
 
   .gallery-arrow.right {
-    right: 20px;
-  }
-
-  .view-photos {
-    position: absolute;
-    left: 18px;
-    bottom: 16px;
-    border: none;
-    border-radius: 10px;
-    background: white;
-    color: #14203b;
-    height: 36px;
-    padding: 0 15px;
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    font-weight: 850;
-    cursor: pointer;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-  }
-
-  .view-photos .svg-icon {
-    width: 17px;
-    height: 17px;
+    right: 18px;
   }
 
   .photo-position {
@@ -1136,25 +1345,26 @@ const styles = `
     min-width: 58px;
     height: 36px;
     border-radius: 10px;
-    background: rgba(16, 24, 50, 0.62);
+    background: rgba(16, 24, 50, 0.68);
     color: white;
     display: grid;
     place-items: center;
     font-weight: 850;
   }
 
-  .thumb-grid {
+  .thumb-row {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    padding: 12px;
   }
 
   .thumb {
     position: relative;
-    height: 128px;
+    height: 92px;
     padding: 0;
     border: none;
-    border-radius: 9px;
+    border-radius: 12px;
     overflow: hidden;
     background: #eef2f7;
     cursor: pointer;
@@ -1164,253 +1374,261 @@ const styles = `
     outline: 3px solid #0b45ff;
   }
 
-  .more-photos {
-    position: absolute;
-    inset: 0;
-    background: rgba(13, 20, 40, 0.62);
-    color: white;
-    display: grid;
-    place-items: center;
-    font-size: 25px;
+  .title-section {
+    padding: 26px;
+  }
+
+  .title-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .year-pill,
+  .status-pill {
+    display: inline-flex;
+    height: 30px;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0 12px;
+    font-size: 13px;
     font-weight: 900;
   }
 
-  .title-section {
-    padding-top: 26px;
-  }
-
   .year-pill {
-    display: inline-flex;
-    height: 28px;
-    align-items: center;
-    border-radius: 8px;
     background: #eef3ff;
     color: #101832;
-    padding: 0 10px;
-    font-size: 13px;
-    font-weight: 850;
-    margin-bottom: 10px;
   }
 
-  .title-row {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 24px;
+  .status-pill.sold {
+    background: #101832;
+    color: white;
   }
 
-  .title-row h1 {
-    margin: 0 0 6px;
+  .status-pill.pending {
+    background: #fff7e8;
+    color: #a15c00;
+  }
+
+  .title-section h1 {
+    margin: 0 0 8px;
     font-size: 38px;
     line-height: 1;
-    letter-spacing: -1.5px;
+    letter-spacing: -1.4px;
     color: #101832;
   }
 
-  .title-row p {
-    margin: 0;
+  .subtitle {
+    margin: 0 0 18px;
     color: #3f4a66;
     font-size: 17px;
     font-weight: 650;
   }
 
-  .rating {
-    color: #0b45ff;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    white-space: nowrap;
-    font-size: 14px;
-    font-weight: 850;
-  }
-
-  .rating small {
-    font-size: 13px;
-  }
-
-  .price-row {
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .price-row h2 {
+  .title-section h2 {
     margin: 0;
-    font-size: 31px;
+    font-size: 32px;
     letter-spacing: -1px;
   }
 
-  .price-row span {
-    background: #daf8e5;
-    color: #15803d;
-    padding: 6px 11px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 850;
-  }
-
-  .spec-row {
-    margin-top: 28px;
+  .spec-grid {
+    margin-top: 24px;
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 18px;
-    border-bottom: 1px solid #e6ebf4;
-    padding-bottom: 24px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
 
-  .spec-row div {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    color: #47526c;
-    font-size: 14px;
-    font-weight: 750;
-    white-space: nowrap;
-  }
-
-  .spec-row .svg-icon {
-    color: #0b45ff;
-    width: 21px;
-    height: 21px;
-  }
-
-  .features-card {
-    margin-top: 28px;
-    background: white;
-    border: 1px solid #e4eaf4;
-    border-radius: 16px;
-    min-height: 86px;
-    padding: 18px 24px;
+  .spec-item {
     display: flex;
-    align-items: center;
-    gap: 28px;
-    flex-wrap: wrap;
-    box-shadow: 0 10px 30px rgba(18, 32, 70, 0.05);
+    align-items: flex-start;
+    gap: 12px;
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 15px;
+    padding: 15px;
   }
 
-  .features-card div {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: #26314d;
-    font-size: 14px;
-    font-weight: 750;
-  }
-
-  .features-card .svg-icon {
+  .spec-item .svg-icon {
     color: #0b45ff;
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
   }
 
-  .features-card button {
-    margin-left: auto;
-    height: 42px;
-    border: 1px solid #b8c9ff;
-    background: white;
-    color: #0b45ff;
-    border-radius: 10px;
-    padding: 0 16px;
-    font-weight: 850;
-    cursor: pointer;
+  .spec-item span {
+    display: block;
+    color: #647089;
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 4px;
   }
 
-  .tabs-card {
-    margin-top: 22px;
-    background: white;
-    border: 1px solid #e4eaf4;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(18, 32, 70, 0.05);
-    overflow: hidden;
-  }
-
-  .tabs {
-    height: 64px;
-    display: flex;
-    align-items: stretch;
-    gap: 18px;
-    padding: 0 18px;
-    border-bottom: 1px solid #e4eaf4;
-    overflow-x: auto;
-  }
-
-  .tabs button {
-    border: none;
-    background: transparent;
+  .spec-item strong {
     color: #101832;
     font-size: 14px;
-    font-weight: 850;
-    padding: 0 14px;
-    border-bottom: 4px solid transparent;
-    white-space: nowrap;
-    cursor: pointer;
+    font-weight: 950;
   }
 
-  .tabs button.active {
-    color: #0b45ff;
-    border-bottom-color: #0b45ff;
+  .details-card {
+    padding: 26px;
   }
 
-  .overview {
-    padding: 28px;
-  }
-
-  .overview h3 {
+  .details-card h2 {
     margin: 0 0 14px;
-    font-size: 18px;
+    font-size: 24px;
+    letter-spacing: -0.7px;
   }
 
-  .overview p {
+  .details-card p {
     margin: 0;
     color: #3f4a66;
-    line-height: 1.65;
-    max-width: 850px;
+    line-height: 1.7;
+    white-space: pre-wrap;
   }
 
-  .tag-row {
-    margin-top: 24px;
+  .feature-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
   }
 
-  .tag-row span {
+  .feature-grid span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background: #f0f3f8;
     color: #25304c;
-    border-radius: 9px;
-    padding: 11px 16px;
+    border-radius: 999px;
+    padding: 11px 15px;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 850;
   }
 
-  .right-column {
-    display: grid;
-    gap: 18px;
-    position: sticky;
-    top: 110px;
+  .feature-grid .svg-icon {
+    color: #0b45ff;
+    width: 17px;
+    height: 17px;
   }
 
   .contact-card,
-  .seller-card {
-    background: white;
-    border: 1px solid #e4eaf4;
-    border-radius: 18px;
+  .owner-card {
     padding: 24px;
-    box-shadow: 0 16px 44px rgba(18, 32, 70, 0.08);
   }
 
   .contact-card h2,
-  .seller-card h2 {
-    margin: 0 0 22px;
+  .owner-card h2 {
+    margin: 0 0 16px;
     font-size: 24px;
     letter-spacing: -0.6px;
   }
 
+  .owner-card p {
+    margin: 0 0 16px;
+    color: #5b667d;
+    line-height: 1.5;
+  }
+
+  .owner-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .owner-button {
+    min-height: 50px;
+    border-radius: 13px;
+    border: 1px solid #dce6ff;
+    background: #eef3ff;
+    color: #0b45ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 950;
+    cursor: pointer;
+  }
+
+  .owner-button.danger {
+    background: #fff1f1;
+    border-color: #ffd1d1;
+    color: #b42318;
+  }
+
+  .owner-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .seller-mini {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 16px;
+  }
+
+  .seller-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: #eef3ff;
+    color: #0b45ff;
+    display: grid;
+    place-items: center;
+  }
+
+  .seller-mini strong,
+  .seller-mini span {
+    display: block;
+  }
+
+  .seller-mini strong {
+    color: #101832;
+    font-weight: 950;
+  }
+
+  .seller-mini span {
+    color: #5b667d;
+    font-size: 14px;
+    margin-top: 3px;
+  }
+
+  .finance-note {
+    display: flex;
+    gap: 12px;
+    background: #f8fbff;
+    border: 1px solid #dce8ff;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 16px;
+  }
+
+  .finance-note .svg-icon {
+    color: #0b45ff;
+  }
+
+  .finance-note strong,
+  .finance-note span {
+    display: block;
+  }
+
+  .finance-note span {
+    color: #5b667d;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+
   .primary-contact,
-  .outline-contact,
   .phone-box {
     width: 100%;
-    height: 62px;
-    border-radius: 11px;
+    min-height: 58px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1427,129 +1645,25 @@ const styles = `
     box-shadow: 0 12px 28px rgba(11, 69, 255, 0.22);
   }
 
-  .outline-contact {
-    margin-top: 16px;
-    background: white;
-    border: 1.5px solid #0b45ff;
-    color: #0b45ff;
-  }
-
   .phone-box {
-    margin-top: 16px;
-    height: 84px;
+    margin-top: 12px;
+    min-height: 74px;
     flex-direction: column;
     border: 1.5px solid #0b45ff;
     color: #0b45ff;
     background: white;
   }
 
+  .phone-box.inactive {
+    border-color: #dfe6f1;
+    color: #647089;
+    cursor: default;
+  }
+
   .phone-box span {
     color: #48536e;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .trust-box {
-    margin-top: 20px;
-    background: #f3f6fb;
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .trust-box .svg-icon {
-    width: 34px;
-    height: 34px;
-    color: #101832;
-  }
-
-  .trust-box strong,
-  .trust-box span {
-    display: block;
-  }
-
-  .trust-box strong {
-    margin-bottom: 4px;
-  }
-
-  .trust-box span {
-    color: #4f5b76;
-    font-size: 14px;
-  }
-
-  .seller-logo {
-    width: 190px;
-    height: 80px;
-    background: linear-gradient(135deg, #111827, #363f55);
-    color: white;
-    display: grid;
-    place-items: center;
-    border-radius: 9px;
-    font-size: 44px;
-    font-weight: 950;
-    margin-bottom: 22px;
-  }
-
-  .dealer-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    color: #0b45ff;
-    font-weight: 900;
-    margin-bottom: 20px;
-  }
-
-  .seller-rating {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #0b45ff;
-    font-weight: 850;
-    margin-bottom: 18px;
-  }
-
-  .seller-card p {
-    margin: 0;
-    color: #4d5872;
-  }
-
-  .seller-link {
-    margin-top: 26px;
-    display: inline-flex;
-    color: #0b45ff;
-    font-size: 17px;
-    font-weight: 950;
-  }
-
-  .seller-benefits {
-    margin-top: 30px;
-    border: 1px solid #e3e9f3;
-    border-radius: 13px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    overflow: hidden;
-  }
-
-  .seller-benefits div {
-    padding: 18px 12px;
-    display: grid;
-    gap: 8px;
-    justify-items: center;
-    text-align: center;
-    color: #33405d;
-    font-size: 12px;
-    font-weight: 750;
-    border-right: 1px solid #e3e9f3;
-  }
-
-  .seller-benefits div:last-child {
-    border-right: none;
-  }
-
-  .seller-benefits .svg-icon {
-    color: #0b45ff;
+    font-size: 13px;
+    font-weight: 650;
   }
 
   .loading-box,
@@ -1700,43 +1814,12 @@ const styles = `
     cursor: not-allowed;
   }
 
-  @media (max-width: 1450px) {
+  @media (max-width: 1200px) {
     .topbar {
-      padding: 0 32px;
-      gap: 18px;
-    }
-
-    .nav {
-      gap: 14px;
-    }
-
-    .top-actions {
-      gap: 14px;
-    }
-
-    .main-layout {
-      grid-template-columns: minmax(0, 1fr) 420px;
-      padding-left: 36px;
-      padding-right: 36px;
-      gap: 30px;
-    }
-
-    .breadcrumb-row {
-      padding-left: 36px;
-      padding-right: 36px;
-    }
-
-    .spec-row {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  @media (max-width: 1150px) {
-    .topbar {
-      height: auto;
-      min-height: 82px;
+      min-height: auto;
+      padding: 18px 22px;
       flex-wrap: wrap;
-      padding: 18px 24px;
+      gap: 14px;
     }
 
     .logo {
@@ -1748,10 +1831,12 @@ const styles = `
       width: 100%;
       overflow-x: auto;
       padding-bottom: 4px;
+      flex: 0 0 100%;
     }
 
-    .top-actions button,
-    .signin-link {
+    .saved-link,
+    .signin-link,
+    .logout-link {
       display: none;
     }
 
@@ -1763,22 +1848,28 @@ const styles = `
       position: static;
     }
 
-    .gallery-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .thumb-grid {
-      grid-template-columns: repeat(5, 1fr);
-    }
-
-    .thumb {
-      height: 100px;
+    .spec-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
   @media (max-width: 700px) {
+    .topbar {
+      padding: 16px 18px;
+    }
+
+    .logo {
+      font-size: 36px;
+    }
+
+    .post-button {
+      height: 46px;
+      padding: 0 15px;
+      font-size: 13px;
+    }
+
     .breadcrumb-row {
-      padding: 20px 18px;
+      padding: 16px 18px;
       overflow-x: auto;
       white-space: nowrap;
     }
@@ -1788,45 +1879,43 @@ const styles = `
     }
 
     .main-layout {
-      padding: 0 18px 44px;
-    }
-
-    .main-photo {
-      height: 280px;
-    }
-
-    .thumb-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    .title-row {
-      align-items: start;
-      flex-direction: column;
-    }
-
-    .title-row h1 {
-      font-size: 32px;
-    }
-
-    .spec-row {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .features-card {
+      padding: 0 16px 44px;
       gap: 18px;
     }
 
-    .seller-benefits {
+    .main-photo {
+      height: 260px;
+    }
+
+    .thumb-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .thumb {
+      height: 76px;
+    }
+
+    .title-section,
+    .details-card,
+    .contact-card,
+    .owner-card {
+      padding: 20px;
+    }
+
+    .title-section h1 {
+      font-size: 30px;
+    }
+
+    .title-section h2 {
+      font-size: 28px;
+    }
+
+    .spec-grid {
       grid-template-columns: 1fr;
     }
 
-    .seller-benefits div {
-      border-right: none;
-      border-bottom: 1px solid #e3e9f3;
-    }
-
-    .seller-benefits div:last-child {
-      border-bottom: none;
+    .enquiry-modal {
+      padding: 24px;
     }
   }
 `;
