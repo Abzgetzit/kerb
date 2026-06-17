@@ -10,6 +10,15 @@ function cleanText(value) {
   return text || null;
 }
 
+function cleanRegistration(value) {
+  const registration = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+  return registration || null;
+}
+
 function cleanNumber(value) {
   if (!value) return null;
 
@@ -100,6 +109,7 @@ export async function POST(request) {
 
     const make = cleanText(formData.get("make"));
     const model = cleanText(formData.get("model"));
+    const registration = cleanRegistration(formData.get("registration"));
     const year = cleanNumber(formData.get("year"));
     const mileage = cleanNumber(formData.get("mileage"));
     const bodyType = cleanText(formData.get("body_type"));
@@ -125,6 +135,7 @@ export async function POST(request) {
       seller_type: cleanText(formData.get("seller_type")),
 
       title: title || null,
+      registration,
       make,
       model,
       year,
