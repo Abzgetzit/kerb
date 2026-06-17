@@ -33,6 +33,28 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-GB").format(number);
 }
 
+function formatDate(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatStatus(value) {
+  const status = String(value || "").trim();
+
+  if (!status) return "";
+
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
 function getTitle(car) {
   const title = [car.year, car.make, car.model].filter(Boolean).join(" ").trim();
 
@@ -260,6 +282,14 @@ function SvgIcon({ name }) {
         <path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.4 7.2 18l.9-5.4-3.9-3.8 5.4-.8L12 3Z" />
       </>
     ),
+    calendar: (
+      <>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M8 3v4" />
+        <path d="M16 3v4" />
+        <path d="M4 10h16" />
+      </>
+    ),
     location: (
       <>
         <path d="M12 21s7-5.2 7-12a7 7 0 0 0-14 0c0 6.8 7 12 7 12Z" />
@@ -406,10 +436,15 @@ export default function ListingPage() {
   const condition = car ? car.condition : "";
   const location = car ? car.location || car.city || car.postcode : "";
   const sellerType = car ? car.seller_type || "Seller" : "";
+  const sellerName = car
+    ? car.seller_name || car.account_name || car.owner_name || ""
+    : "";
   const sellerPhone = car ? car.seller_phone || car.phone : "";
   const year = car ? car.year || car.registration_year : "";
   const financeAvailable = car ? car.finance_available === true : false;
   const status = car ? String(car.status || "").toLowerCase() : "";
+  const postedDate = car ? formatDate(car.created_at) : "";
+  const listingReference = car?.id ? String(car.id).slice(0, 8).toUpperCase() : "";
 
   const currentEmail = String(currentUser?.email || "").toLowerCase();
   const ownerEmails = [
@@ -472,6 +507,76 @@ export default function ListingPage() {
         }
       : null,
   ].filter(Boolean);
+
+  const overviewItems = [
+    {
+      label: "Make",
+      value: car?.make,
+    },
+    {
+      label: "Model",
+      value: car?.model,
+    },
+    {
+      label: "Year",
+      value: year,
+    },
+    mileage
+      ? {
+          label: "Mileage",
+          value: `${formatNumber(mileage)} miles`,
+        }
+      : null,
+    {
+      label: "Fuel type",
+      value: fuel,
+    },
+    {
+      label: "Gearbox",
+      value: gearbox,
+    },
+    {
+      label: "Body type",
+      value: bodyType,
+    },
+    {
+      label: "Condition",
+      value: condition,
+    },
+    {
+      label: "Location",
+      value: location,
+    },
+    {
+      label: "Finance",
+      value: financeAvailable
+        ? "Advertised by seller/dealer"
+        : "Not advertised",
+    },
+  ].filter((item) => item && item.value);
+
+  const listingItems = [
+    {
+      label: "Seller type",
+      value: sellerType,
+    },
+    {
+      label: "Seller name",
+      value: sellerName,
+    },
+    {
+      label: "Listed",
+      value: postedDate,
+    },
+    {
+      label: "Status",
+      value: formatStatus(status),
+    },
+    {
+      label: "Listing ref",
+      value: listingReference,
+    },
+  ].filter((item) => item.value);
 
   function nextPhoto() {
     if (photos.length <= 1) return;
@@ -748,6 +853,29 @@ export default function ListingPage() {
 
               <h2>{formatPrice(price)}</h2>
 
+              <div className="listing-summary-row">
+                {location && (
+                  <span>
+                    <SvgIcon name="location" />
+                    {location}
+                  </span>
+                )}
+
+                {postedDate && (
+                  <span>
+                    <SvgIcon name="calendar" />
+                    Listed {postedDate}
+                  </span>
+                )}
+
+                {sellerType && (
+                  <span>
+                    <SvgIcon name="shield" />
+                    {sellerType}
+                  </span>
+                )}
+              </div>
+
               {specItems.length > 0 && (
                 <div className="spec-grid">
                   {specItems.map((item) => (
@@ -764,9 +892,28 @@ export default function ListingPage() {
             </section>
 
             <section className="details-card">
-              <h2>About this car</h2>
+              <div className="section-heading">
+                <span>Key information</span>
+                <h2>Vehicle details</h2>
+              </div>
 
-              <p>
+              <div className="detail-grid">
+                {overviewItems.map((item) => (
+                  <div className="detail-item" key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="details-card">
+              <div className="section-heading">
+                <span>Seller notes</span>
+                <h2>Description</h2>
+              </div>
+
+              <p className="description-copy">
                 {car.description ||
                   "No description has been added by the seller yet."}
               </p>
@@ -774,7 +921,10 @@ export default function ListingPage() {
 
             {features.length > 0 && (
               <section className="details-card">
-                <h2>Features</h2>
+                <div className="section-heading">
+                  <span>Selected by seller</span>
+                  <h2>Features</h2>
+                </div>
 
                 <div className="feature-grid">
                   {features.map((feature, index) => (
@@ -782,6 +932,24 @@ export default function ListingPage() {
                       <SvgIcon name="shield" />
                       {feature}
                     </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {listingItems.length > 0 && (
+              <section className="details-card">
+                <div className="section-heading">
+                  <span>Listing details</span>
+                  <h2>Seller and advert information</h2>
+                </div>
+
+                <div className="detail-list">
+                  {listingItems.map((item) => (
+                    <div key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
                   ))}
                 </div>
               </section>
@@ -846,9 +1014,26 @@ export default function ListingPage() {
                 </div>
 
                 <div>
-                  <strong>{sellerType}</strong>
+                  <strong>{sellerName || sellerType}</strong>
+                  {sellerName && sellerType && <small>{sellerType}</small>}
                   {location && <span>{location}</span>}
                 </div>
+              </div>
+
+              <div className="seller-facts">
+                {postedDate && (
+                  <div>
+                    <span>Listed</span>
+                    <strong>{postedDate}</strong>
+                  </div>
+                )}
+
+                {listingReference && (
+                  <div>
+                    <span>Reference</span>
+                    <strong>{listingReference}</strong>
+                  </div>
+                )}
               </div>
 
               {financeAvailable && (
@@ -1433,6 +1618,32 @@ const styles = `
     letter-spacing: -1px;
   }
 
+  .listing-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .listing-summary-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    color: #3f4a66;
+    border-radius: 999px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .listing-summary-row .svg-icon {
+    width: 16px;
+    height: 16px;
+    color: #0b45ff;
+  }
+
   .spec-grid {
     margin-top: 24px;
     display: grid;
@@ -1475,8 +1686,22 @@ const styles = `
     padding: 26px;
   }
 
+  .section-heading {
+    margin-bottom: 18px;
+  }
+
+  .section-heading span {
+    display: block;
+    color: #0b45ff;
+    font-size: 12px;
+    font-weight: 950;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .section-heading h2,
   .details-card h2 {
-    margin: 0 0 14px;
+    margin: 0;
     font-size: 24px;
     letter-spacing: -0.7px;
   }
@@ -1486,6 +1711,69 @@ const styles = `
     color: #3f4a66;
     line-height: 1.7;
     white-space: pre-wrap;
+  }
+
+  .description-copy {
+    border-left: 4px solid #dce6ff;
+    padding-left: 16px;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .detail-item {
+    min-height: 74px;
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 15px;
+    padding: 14px;
+    display: grid;
+    align-content: center;
+    gap: 5px;
+  }
+
+  .detail-item span,
+  .detail-list span,
+  .seller-facts span {
+    color: #647089;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .detail-item strong,
+  .detail-list strong,
+  .seller-facts strong {
+    color: #101832;
+    font-size: 15px;
+    font-weight: 950;
+    word-break: break-word;
+  }
+
+  .detail-list {
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .detail-list div {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 14px 16px;
+    background: white;
+  }
+
+  .detail-list div + div {
+    border-top: 1px solid #e5eaf4;
+  }
+
+  .detail-list div:nth-child(odd) {
+    background: #f9fbff;
   }
 
   .feature-grid {
@@ -1583,6 +1871,7 @@ const styles = `
   }
 
   .seller-mini strong,
+  .seller-mini small,
   .seller-mini span {
     display: block;
   }
@@ -1596,6 +1885,29 @@ const styles = `
     color: #5b667d;
     font-size: 14px;
     margin-top: 3px;
+  }
+
+  .seller-mini small {
+    color: #0b45ff;
+    font-size: 12px;
+    font-weight: 900;
+    margin-top: 2px;
+  }
+
+  .seller-facts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .seller-facts div {
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 14px;
+    padding: 13px;
+    display: grid;
+    gap: 5px;
   }
 
   .finance-note {
@@ -1851,6 +2163,10 @@ const styles = `
     .spec-grid {
       grid-template-columns: repeat(2, 1fr);
     }
+
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 700px) {
@@ -1911,6 +2227,10 @@ const styles = `
     }
 
     .spec-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .seller-facts {
       grid-template-columns: 1fr;
     }
 
