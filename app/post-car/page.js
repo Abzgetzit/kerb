@@ -26,6 +26,46 @@ const carMakes = {
   Other: [],
 };
 
+const makeAliases = {
+  "MERCEDES-BENZ": "Mercedes",
+  "MERCEDES BENZ": "Mercedes",
+  VW: "Volkswagen",
+  "LAND-ROVER": "Land Rover",
+  LANDROVER: "Land Rover",
+};
+
+function cleanRegistration(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
+}
+
+function findMakeKey(value) {
+  const normalisedMake = String(value || "").trim().toUpperCase();
+
+  if (!normalisedMake) return "";
+  if (makeAliases[normalisedMake]) return makeAliases[normalisedMake];
+
+  return (
+    Object.keys(carMakes).find(
+      (makeName) => makeName.toUpperCase() === normalisedMake
+    ) || "Other"
+  );
+}
+
+function findModelForMake(makeName, value) {
+  const normalisedModel = String(value || "").trim().toUpperCase();
+
+  if (!normalisedModel) return "";
+
+  return (
+    (carMakes[makeName] || []).find(
+      (modelName) => modelName.toUpperCase() === normalisedModel
+    ) || ""
+  );
+}
+
 export default function PostCarPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -33,7 +73,11 @@ export default function PostCarPage() {
   const [submittedListing, setSubmittedListing] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLookingUpRegistration, setIsLookingUpRegistration] = useState(false);
+  const [lookupMessage, setLookupMessage] = useState("");
+  const [lookupError, setLookupError] = useState("");
 
+  const [registration, setRegistration] = useState("");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [customModel, setCustomModel] = useState("");
@@ -132,6 +176,81 @@ export default function PostCarPage() {
     setPhotos(previews.slice(0, 12));
   }
 
+  async function handleVehicleLookup() {
+    const registrationToLookup = cleanRegistration(registration);
+
+    setLookupError("");
+    setLookupMessage("");
+
+    if (!registrationToLookup) {
+      setLookupError("Enter a registration number first.");
+      return;
+    }
+
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) {
+      setLookupError("Please sign in again before looking up a registration.");
+      return;
+    }
+
+    setIsLookingUpRegistration(true);
+    setRegistration(registrationToLookup);
+
+    try {
+      const response = await fetch("/api/vehicle-lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({
+          registration: registrationToLookup,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not look up that registration.");
+      }
+
+      const vehicle = result.vehicle || {};
+      const matchedMake = findMakeKey(vehicle.make);
+
+      if (matchedMake) {
+        setMake(matchedMake);
+        setModel("");
+        setCustomModel("");
+      }
+
+      if (vehicle.model) {
+        const matchedModel = findModelForMake(matchedMake, vehicle.model);
+
+        if (matchedModel) {
+          setModel(matchedModel);
+          setCustomModel("");
+        } else {
+          setModel("Other");
+          setCustomModel(vehicle.model);
+        }
+      }
+
+      if (vehicle.year) setYear(String(vehicle.year));
+      if (vehicle.mileage) setMileage(String(vehicle.mileage));
+      if (vehicle.fuel_type) setFuel(vehicle.fuel_type);
+
+      setLookupMessage(
+        result.message ||
+          "Vehicle details added. Check anything missing before submitting."
+      );
+    } catch (error) {
+      setLookupError(error.message || "Could not look up that registration.");
+    } finally {
+      setIsLookingUpRegistration(false);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setIsSubmitting(true);
@@ -140,6 +259,7 @@ export default function PostCarPage() {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
+    formData.set("registration", cleanRegistration(registration));
     formData.set("model", finalModel);
     formData.set("body_type", bodyType);
     formData.set("condition", condition);
@@ -271,6 +391,49 @@ export default function PostCarPage() {
               <h2>Car details</h2>
               <p>Start with the basic information buyers care about most.</p>
             </div>
+          </div>
+
+          <div className="lookupBox">
+            <div className="lookupHeader">
+              <div>
+                <h3>Number plate lookup</h3>
+                <p>
+                  Enter the registration to fill any details available from
+                  DVLA, then check the remaining fields manually.
+                </p>
+              </div>
+            </div>
+
+            <div className="lookupControls">
+              <label className="registrationLabel">
+                Registration
+                <input
+                  className="registrationInput"
+                  name="registration"
+                  placeholder="AB12 CDE"
+                  value={registration}
+                  onChange={(e) => setRegistration(e.target.value.toUpperCase())}
+                  autoCapitalize="characters"
+                />
+              </label>
+
+              <button
+                className="secondaryBtn lookupButton"
+                type="button"
+                onClick={handleVehicleLookup}
+                disabled={isLookingUpRegistration}
+              >
+                {isLookingUpRegistration ? "Looking up..." : "Look up"}
+              </button>
+            </div>
+
+            {lookupMessage && (
+              <div className="lookupMessage success">{lookupMessage}</div>
+            )}
+
+            {lookupError && (
+              <div className="lookupMessage error">{lookupError}</div>
+            )}
           </div>
 
           <div className="grid">
@@ -739,6 +902,62 @@ const styles = `
     font-size: 14px;
   }
 
+  .lookupBox {
+    background: #f8fbff;
+    border: 1px solid #dce8ff;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .lookupHeader {
+    margin-bottom: 16px;
+  }
+
+  .lookupHeader h3 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    letter-spacing: 0;
+  }
+
+  .lookupControls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .registrationInput {
+    text-transform: uppercase;
+    font-weight: 950;
+    letter-spacing: 0;
+  }
+
+  .lookupButton {
+    min-height: 51px;
+    box-shadow: none;
+  }
+
+  .lookupMessage {
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 850;
+    margin-top: 14px;
+  }
+
+  .lookupMessage.success {
+    background: #eafaf0;
+    border: 1px solid #c9efd7;
+    color: #137333;
+  }
+
+  .lookupMessage.error {
+    background: #fff1f1;
+    border: 1px solid #ffd1d1;
+    color: #b42318;
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -940,7 +1159,8 @@ const styles = `
     color: #0048ff;
   }
 
-  .primaryBtn:disabled {
+  .primaryBtn:disabled,
+  .secondaryBtn:disabled {
     opacity: 0.65;
     cursor: not-allowed;
   }
@@ -1037,6 +1257,14 @@ const styles = `
 
     .grid {
       grid-template-columns: 1fr;
+    }
+
+    .lookupControls {
+      grid-template-columns: 1fr;
+    }
+
+    .lookupButton {
+      width: 100%;
     }
 
     .formCard {
