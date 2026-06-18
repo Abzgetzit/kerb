@@ -41,6 +41,42 @@ function getFileExtension(fileName = "") {
   return extension.toLowerCase();
 }
 
+const allowedFeatures = new Set([
+  "Apple CarPlay",
+  "Android Auto",
+  "Bluetooth",
+  "Satellite navigation",
+  "Parking sensors",
+  "Reversing camera",
+  "Heated seats",
+  "Leather seats",
+  "Cruise control",
+  "Adaptive cruise control",
+  "Air conditioning",
+  "Climate control",
+  "Keyless entry",
+  "Panoramic roof",
+  "DAB radio",
+  "Service history",
+  "MOT included",
+  "ULEZ compliant",
+  "Alloy wheels",
+  "Electric folding mirrors",
+  "Lane assist",
+  "Blind spot monitoring",
+]);
+
+function cleanFeatures(formData) {
+  return [
+    ...new Set(
+      formData
+        .getAll("features")
+        .map(cleanText)
+        .filter((feature) => feature && allowedFeatures.has(feature))
+    ),
+  ];
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -115,6 +151,7 @@ export async function POST(request) {
     const askingPrice = cleanNumber(formData.get("asking_price"));
     const location = cleanText(formData.get("location"));
     const financeAvailable = cleanBoolean(formData.get("finance_available"));
+    const features = cleanFeatures(formData);
 
     const title = [year, make, model].filter(Boolean).join(" ");
 
@@ -146,6 +183,7 @@ export async function POST(request) {
       finance_available: financeAvailable,
 
       description: cleanText(formData.get("description")),
+      features,
 
       valuation_low: cleanNumber(formData.get("valuation_low")),
       valuation_high: cleanNumber(formData.get("valuation_high")),
