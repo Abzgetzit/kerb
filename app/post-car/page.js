@@ -1,30 +1,192 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import SiteMenu from "../components/SiteMenu";
 
 const carMakes = {
-  Audi: ["A1", "A3", "A4", "A5", "A6", "Q2", "Q3", "Q5", "Q7", "TT"],
-  BMW: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "X1", "X3", "X5", "i3", "i4"],
-  Mercedes: ["A-Class", "C-Class", "E-Class", "S-Class", "GLA", "GLC", "GLE", "CLA"],
-  Volkswagen: ["Polo", "Golf", "Passat", "Tiguan", "T-Roc", "Touareg"],
-  Ford: ["Fiesta", "Focus", "Kuga", "Puma", "Mondeo", "Transit"],
-  Vauxhall: ["Corsa", "Astra", "Insignia", "Mokka", "Grandland"],
-  Toyota: ["Yaris", "Corolla", "Auris", "C-HR", "RAV4", "Prius"],
-  Nissan: ["Micra", "Juke", "Qashqai", "X-Trail", "Leaf"],
-  Hyundai: ["i10", "i20", "i30", "Tucson", "Kona", "Ioniq"],
-  Kia: ["Picanto", "Rio", "Ceed", "Sportage", "Niro", "EV6"],
-  Peugeot: ["208", "308", "508", "2008", "3008", "5008"],
-  Renault: ["Clio", "Megane", "Captur", "Kadjar", "Zoe"],
+  Abarth: ["595", "695", "124 Spider"],
+  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "Tonale"],
+  Audi: ["A1", "A3", "A4", "A5", "A6", "A7", "Q2", "Q3", "Q5", "Q7", "Q8", "TT", "e-tron"],
+  BMW: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "7 Series", "X1", "X2", "X3", "X5", "X6", "i3", "i4", "iX"],
+  Citroen: ["C1", "C3", "C4", "C5 Aircross", "Berlingo"],
+  Cupra: ["Born", "Formentor", "Leon", "Ateca"],
+  Dacia: ["Sandero", "Duster", "Jogger"],
+  DS: ["DS 3", "DS 4", "DS 7"],
+  Fiat: ["500", "500X", "Panda", "Tipo"],
+  Ford: ["Fiesta", "Focus", "Kuga", "Puma", "Mondeo", "Mustang", "Transit", "Ranger"],
+  Honda: ["Civic", "Jazz", "CR-V", "HR-V", "e"],
+  Hyundai: ["i10", "i20", "i30", "Tucson", "Kona", "Ioniq", "Ioniq 5", "Santa Fe"],
+  Jaguar: ["XE", "XF", "F-Pace", "E-Pace", "I-Pace", "F-Type"],
+  Jeep: ["Renegade", "Compass", "Wrangler", "Grand Cherokee"],
+  Kia: ["Picanto", "Rio", "Ceed", "Sportage", "Niro", "Sorento", "EV6", "EV9"],
+  "Land Rover": ["Range Rover Evoque", "Discovery Sport", "Range Rover Sport", "Range Rover", "Defender", "Discovery"],
+  Lexus: ["CT", "IS", "ES", "NX", "RX", "UX"],
+  Mazda: ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-30", "CX-5", "MX-5"],
+  Mercedes: ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "CLA", "GLA", "GLB", "GLC", "GLE", "EQC", "EQA"],
+  MINI: ["Hatch", "Clubman", "Countryman", "Convertible", "Electric"],
+  Nissan: ["Micra", "Juke", "Qashqai", "X-Trail", "Leaf", "Ariya"],
+  Peugeot: ["108", "208", "308", "508", "2008", "3008", "5008", "Rifter"],
+  Polestar: ["Polestar 2", "Polestar 3"],
+  Porsche: ["Boxster", "Cayman", "911", "Macan", "Cayenne", "Panamera", "Taycan"],
+  Renault: ["Clio", "Megane", "Captur", "Kadjar", "Arkana", "Zoe"],
+  SEAT: ["Ibiza", "Leon", "Ateca", "Arona", "Tarraco"],
+  Skoda: ["Fabia", "Octavia", "Superb", "Kamiq", "Karoq", "Kodiaq", "Enyaq"],
+  Smart: ["ForTwo", "ForFour", "#1"],
+  Subaru: ["Impreza", "Forester", "Outback", "XV", "BRZ"],
+  Suzuki: ["Swift", "Vitara", "S-Cross", "Ignis", "Jimny"],
   Tesla: ["Model 3", "Model Y", "Model S", "Model X"],
-  Volvo: ["V40", "XC40", "XC60", "XC90", "S60", "V60"],
-  "Land Rover": ["Range Rover Evoque", "Discovery Sport", "Range Rover Sport", "Defender"],
-  MINI: ["Hatch", "Clubman", "Countryman", "Convertible"],
-  Honda: ["Civic", "Jazz", "CR-V", "HR-V"],
-  Mazda: ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-5"],
-  Skoda: ["Fabia", "Octavia", "Superb", "Kamiq", "Karoq", "Kodiaq"],
-  SEAT: ["Ibiza", "Leon", "Ateca", "Arona"],
+  Toyota: ["Aygo", "Yaris", "Corolla", "Auris", "C-HR", "RAV4", "Prius", "Hilux", "Land Cruiser"],
+  Vauxhall: ["Adam", "Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Vivaro"],
+  Volkswagen: ["Up", "Polo", "Golf", "Passat", "Arteon", "Tiguan", "T-Roc", "Touareg", "ID.3", "ID.4", "Transporter"],
+  Volvo: ["V40", "V60", "V90", "S60", "S90", "XC40", "XC60", "XC90", "EX30"],
   Other: [],
 };
+
+const modelDetails = {
+  Audi: {
+    A3: ["30 TFSI", "35 TFSI", "35 TDI", "40 TFSI e", "S3", "RS3"],
+    A4: ["35 TFSI", "40 TFSI", "35 TDI", "40 TDI", "S4", "RS4"],
+    A5: ["35 TFSI", "40 TFSI", "35 TDI", "S5", "RS5"],
+    Q5: ["40 TDI", "45 TFSI", "50 TFSI e", "SQ5"],
+  },
+  BMW: {
+    "1 Series": ["116i", "118i", "118d", "120i", "120d", "128ti", "M135i"],
+    "2 Series": ["218i", "220i", "220d", "225e", "M235i", "M240i"],
+    "3 Series": ["318i", "318d", "320i", "320d", "330i", "330d", "330e", "335d", "335i", "M340i", "M340d", "M3"],
+    "4 Series": ["420i", "420d", "430i", "430d", "435d", "M440i", "M440d", "M4"],
+    "5 Series": ["520i", "520d", "530i", "530d", "530e", "540i", "M550i", "M5"],
+    X3: ["xDrive20d", "xDrive30e", "xDrive30d", "M40i", "M40d", "X3 M"],
+    X5: ["xDrive30d", "xDrive40i", "xDrive45e", "xDrive50e", "M50d", "X5 M"],
+  },
+  Ford: {
+    Fiesta: ["1.0 EcoBoost", "1.5 TDCi", "ST-Line", "ST"],
+    Focus: ["1.0 EcoBoost", "1.5 EcoBlue", "ST-Line", "ST", "RS"],
+    Kuga: ["EcoBoost", "EcoBlue", "PHEV", "ST-Line"],
+  },
+  Mercedes: {
+    "A-Class": ["A180", "A200", "A220", "A250e", "A35 AMG", "A45 AMG"],
+    "C-Class": ["C180", "C200", "C220d", "C300", "C300e", "C43 AMG", "C63 AMG"],
+    "E-Class": ["E220d", "E300", "E300e", "E400d", "E53 AMG", "E63 AMG"],
+    GLC: ["GLC 220d", "GLC 300", "GLC 300e", "GLC 43 AMG", "GLC 63 AMG"],
+  },
+  Tesla: {
+    "Model 3": ["Rear-Wheel Drive", "Long Range", "Performance"],
+    "Model Y": ["Rear-Wheel Drive", "Long Range", "Performance"],
+    "Model S": ["Long Range", "Plaid"],
+    "Model X": ["Long Range", "Plaid"],
+  },
+  Volkswagen: {
+    Golf: ["1.0 TSI", "1.5 TSI", "2.0 TDI", "GTE", "GTI", "GTD", "R"],
+    Passat: ["1.5 TSI", "2.0 TDI", "GTE", "R-Line"],
+    Polo: ["1.0 MPI", "1.0 TSI", "GTI"],
+    Tiguan: ["1.5 TSI", "2.0 TDI", "eHybrid", "R-Line", "R"],
+  },
+};
+
+const makeFallbackGuide = {
+  Abarth: 22000,
+  "Alfa Romeo": 30000,
+  Audi: 36000,
+  BMW: 38000,
+  Citroen: 21000,
+  Cupra: 34000,
+  Dacia: 17000,
+  DS: 31000,
+  Fiat: 18000,
+  Ford: 26000,
+  Honda: 28000,
+  Hyundai: 28000,
+  Jaguar: 45000,
+  Jeep: 36000,
+  Kia: 29000,
+  "Land Rover": 56000,
+  Lexus: 43000,
+  Mazda: 28000,
+  Mercedes: 40000,
+  MINI: 27000,
+  Nissan: 27000,
+  Peugeot: 26000,
+  Polestar: 48000,
+  Porsche: 72000,
+  Renault: 24000,
+  SEAT: 24000,
+  Skoda: 28000,
+  Smart: 21000,
+  Subaru: 33000,
+  Suzuki: 21000,
+  Tesla: 46000,
+  Toyota: 29000,
+  Vauxhall: 23000,
+  Volkswagen: 30000,
+  Volvo: 44000,
+};
+
+const modelValueGuide = {
+  "BMW|1 Series": 31000,
+  "BMW|2 Series": 34000,
+  "BMW|3 Series": 39000,
+  "BMW|4 Series": 45000,
+  "BMW|5 Series": 51000,
+  "BMW|X3": 51000,
+  "BMW|X5": 72000,
+  "Audi|A3": 33000,
+  "Audi|A4": 39000,
+  "Audi|A5": 46000,
+  "Audi|Q5": 53000,
+  "Ford|Fiesta": 21000,
+  "Ford|Focus": 26000,
+  "Ford|Kuga": 33000,
+  "Mercedes|A-Class": 34000,
+  "Mercedes|C-Class": 47000,
+  "Mercedes|E-Class": 56000,
+  "Mercedes|GLC": 57000,
+  "Tesla|Model 3": 43000,
+  "Tesla|Model Y": 46000,
+  "Volkswagen|Golf": 30000,
+  "Volkswagen|Passat": 36000,
+  "Volkswagen|Polo": 21000,
+  "Volkswagen|Tiguan": 38000,
+};
+
+const modelDetailValueGuide = {
+  "BMW|3 Series|320d": 36000,
+  "BMW|3 Series|320i": 35000,
+  "BMW|3 Series|330e": 47000,
+  "BMW|3 Series|330d": 48000,
+  "BMW|3 Series|335d": 50000,
+  "BMW|3 Series|335i": 47000,
+  "BMW|3 Series|M340i": 58000,
+  "BMW|3 Series|M340d": 57000,
+  "BMW|3 Series|M3": 82000,
+  "BMW|4 Series|M4": 85000,
+  "BMW|5 Series|M5": 112000,
+  "Audi|A3|S3": 46000,
+  "Audi|A3|RS3": 62000,
+  "Audi|A4|RS4": 78000,
+  "Audi|A5|RS5": 82000,
+  "Ford|Focus|ST": 36000,
+  "Ford|Focus|RS": 43000,
+  "Mercedes|A-Class|A35 AMG": 46000,
+  "Mercedes|A-Class|A45 AMG": 64000,
+  "Mercedes|C-Class|C63 AMG": 91000,
+  "Tesla|Model 3|Performance": 56000,
+  "Tesla|Model Y|Performance": 60000,
+  "Volkswagen|Golf|GTI": 39000,
+  "Volkswagen|Golf|GTD": 37000,
+  "Volkswagen|Golf|R": 50000,
+};
+
+function getGuidePrice({ make, model, modelDetail }) {
+  const detailKey = `${make}|${model}|${modelDetail}`;
+  const modelKey = `${make}|${model}`;
+
+  return (
+    modelDetailValueGuide[detailKey] ||
+    modelValueGuide[modelKey] ||
+    makeFallbackGuide[make] ||
+    22000
+  );
+}
 
 export default function PostCarPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -36,6 +198,7 @@ export default function PostCarPage() {
 
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
+  const [modelDetail, setModelDetail] = useState("");
   const [customModel, setCustomModel] = useState("");
   const [year, setYear] = useState("");
   const [mileage, setMileage] = useState("");
@@ -72,8 +235,13 @@ export default function PostCarPage() {
   }, []);
 
   const availableModels = make ? carMakes[make] || [] : [];
+  const availableModelDetails =
+    make && model ? modelDetails[make]?.[model] || [] : [];
 
-  const finalModel = model === "Other" ? customModel : model || customModel;
+  const finalModel =
+    model === "Other"
+      ? customModel
+      : [model, modelDetail].filter(Boolean).join(" ") || customModel;
 
   const valuation = useMemo(() => {
     if (!make || !year || !mileage) return null;
@@ -83,36 +251,30 @@ export default function PostCarPage() {
 
     if (!Number.isFinite(carAge) || !Number.isFinite(mileageNumber)) return null;
 
-    let base = 12000;
+    const cleanAge = Math.max(carAge, 0);
+    const guidePrice = getGuidePrice({ make, model, modelDetail });
+    const depreciationFactor = Math.max(0.22, Math.pow(0.88, cleanAge));
+    const expectedMileage = Math.max(cleanAge, 1) * 8000;
+    const mileageDelta = mileageNumber - expectedMileage;
+    const mileageRate = guidePrice >= 50000 ? 0.08 : 0.055;
 
-    if (["BMW", "Mercedes", "Audi", "Land Rover", "Tesla", "Volvo"].includes(make)) {
-      base = 22000;
-    }
+    let estimate = guidePrice * depreciationFactor - mileageDelta * mileageRate;
 
-    if (["Volkswagen", "Toyota", "Kia", "Hyundai", "Skoda"].includes(make)) {
-      base = 15000;
-    }
+    if (fuel === "Electric") estimate *= 1.06;
+    if (fuel === "Hybrid") estimate *= 1.04;
+    if (gearbox === "Automatic") estimate *= 1.025;
+    if (condition === "New") estimate = guidePrice * 0.95;
+    if (condition === "Nearly new") estimate = Math.max(estimate, guidePrice * 0.78);
+    if (condition === "Fair") estimate *= 0.9;
+    if (condition === "Needs work") estimate *= 0.72;
 
-    if (["Ford", "Vauxhall", "Peugeot", "Renault", "Nissan"].includes(make)) {
-      base = 11000;
-    }
-
-    const ageDeduction = carAge * 1100;
-    const mileageDeduction = Math.floor(mileageNumber / 10000) * 550;
-
-    if (fuel === "Electric") base += 2500;
-    if (fuel === "Hybrid") base += 1200;
-    if (gearbox === "Automatic") base += 700;
-    if (condition === "New") base += 2500;
-    if (condition === "Nearly new") base += 1500;
-
-    const estimate = Math.max(base - ageDeduction - mileageDeduction, 1500);
+    estimate = Math.max(estimate, 1200);
 
     return {
-      low: Math.round((estimate * 0.9) / 100) * 100,
-      high: Math.round((estimate * 1.1) / 100) * 100,
+      low: Math.round((estimate * 0.92) / 100) * 100,
+      high: Math.round((estimate * 1.08) / 100) * 100,
     };
-  }, [make, year, mileage, fuel, gearbox, condition]);
+  }, [make, model, modelDetail, year, mileage, fuel, gearbox, condition]);
 
   function handleLogout() {
     localStorage.removeItem("kerbSessionToken");
@@ -241,6 +403,8 @@ export default function PostCarPage() {
             Log out
           </button>
         </div>
+
+        <SiteMenu currentUser={currentUser} onLogout={handleLogout} />
       </header>
 
       <section className="hero">
@@ -283,6 +447,7 @@ export default function PostCarPage() {
                 onChange={(e) => {
                   setMake(e.target.value);
                   setModel("");
+                  setModelDetail("");
                   setCustomModel("");
                 }}
               >
@@ -309,7 +474,10 @@ export default function PostCarPage() {
                 <>
                   <select
                     value={model}
-                    onChange={(e) => setModel(e.target.value)}
+                    onChange={(e) => {
+                      setModel(e.target.value);
+                      setModelDetail("");
+                    }}
                     required={!customModel}
                   >
                     <option value="">Select model</option>
@@ -335,6 +503,23 @@ export default function PostCarPage() {
               )}
               <input type="hidden" name="model" value={finalModel} />
             </label>
+
+            {availableModelDetails.length > 0 && (
+              <label>
+                Model detail
+                <select
+                  value={modelDetail}
+                  onChange={(e) => setModelDetail(e.target.value)}
+                >
+                  <option value="">I am not sure / standard model</option>
+                  {availableModelDetails.map((detail) => (
+                    <option key={detail} value={detail}>
+                      {detail}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
             <label>
               Year
@@ -470,8 +655,8 @@ export default function PostCarPage() {
                 </strong>
               </div>
               <p>
-                This is a basic estimate only. A real valuation will later compare
-                similar cars listed on Kerb.
+                This guide uses make, model, version, age, mileage, fuel and
+                condition. It is still an estimate, not a guaranteed sale price.
               </p>
             </div>
           )}
@@ -1018,13 +1203,11 @@ const styles = `
 
     .navbar {
       height: auto;
-      align-items: flex-start;
-      flex-direction: column;
+      align-items: center;
     }
 
     .navActions {
-      width: 100%;
-      flex-wrap: wrap;
+      display: none;
     }
 
     .hero {
