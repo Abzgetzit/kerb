@@ -240,8 +240,8 @@ export default function HomePage() {
   const categories = [
     [
       "car",
-      "Used cars",
-      "Browse trusted second-hand cars",
+      "Browse cars",
+      "Search cars listed on Kerb",
       "/browse",
     ],
     [
@@ -394,7 +394,10 @@ export default function HomePage() {
         </nav>
 
         <div className="navActions">
-          <Link href={currentUser ? "/account" : "/login"} className="ghostBtn">
+          <Link
+            href={currentUser ? "/account?tab=saved" : "/login"}
+            className="ghostBtn"
+          >
             <Icon name="heart" /> Saved
           </Link>
 
@@ -414,7 +417,7 @@ export default function HomePage() {
             </Link>
           )}
 
-          <Link href="/post-car" className="primaryBtn">
+          <Link href="/post-car" className="primaryBtn navPostBtn">
             <Icon name="plus" /> Post your car
           </Link>
         </div>
@@ -424,14 +427,14 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="heroText">
-          <div className="pill">New car marketplace launching soon</div>
+          <div className="pill">UK car marketplace</div>
 
           <h1>Find your next car with confidence</h1>
 
           <p>
-            Kerb helps buyers discover trusted cars from private sellers and
-            dealers, with simple filters, clear pricing and a smooth buying
-            experience.
+            Browse cars from private sellers and dealers, save favourites and
+            message sellers directly. Kerb is a marketplace, not a direct car
+            seller.
           </p>
 
           <div className="heroStats">
@@ -439,10 +442,10 @@ export default function HomePage() {
               <Icon name="car" /> Private sellers
             </span>
             <span>
-              <Icon name="shield" /> Approved dealers
+              <Icon name="mail" /> Message sellers
             </span>
             <span>
-              <Icon name="new" /> Simple car search
+              <Icon name="heart" /> Save favourites
             </span>
           </div>
         </div>
@@ -485,7 +488,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link className="filterItem" href="/browse?body_type=Any">
+          <Link className="filterItem" href="/browse">
             <Icon name="body" />
             <div>
               <small>Body type</small>
@@ -520,7 +523,7 @@ export default function HomePage() {
         <div className="listingsPanel">
           <div className="sectionTitleRow">
             <div>
-              <span className="sectionKicker">Approved listings</span>
+              <span className="sectionKicker">Recently listed</span>
               <h2>Latest cars on Kerb</h2>
             </div>
 
@@ -588,11 +591,11 @@ export default function HomePage() {
                 <Icon name="car" />
               </div>
 
-              <h2>No approved cars yet</h2>
+              <h2>No cars live yet</h2>
 
               <p>
-                Once sellers submit cars and you approve them in the admin
-                dashboard, they will appear here automatically.
+                Once sellers submit cars and they are published, they will
+                appear here automatically.
               </p>
 
               <div className="emptyActions">
@@ -612,8 +615,8 @@ export default function HomePage() {
           <h2>Sell your car the smart way</h2>
 
           <p>
-            Create a clean listing, reach serious buyers and manage enquiries
-            from one simple dashboard.
+            Create a clean listing, add real photos and manage buyer enquiries
+            from your Kerb account.
           </p>
 
           <div className="sellerSteps">
@@ -629,7 +632,7 @@ export default function HomePage() {
 
             <div>
               <strong>3</strong>
-              <span>Wait for approval</span>
+              <span>Manage enquiries</span>
             </div>
           </div>
 
@@ -744,7 +747,10 @@ export default function HomePage() {
 
         .page {
           min-height: 100vh;
-          padding: 22px 40px 40px;
+          padding: 22px 40px 44px;
+          background:
+            radial-gradient(circle at top left, rgba(0, 72, 255, 0.06), transparent 30%),
+            #f7f9fd;
         }
 
         .icon {
@@ -754,12 +760,12 @@ export default function HomePage() {
         }
 
         .navbar {
-          height: 58px;
+          min-height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 24px;
-          margin-bottom: 18px;
+          gap: 22px;
+          margin-bottom: 22px;
         }
 
         .logo {
@@ -773,10 +779,11 @@ export default function HomePage() {
         .navLinks {
           display: flex;
           align-items: center;
-          gap: 30px;
+          gap: clamp(16px, 1.6vw, 30px);
           font-size: 14px;
           font-weight: 800;
           color: #12172c;
+          min-width: 0;
         }
 
         .navLinks a {
@@ -798,7 +805,8 @@ export default function HomePage() {
         .navActions {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 16px;
+          flex: 0 0 auto;
         }
 
         button {
@@ -841,6 +849,29 @@ export default function HomePage() {
           border: none;
           cursor: pointer;
           font-family: inherit;
+          line-height: 1;
+          transition: transform 0.18s ease, box-shadow 0.18s ease,
+            background 0.18s ease;
+        }
+
+        .primaryBtn:hover,
+        .searchBtn:hover,
+        .viewCarBtn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 34px rgba(0, 72, 255, 0.28);
+        }
+
+        .navPostBtn {
+          min-height: 54px;
+          padding: 0 22px;
+          border-radius: 17px;
+          font-size: 15px;
+          white-space: nowrap;
+        }
+
+        .navPostBtn .icon {
+          width: 21px;
+          height: 21px;
         }
 
         .secondaryBtn {
@@ -860,7 +891,7 @@ export default function HomePage() {
 
         .hero {
           position: relative;
-          min-height: 395px;
+          min-height: 430px;
           border-radius: 30px;
           overflow: hidden;
           background:
@@ -868,8 +899,9 @@ export default function HomePage() {
             radial-gradient(circle at 72% 72%, rgba(255,255,255,0.92), transparent 42%),
             linear-gradient(105deg, #f9fbff 0%, #f5f8ff 42%, #eaf2ff 100%);
           border: 1px solid #e5eaf5;
-          padding: 46px 56px 104px;
+          padding: 48px 56px 118px;
           box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
+          animation: fadeUp 0.42s ease both;
         }
 
         .pill {
@@ -927,8 +959,8 @@ export default function HomePage() {
 
         .heroCar {
           position: absolute;
-          right: 46px;
-          bottom: 92px;
+          right: 54px;
+          bottom: 106px;
           width: 640px;
           z-index: 1;
           pointer-events: none;
@@ -972,12 +1004,12 @@ export default function HomePage() {
           position: absolute;
           left: 56px;
           right: 56px;
-          bottom: 26px;
+          bottom: 28px;
           z-index: 4;
           display: grid;
           grid-template-columns: repeat(5, 1fr) 170px;
           gap: 16px;
-          background: rgba(255,255,255,0.9);
+          background: rgba(255,255,255,0.94);
           backdrop-filter: blur(20px);
           border: 1px solid #e4e9f3;
           border-radius: 22px;
@@ -996,6 +1028,14 @@ export default function HomePage() {
           min-width: 0;
           text-decoration: none;
           color: inherit;
+          transition: transform 0.18s ease, border-color 0.18s ease,
+            box-shadow 0.18s ease;
+        }
+
+        .filterItem:hover {
+          transform: translateY(-2px);
+          border-color: #cfdbef;
+          box-shadow: 0 12px 24px rgba(10, 20, 40, 0.08);
         }
 
         .filterItem .icon {
@@ -1024,6 +1064,7 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
 
         .categories {
@@ -1044,12 +1085,14 @@ export default function HomePage() {
           box-shadow: 0 8px 25px rgba(10, 20, 40, 0.04);
           text-decoration: none;
           color: inherit;
-          transition: 0.2s ease;
+          transition: transform 0.18s ease, box-shadow 0.18s ease,
+            border-color 0.18s ease;
         }
 
         .categoryCard:hover {
           transform: translateY(-3px);
           box-shadow: 0 16px 35px rgba(10, 20, 40, 0.08);
+          border-color: #d6e1f4;
         }
 
         .categoryIcon {
@@ -1087,6 +1130,7 @@ export default function HomePage() {
           grid-template-columns: 1.4fr 0.9fr;
           gap: 20px;
           margin-top: 20px;
+          align-items: start;
         }
 
         .listingsPanel,
@@ -1097,6 +1141,7 @@ export default function HomePage() {
           border-radius: 24px;
           padding: 34px;
           box-shadow: 0 12px 30px rgba(10, 20, 40, 0.05);
+          animation: fadeUp 0.42s ease both;
         }
 
         .sectionTitleRow {
@@ -1141,12 +1186,14 @@ export default function HomePage() {
           overflow: hidden;
           background: #fff;
           box-shadow: 0 8px 24px rgba(10, 20, 40, 0.04);
-          transition: 0.2s ease;
+          transition: transform 0.18s ease, box-shadow 0.18s ease,
+            border-color 0.18s ease;
         }
 
         .listingCard:hover {
           transform: translateY(-3px);
           box-shadow: 0 18px 44px rgba(10, 20, 40, 0.09);
+          border-color: #d6e1f4;
         }
 
         .listingImageWrap {
@@ -1160,6 +1207,11 @@ export default function HomePage() {
           height: 100%;
           object-fit: cover;
           display: block;
+          transition: transform 0.28s ease;
+        }
+
+        .listingCard:hover .listingImage {
+          transform: scale(1.035);
         }
 
         .listingContent {
@@ -1279,7 +1331,8 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 14px;
+          min-height: 64px;
+          padding: 14px 16px;
           background: #f7f9fd;
           border-radius: 14px;
           border: 1px solid #e8edf5;
@@ -1305,6 +1358,7 @@ export default function HomePage() {
 
         .fullBtn {
           width: 100%;
+          min-height: 54px;
         }
 
         .trustGrid {
@@ -1474,6 +1528,18 @@ export default function HomePage() {
           }
           100% {
             background-position: -200% 0;
+          }
+        }
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
 
