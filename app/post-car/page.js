@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SiteMenu from "../components/SiteMenu";
 
 const carMakes = {
@@ -233,6 +233,7 @@ export default function PostCarPage() {
   const [condition, setCondition] = useState("");
   const [financeAvailable, setFinanceAvailable] = useState("false");
   const [photos, setPhotos] = useState([]);
+  const photoUrlsRef = useRef([]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("kerbUser");
@@ -309,14 +310,57 @@ export default function PostCarPage() {
     window.location.href = "/";
   }
 
+  useEffect(() => {
+    return () => {
+      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      photoUrlsRef.current = [];
+    };
+  }, []);
+
   function handlePhotoUpload(e) {
     const files = Array.from(e.target.files || []);
-    const previews = files.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-    }));
+    const previews = files.map((file) => {
+      const url = URL.createObjectURL(file);
+      photoUrlsRef.current.push(url);
 
-    setPhotos(previews.slice(0, 12));
+      return {
+        id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
+        file,
+        name: file.name,
+        url,
+      };
+    });
+
+    setPhotos((currentPhotos) => {
+      const nextPhotos = [...currentPhotos, ...previews].slice(0, 12);
+      const keptUrls = new Set(nextPhotos.map((photo) => photo.url));
+
+      photoUrlsRef.current = photoUrlsRef.current.filter((url) => {
+        if (keptUrls.has(url)) return true;
+
+        URL.revokeObjectURL(url);
+        return false;
+      });
+
+      return nextPhotos;
+    });
+
+    e.target.value = "";
+  }
+
+  function removePhoto(photoId) {
+    setPhotos((currentPhotos) => {
+      const photoToRemove = currentPhotos.find((photo) => photo.id === photoId);
+
+      if (photoToRemove) {
+        URL.revokeObjectURL(photoToRemove.url);
+        photoUrlsRef.current = photoUrlsRef.current.filter(
+          (url) => url !== photoToRemove.url
+        );
+      }
+
+      return currentPhotos.filter((photo) => photo.id !== photoId);
+    });
   }
 
   async function handleSubmit(e) {
@@ -326,6 +370,10 @@ export default function PostCarPage() {
 
     const form = e.currentTarget;
     const formData = new FormData(form);
+
+    photos.forEach((photo) => {
+      formData.append("photos", photo.file);
+    });
 
     formData.set("model", finalModel);
     formData.set("body_type", bodyType);
@@ -721,7 +769,6 @@ export default function PostCarPage() {
 
             <label className="uploadBox">
               <input
-                name="photos"
                 type="file"
                 accept="image/*"
                 multiple
@@ -735,8 +782,16 @@ export default function PostCarPage() {
             {photos.length > 0 && (
               <div className="photoGrid">
                 {photos.map((photo, index) => (
-                  <div className="photoPreview" key={`${photo.name}-${index}`}>
+                  <div className="photoPreview" key={photo.id}>
                     <img src={photo.url} alt={photo.name} />
+                    <button
+                      type="button"
+                      className="removePhotoButton"
+                      onClick={() => removePhoto(photo.id)}
+                      aria-label={`Remove photo ${index + 1}`}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1159,6 +1214,7 @@ const styles = `
   }
 
   .photoPreview {
+    position: relative;
     height: 110px;
     border-radius: 16px;
     overflow: hidden;
@@ -1170,6 +1226,36 @@ const styles = `
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .removePhotoButton {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(7, 17, 38, 0.78);
+    color: white;
+    font-size: 22px;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.92);
+    transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  }
+
+  .photoPreview:hover .removePhotoButton,
+  .removePhotoButton:focus-visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .removePhotoButton:hover {
+    background: #d7193f;
   }
 
   .errorBox {
@@ -1319,6 +1405,11 @@ const styles = `
 
     .photoGrid {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .removePhotoButton {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 `;
