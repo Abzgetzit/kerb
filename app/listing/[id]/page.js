@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import SiteMenu from "../../components/SiteMenu";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -346,6 +347,8 @@ export default function ListingPage() {
   const [actionMessage, setActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSavingListing, setIsSavingListing] = useState(false);
 
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [isSendingEnquiry, setIsSendingEnquiry] = useState(false);
@@ -391,6 +394,44 @@ export default function ListingPage() {
       window.removeEventListener("kerb-auth-change", syncKerbUser);
     };
   }, []);
+
+  useEffect(() => {
+    async function loadSavedState() {
+      const token = localStorage.getItem("kerbSessionToken");
+
+      if (!token || !currentUser || !id) {
+        setIsSaved(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/saved-listings", {
+          headers: {
+            "x-kerb-session-token": token,
+          },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Could not load saved cars.");
+        }
+
+        setIsSaved((result.saved_listing_ids || []).includes(String(id)));
+      } catch (error) {
+        console.error("Saved listing state error:", error);
+        setIsSaved(false);
+      }
+    }
+
+    loadSavedState();
+
+    window.addEventListener("kerb-saved-change", loadSavedState);
+
+    return () => {
+      window.removeEventListener("kerb-saved-change", loadSavedState);
+    };
+  }, [currentUser, id]);
 
   useEffect(() => {
     async function loadListing() {
@@ -594,8 +635,51 @@ export default function ListingPage() {
     localStorage.removeItem("kerbSessionToken");
     localStorage.removeItem("kerbAccountEmail");
     localStorage.removeItem("kerbUser");
+    setIsSaved(false);
     window.dispatchEvent(new Event("kerb-auth-change"));
     window.location.href = "/";
+  }
+
+  async function toggleSavedListing() {
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token || !currentUser) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!id) return;
+
+    const wasSaved = isSaved;
+
+    setIsSaved(!wasSaved);
+    setIsSavingListing(true);
+
+    try {
+      const response = await fetch("/api/saved-listings", {
+        method: wasSaved ? "DELETE" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({
+          listing_id: String(id),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not update saved cars.");
+      }
+
+      window.dispatchEvent(new Event("kerb-saved-change"));
+    } catch (error) {
+      console.error("Save listing error:", error);
+      setIsSaved(wasSaved);
+    } finally {
+      setIsSavingListing(false);
+    }
   }
 
   async function shareListing() {
@@ -763,10 +847,15 @@ export default function ListingPage() {
           <strong>{title}</strong>
 
           <div className="save-share">
-            <Link href={currentUser ? "/account" : "/login"}>
+            <button
+              type="button"
+              className={isSaved ? "save-button saved" : "save-button"}
+              onClick={toggleSavedListing}
+              disabled={isSavingListing}
+            >
               <SvgIcon name="heart" />
-              Save
-            </Link>
+              {isSaved ? "Saved" : "Save"}
+            </button>
 
             <button type="button" onClick={shareListing}>
               <SvgIcon name="share" />
@@ -1223,7 +1312,10 @@ function Header({ currentUser, onLogout }) {
       </nav>
 
       <div className="top-actions">
-        <Link href={currentUser ? "/account" : "/login"} className="saved-link">
+        <Link
+          href={currentUser ? "/account?tab=saved" : "/login"}
+          className="saved-link"
+        >
           <SvgIcon name="heart" />
           Saved
         </Link>
@@ -1251,6 +1343,8 @@ function Header({ currentUser, onLogout }) {
           Post your car
         </Link>
       </div>
+
+      <SiteMenu currentUser={currentUser} onLogout={onLogout} />
     </header>
   );
 }
@@ -1431,6 +1525,19 @@ const styles = `
     font-size: 14px;
     font-weight: 750;
     cursor: pointer;
+  }
+
+  .save-share .save-button.saved {
+    color: #d7193f;
+  }
+
+  .save-share .save-button.saved .svg-icon path {
+    fill: currentColor;
+  }
+
+  .save-share .save-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 
   .main-layout {
@@ -2172,10 +2279,15 @@ const styles = `
   @media (max-width: 700px) {
     .topbar {
       padding: 16px 18px;
+      flex-wrap: nowrap;
     }
 
     .logo {
       font-size: 36px;
+    }
+
+    .nav {
+      display: none;
     }
 
     .post-button {
