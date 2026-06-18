@@ -1,5 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import {
+  createListingLiveEmail,
+  getListingTitle,
+  getSiteUrl,
+  sendKerbEmail,
+} from "../../../lib/kerb-email";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -88,6 +94,19 @@ export async function PATCH(request) {
     );
   }
 
+  const { data: existingListing, error: existingListingError } = await supabase
+    .from("kerb_listings")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (existingListingError) {
+    return NextResponse.json(
+      { error: existingListingError.message },
+      { status: 500 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("kerb_listings")
     .update({ status })
@@ -99,7 +118,27 @@ export async function PATCH(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ listing: data });
+  let liveEmail = null;
+
+  if (status === "approved" && existingListing?.status !== "approved") {
+    const siteUrl = getSiteUrl(request);
+
+    liveEmail = await sendKerbEmail({
+      to: data.seller_email || data.account_email,
+      subject: `Your ${getListingTitle(data)} listing is now live`,
+      html: createListingLiveEmail({
+        listing: data,
+        siteUrl,
+      }),
+    });
+  }
+
+  return NextResponse.json({
+    listing: data,
+    emails: {
+      listing_live: liveEmail,
+    },
+  });
 }
 
 export async function DELETE(request) {
