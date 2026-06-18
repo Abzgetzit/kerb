@@ -1590,7 +1590,7 @@ const styles = `
 
   .main-photo {
     position: relative;
-    height: 460px;
+    height: clamp(520px, 42vw, 620px);
     overflow: hidden;
     background: #eef2f7;
   }
@@ -1598,7 +1598,8 @@ const styles = `
   .main-photo img {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center center;
     display: block;
     background: #eef2f7;
   }
@@ -2364,7 +2365,7 @@ const styles = `
     }
 
     .main-photo {
-      height: 300px;
+      height: 330px;
     }
 
     .thumb-row {
