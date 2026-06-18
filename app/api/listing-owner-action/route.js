@@ -34,6 +34,10 @@ async function findAccountFromToken(supabase, token) {
     },
     {
       table: "kerb_account_sessions",
+      column: "session_token",
+    },
+    {
+      table: "kerb_account_sessions",
       column: "token",
     },
   ];
