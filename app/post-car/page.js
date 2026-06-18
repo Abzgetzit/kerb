@@ -121,6 +121,31 @@ const makeFallbackGuide = {
   Volvo: 44000,
 };
 
+const carFeatureOptions = [
+  "Apple CarPlay",
+  "Android Auto",
+  "Bluetooth",
+  "Satellite navigation",
+  "Parking sensors",
+  "Reversing camera",
+  "Heated seats",
+  "Leather seats",
+  "Cruise control",
+  "Adaptive cruise control",
+  "Air conditioning",
+  "Climate control",
+  "Keyless entry",
+  "Panoramic roof",
+  "DAB radio",
+  "Service history",
+  "MOT included",
+  "ULEZ compliant",
+  "Alloy wheels",
+  "Electric folding mirrors",
+  "Lane assist",
+  "Blind spot monitoring",
+];
+
 const modelValueGuide = {
   "BMW|1 Series": 31000,
   "BMW|2 Series": 34000,
@@ -664,6 +689,22 @@ export default function PostCarPage() {
           <input type="hidden" name="valuation_low" value={valuation?.low || ""} />
           <input type="hidden" name="valuation_high" value={valuation?.high || ""} />
 
+          <section className="featuresSection">
+            <div>
+              <h2>Features</h2>
+              <p>Select only the features this car actually has.</p>
+            </div>
+
+            <div className="featureChecklist">
+              {carFeatureOptions.map((feature) => (
+                <label className="featureOption" key={feature}>
+                  <input name="features" type="checkbox" value={feature} />
+                  <span>{feature}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+
           <label>
             Short description
             <textarea
@@ -1027,6 +1068,47 @@ const styles = `
     color: #657189;
   }
 
+  .featuresSection {
+    margin: 0 0 24px;
+    border: 1px solid #e5eaf4;
+    border-radius: 22px;
+    padding: 22px;
+    background: #fbfcff;
+  }
+
+  .featuresSection h2 {
+    margin-bottom: 8px;
+  }
+
+  .featureChecklist {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .featureOption {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    border: 1px solid #dfe6f1;
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: white;
+    color: #172033;
+    font-size: 13px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .featureOption input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #0048ff;
+  }
+
   .photoSection {
     border-top: 1px solid #edf1f7;
     border-bottom: 1px solid #edf1f7;
@@ -1191,6 +1273,10 @@ const styles = `
   }
 
   @media (max-width: 1100px) {
+    .featureChecklist {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     .photoGrid {
       grid-template-columns: repeat(3, 1fr);
     }
@@ -1220,6 +1306,10 @@ const styles = `
     }
 
     .grid {
+      grid-template-columns: 1fr;
+    }
+
+    .featureChecklist {
       grid-template-columns: 1fr;
     }
 
