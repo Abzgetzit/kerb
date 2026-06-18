@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import SiteMenu from "../components/SiteMenu";
 
 function formatDate(value) {
   if (!value) return "Unknown";
@@ -111,6 +112,12 @@ export default function AccountPage() {
   }
 
   useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+
+    if (["overview", "listings", "saved", "sent", "received"].includes(tab)) {
+      setActiveTab(tab);
+    }
+
     loadAccount();
   }, []);
 
@@ -135,7 +142,7 @@ export default function AccountPage() {
       listings: accountData?.my_listings?.length || 0,
       sent: accountData?.sent_enquiries?.length || 0,
       received: accountData?.received_enquiries?.length || 0,
-      saved: 0,
+      saved: accountData?.saved_listings?.length || 0,
     };
   }, [accountData]);
 
@@ -193,6 +200,8 @@ export default function AccountPage() {
             Log out
           </button>
         </div>
+
+        <SiteMenu currentUser={accountData?.account || accountData} onLogout={logout} />
       </header>
 
       <section className="hero">
@@ -378,12 +387,48 @@ export default function AccountPage() {
         <section className="contentSection">
           <h2>Saved cars</h2>
 
-          <EmptyBox
-            title="Saved cars coming next"
-            text="The account page is ready. Next we will connect the heart buttons so saved cars appear here."
-            link="/browse"
-            linkText="Browse cars"
-          />
+          {!accountData.saved_listings ||
+          accountData.saved_listings.length === 0 ? (
+            <EmptyBox
+              title="No saved cars yet"
+              text="Tap the heart on a listing to save it here."
+              link="/browse"
+              linkText="Browse cars"
+            />
+          ) : (
+            <div className="cardsGrid">
+              {accountData.saved_listings.map((car) => (
+                <article className="card" key={car.id}>
+                  <span className="status saved">Saved</span>
+
+                  <h3>{getTitle(car)}</h3>
+
+                  <p>
+                    {car.location || "Location TBC"} · Saved{" "}
+                    {formatDate(car.saved_at)}
+                  </p>
+
+                  <div className="detailsGrid">
+                    <div>
+                      <span>Price</span>
+                      <strong>
+                        {formatPrice(car.price || car.asking_price)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Mileage</span>
+                      <strong>{car.mileage || "TBC"}</strong>
+                    </div>
+                  </div>
+
+                  <Link href={`/listing/${car.id}`} className="cardLink">
+                    View listing
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -801,6 +846,11 @@ const styles = `
     color: #137333;
   }
 
+  .status.saved {
+    background: #fff1f1;
+    color: #d7193f;
+  }
+
   .detailsGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -881,10 +931,17 @@ const styles = `
       padding: 18px;
     }
 
-    .navbar,
+    .navbar {
+      align-items: center;
+    }
+
     .sectionHeader {
       align-items: flex-start;
       flex-direction: column;
+    }
+
+    .navActions {
+      display: none;
     }
 
     h1 {
