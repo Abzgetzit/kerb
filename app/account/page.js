@@ -40,6 +40,73 @@ function getTitle(car) {
   );
 }
 
+function normaliseImageUrl(value) {
+  if (!value) return "";
+
+  const image = String(value).trim();
+
+  if (!image) return "";
+
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("/")
+  ) {
+    return image;
+  }
+
+  return image;
+}
+
+function parseImageField(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.map(normaliseImageUrl).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map(normaliseImageUrl).filter(Boolean);
+      }
+
+      if (typeof parsed === "string") {
+        return [normaliseImageUrl(parsed)].filter(Boolean);
+      }
+    } catch {
+      return [normaliseImageUrl(trimmed)].filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
+function getListingImages(car) {
+  const images = [
+    ...parseImageField(car.image_url),
+    ...parseImageField(car.photo_url),
+    ...parseImageField(car.main_photo_url),
+    ...parseImageField(car.cover_image_url),
+    ...parseImageField(car.photos),
+    ...parseImageField(car.photo_urls),
+    ...parseImageField(car.images),
+    ...parseImageField(car.image_urls),
+  ];
+
+  return [...new Set(images)].filter(Boolean);
+}
+
+function getImage(car) {
+  return getListingImages(car)[0] || "/cars/hero-car.png";
+}
+
 function createKerbUserFromAccount(result) {
   const account = result?.account || {};
 
@@ -144,6 +211,31 @@ export default function AccountPage() {
       received: accountData?.received_enquiries?.length || 0,
       saved: accountData?.saved_listings?.length || 0,
     };
+  }, [accountData]);
+
+  const latestListings = useMemo(
+    () => (accountData?.my_listings || []).slice(0, 3),
+    [accountData]
+  );
+
+  const savedPreview = useMemo(
+    () => (accountData?.saved_listings || []).slice(0, 3),
+    [accountData]
+  );
+
+  const recentActivity = useMemo(() => {
+    const sent = (accountData?.sent_enquiries || []).map((enquiry) => ({
+      ...enquiry,
+      activity_type: "sent",
+    }));
+    const received = (accountData?.received_enquiries || []).map((enquiry) => ({
+      ...enquiry,
+      activity_type: "received",
+    }));
+
+    return [...sent, ...received]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 4);
   }, [accountData]);
 
   if (isLoading) {
@@ -320,6 +412,97 @@ export default function AccountPage() {
               </div>
             </div>
           </div>
+
+          <div className="panel widePanel">
+            <div className="panelHeader">
+              <div>
+                <h2>Latest listings</h2>
+                <p>Your newest cars and their current status.</p>
+              </div>
+
+              <button type="button" onClick={() => setActiveTab("listings")}>
+                View all
+              </button>
+            </div>
+
+            {latestListings.length === 0 ? (
+              <div className="softEmpty">
+                <p>Post a car and it will appear here for review and editing.</p>
+                <button type="button" onClick={goToPostCar}>
+                  Post your car
+                </button>
+              </div>
+            ) : (
+              <div className="miniList">
+                {latestListings.map((car) => (
+                  <ListingMiniCard
+                    key={car.id}
+                    car={car}
+                    mode="listing"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="panel">
+            <div className="panelHeader">
+              <div>
+                <h2>Saved cars</h2>
+                <p>Cars you have kept for later.</p>
+              </div>
+
+              <button type="button" onClick={() => setActiveTab("saved")}>
+                View
+              </button>
+            </div>
+
+            {savedPreview.length === 0 ? (
+              <div className="softEmpty">
+                <p>No saved cars yet.</p>
+                <Link href="/browse">Browse cars</Link>
+              </div>
+            ) : (
+              <div className="miniList compact">
+                {savedPreview.map((car) => (
+                  <ListingMiniCard key={car.id} car={car} mode="saved" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="panel">
+            <div className="panelHeader">
+              <div>
+                <h2>Recent activity</h2>
+                <p>Latest buyer and seller messages.</p>
+              </div>
+            </div>
+
+            {recentActivity.length === 0 ? (
+              <div className="softEmpty">
+                <p>No enquiry activity yet.</p>
+                <Link href="/browse">Find cars</Link>
+              </div>
+            ) : (
+              <div className="activityList">
+                {recentActivity.map((activity) => (
+                  <div
+                    className="activityItem"
+                    key={`${activity.activity_type}-${activity.id}`}
+                  >
+                    <span>
+                      {activity.activity_type === "sent"
+                        ? "Enquiry sent"
+                        : "Enquiry received"}
+                    </span>
+                    <strong>{activity.listing_title || "Kerb listing"}</strong>
+                    <small>{formatDate(activity.created_at)}</small>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       )}
 
@@ -347,35 +530,39 @@ export default function AccountPage() {
           ) : (
             <div className="cardsGrid">
               {accountData.my_listings.map((car) => (
-                <article className="card" key={car.id}>
-                  <span className={`status ${normaliseStatus(car.status)}`}>
-                    {normaliseStatus(car.status)}
-                  </span>
+                <article className="card mediaCard" key={car.id}>
+                  <ListingCardImage car={car} />
 
-                  <h3>{getTitle(car)}</h3>
+                  <div className="cardContent">
+                    <span className={`status ${normaliseStatus(car.status)}`}>
+                      {normaliseStatus(car.status)}
+                    </span>
 
-                  <p>
-                    {car.location || "Location TBC"} ·{" "}
-                    {formatDate(car.created_at)}
-                  </p>
+                    <h3>{getTitle(car)}</h3>
 
-                  <div className="detailsGrid">
-                    <div>
-                      <span>Price</span>
-                      <strong>
-                        {formatPrice(car.price || car.asking_price)}
-                      </strong>
+                    <p>
+                      {car.location || "Location TBC"} ·{" "}
+                      {formatDate(car.created_at)}
+                    </p>
+
+                    <div className="detailsGrid">
+                      <div>
+                        <span>Price</span>
+                        <strong>
+                          {formatPrice(car.price || car.asking_price)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Mileage</span>
+                        <strong>{car.mileage || "TBC"}</strong>
+                      </div>
                     </div>
 
-                    <div>
-                      <span>Mileage</span>
-                      <strong>{car.mileage || "TBC"}</strong>
+                    <div className="cardActions listingActions">
+                      <Link href={`/listing/${car.id}`}>View listing</Link>
+                      <Link href={`/listing/${car.id}/edit`}>Edit listing</Link>
                     </div>
-                  </div>
-
-                  <div className="cardActions listingActions">
-                    <Link href={`/listing/${car.id}`}>View listing</Link>
-                    <Link href={`/listing/${car.id}/edit`}>Edit listing</Link>
                   </div>
                 </article>
               ))}
@@ -399,33 +586,37 @@ export default function AccountPage() {
           ) : (
             <div className="cardsGrid">
               {accountData.saved_listings.map((car) => (
-                <article className="card" key={car.id}>
-                  <span className="status saved">Saved</span>
+                <article className="card mediaCard" key={car.id}>
+                  <ListingCardImage car={car} />
 
-                  <h3>{getTitle(car)}</h3>
+                  <div className="cardContent">
+                    <span className="status saved">Saved</span>
 
-                  <p>
-                    {car.location || "Location TBC"} · Saved{" "}
-                    {formatDate(car.saved_at)}
-                  </p>
+                    <h3>{getTitle(car)}</h3>
 
-                  <div className="detailsGrid">
-                    <div>
-                      <span>Price</span>
-                      <strong>
-                        {formatPrice(car.price || car.asking_price)}
-                      </strong>
+                    <p>
+                      {car.location || "Location TBC"} · Saved{" "}
+                      {formatDate(car.saved_at)}
+                    </p>
+
+                    <div className="detailsGrid">
+                      <div>
+                        <span>Price</span>
+                        <strong>
+                          {formatPrice(car.price || car.asking_price)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Mileage</span>
+                        <strong>{car.mileage || "TBC"}</strong>
+                      </div>
                     </div>
 
-                    <div>
-                      <span>Mileage</span>
-                      <strong>{car.mileage || "TBC"}</strong>
-                    </div>
+                    <Link href={`/listing/${car.id}`} className="cardLink">
+                      View listing
+                    </Link>
                   </div>
-
-                  <Link href={`/listing/${car.id}`} className="cardLink">
-                    View listing
-                  </Link>
                 </article>
               ))}
             </div>
@@ -502,6 +693,54 @@ function EmptyBox({ title, text, link, linkText, buttonText, onButtonClick }) {
         </button>
       )}
     </div>
+  );
+}
+
+function ListingCardImage({ car }) {
+  return (
+    <Link href={`/listing/${car.id}`} className="cardImage">
+      <img
+        src={getImage(car)}
+        alt={getTitle(car)}
+        onError={(event) => {
+          event.currentTarget.src = "/cars/hero-car.png";
+        }}
+      />
+    </Link>
+  );
+}
+
+function ListingMiniCard({ car, mode }) {
+  return (
+    <article className="miniCard">
+      <Link href={`/listing/${car.id}`} className="miniImage">
+        <img
+          src={getImage(car)}
+          alt={getTitle(car)}
+          onError={(event) => {
+            event.currentTarget.src = "/cars/hero-car.png";
+          }}
+        />
+      </Link>
+
+      <div>
+        <span className={`status ${mode === "saved" ? "saved" : normaliseStatus(car.status)}`}>
+          {mode === "saved" ? "Saved" : normaliseStatus(car.status)}
+        </span>
+        <h3>{getTitle(car)}</h3>
+        <p>
+          {formatPrice(car.price || car.asking_price)} ·{" "}
+          {car.location || "Location TBC"}
+        </p>
+
+        <div className="miniActions">
+          <Link href={`/listing/${car.id}`}>View</Link>
+          {mode === "listing" && (
+            <Link href={`/listing/${car.id}/edit`}>Edit</Link>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -590,6 +829,9 @@ const styles = `
   .page {
     min-height: 100vh;
     padding: 24px 36px 60px;
+    background:
+      radial-gradient(circle at top left, rgba(0, 72, 255, 0.06), transparent 32%),
+      #f7f9fd;
   }
 
   a {
@@ -641,12 +883,14 @@ const styles = `
     display: grid;
     grid-template-columns: 1fr 520px;
     gap: 22px;
-    background: white;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.98));
     border: 1px solid #e5eaf4;
     border-radius: 30px;
     padding: 42px;
     box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
     margin-bottom: 22px;
+    animation: fadeUp 0.42s ease both;
   }
 
   .pill {
@@ -744,6 +988,10 @@ const styles = `
     gap: 18px;
   }
 
+  .widePanel {
+    grid-column: span 2;
+  }
+
   .panel,
   .card,
   .emptyBox,
@@ -754,6 +1002,14 @@ const styles = `
     border-radius: 24px;
     padding: 26px;
     box-shadow: 0 12px 34px rgba(10, 20, 40, 0.06);
+    animation: fadeUp 0.42s ease both;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .panel:hover,
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 44px rgba(10, 20, 40, 0.1);
   }
 
   .emptyCard {
@@ -801,6 +1057,33 @@ const styles = `
     font-family: inherit;
   }
 
+  .panelHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .panelHeader h2 {
+    margin-bottom: 6px;
+  }
+
+  .panelHeader button,
+  .softEmpty a,
+  .softEmpty button,
+  .miniActions a {
+    border: none;
+    background: #eef3ff;
+    color: #0048ff;
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-weight: 950;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
   .contentSection {
     display: grid;
     gap: 18px;
@@ -817,6 +1100,36 @@ const styles = `
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 18px;
+  }
+
+  .mediaCard {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .cardContent {
+    padding: 22px;
+  }
+
+  .cardImage {
+    display: block;
+    height: 190px;
+    background: #eef2f7;
+    overflow: hidden;
+  }
+
+  .cardImage img,
+  .miniImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.28s ease;
+  }
+
+  .mediaCard:hover .cardImage img,
+  .miniCard:hover .miniImage img {
+    transform: scale(1.035);
   }
 
   .status {
@@ -915,6 +1228,96 @@ const styles = `
     margin-top: 18px;
   }
 
+  .miniList,
+  .activityList {
+    display: grid;
+    gap: 12px;
+  }
+
+  .miniList.compact {
+    gap: 10px;
+  }
+
+  .miniCard {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+    border: 1px solid #e5eaf4;
+    border-radius: 18px;
+    padding: 12px;
+    background: #fbfcff;
+    transition: transform 0.18s ease, border-color 0.18s ease;
+  }
+
+  .miniCard:hover {
+    transform: translateY(-2px);
+    border-color: #cfdcff;
+  }
+
+  .miniImage {
+    height: 108px;
+    border-radius: 14px;
+    background: #eef2f7;
+    overflow: hidden;
+  }
+
+  .miniCard h3 {
+    margin-bottom: 5px;
+  }
+
+  .miniCard p {
+    font-size: 13px;
+  }
+
+  .miniActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .miniActions a:first-child {
+    background: #0048ff;
+    color: white;
+  }
+
+  .softEmpty {
+    border: 1px dashed #d7e1f2;
+    border-radius: 18px;
+    padding: 22px;
+    background: #fbfcff;
+  }
+
+  .softEmpty p {
+    margin-bottom: 14px;
+  }
+
+  .activityItem {
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    padding: 14px;
+    background: #fbfcff;
+    display: grid;
+    gap: 4px;
+  }
+
+  .activityItem span {
+    color: #0048ff;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .activityItem strong {
+    color: #071126;
+  }
+
+  .activityItem small {
+    color: #657189;
+    font-weight: 750;
+  }
+
   .emptyBox {
     text-align: center;
   }
@@ -923,11 +1326,27 @@ const styles = `
     margin-bottom: 20px;
   }
 
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   @media (max-width: 1000px) {
     .hero,
     .overviewGrid,
     .cardsGrid {
       grid-template-columns: 1fr;
+    }
+
+    .widePanel {
+      grid-column: auto;
     }
   }
 
@@ -960,6 +1379,22 @@ const styles = `
     .statsGrid,
     .detailsGrid {
       grid-template-columns: 1fr;
+    }
+
+    .panelHeader {
+      flex-direction: column;
+    }
+
+    .cardImage {
+      height: 180px;
+    }
+
+    .miniCard {
+      grid-template-columns: 1fr;
+    }
+
+    .miniImage {
+      height: 170px;
     }
   }
 `;
