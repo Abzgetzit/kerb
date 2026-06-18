@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import SiteMenu from "./components/SiteMenu";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -417,6 +418,8 @@ export default function HomePage() {
             <Icon name="plus" /> Post your car
           </Link>
         </div>
+
+        <SiteMenu currentUser={currentUser} onLogout={logout} />
       </header>
 
       <section className="hero">
@@ -1521,7 +1524,8 @@ export default function HomePage() {
 
           .navbar {
             height: auto;
-            align-items: flex-start;
+            align-items: center;
+            gap: 12px;
           }
 
           .navActions {
