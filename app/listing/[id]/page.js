@@ -1571,6 +1571,17 @@ const styles = `
     border: 1px solid #e4eaf4;
     border-radius: 20px;
     box-shadow: 0 12px 34px rgba(18, 32, 70, 0.06);
+    animation: listingFadeUp 0.42s ease both;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .gallery-card:hover,
+  .title-section:hover,
+  .details-card:hover,
+  .contact-card:hover,
+  .owner-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 46px rgba(18, 32, 70, 0.1);
   }
 
   .gallery-card {
@@ -1584,12 +1595,24 @@ const styles = `
     background: #eef2f7;
   }
 
-  .main-photo img,
+  .main-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #eef2f7;
+  }
+
   .thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform 0.22s ease;
+  }
+
+  .thumb:hover img {
+    transform: scale(1.04);
   }
 
   .sold-ribbon {
@@ -1620,6 +1643,12 @@ const styles = `
     place-items: center;
     cursor: pointer;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .gallery-arrow:hover {
+    transform: translateY(-50%) scale(1.04);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
   }
 
   .gallery-arrow.left {
@@ -2062,6 +2091,15 @@ const styles = `
     background: #0b45ff;
     color: white;
     box-shadow: 0 12px 28px rgba(11, 69, 255, 0.22);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .primary-contact:hover,
+  .phone-box:hover,
+  .owner-button:hover,
+  .post-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(11, 69, 255, 0.22);
   }
 
   .phone-box {
@@ -2233,6 +2271,18 @@ const styles = `
     cursor: not-allowed;
   }
 
+  @keyframes listingFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   @media (max-width: 1200px) {
     .topbar {
       min-height: auto;
@@ -2278,12 +2328,13 @@ const styles = `
 
   @media (max-width: 700px) {
     .topbar {
-      padding: 16px 18px;
+      padding: 12px 14px;
       flex-wrap: nowrap;
+      min-height: 72px;
     }
 
     .logo {
-      font-size: 36px;
+      font-size: 34px;
     }
 
     .nav {
@@ -2292,14 +2343,15 @@ const styles = `
 
     .post-button {
       height: 46px;
-      padding: 0 15px;
+      padding: 0 12px;
       font-size: 13px;
     }
 
     .breadcrumb-row {
-      padding: 16px 18px;
+      padding: 14px 16px;
       overflow-x: auto;
       white-space: nowrap;
+      gap: 10px;
     }
 
     .save-share {
@@ -2312,15 +2364,17 @@ const styles = `
     }
 
     .main-photo {
-      height: 260px;
+      height: 300px;
     }
 
     .thumb-row {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, minmax(78px, 1fr));
+      overflow-x: auto;
+      padding-bottom: 14px;
     }
 
     .thumb {
-      height: 76px;
+      height: 72px;
     }
 
     .title-section,
@@ -2344,6 +2398,12 @@ const styles = `
 
     .seller-facts {
       grid-template-columns: 1fr;
+    }
+
+    .primary-contact,
+    .phone-box {
+      min-height: 54px;
+      font-size: 15px;
     }
 
     .enquiry-modal {
