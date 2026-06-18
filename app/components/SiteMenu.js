@@ -70,7 +70,10 @@ export default function SiteMenu({ currentUser, onLogout }) {
           <Link href="/#guides" onClick={closeMenu}>
             Guides
           </Link>
-          <Link href={currentUser ? "/account" : "/login"} onClick={closeMenu}>
+          <Link
+            href={currentUser ? "/account?tab=saved" : "/login"}
+            onClick={closeMenu}
+          >
             Saved cars
           </Link>
 
@@ -118,6 +121,14 @@ export default function SiteMenu({ currentUser, onLogout }) {
           gap: 5px;
           cursor: pointer;
           box-shadow: 0 10px 24px rgba(14, 30, 70, 0.08);
+          transition: transform 0.18s ease, box-shadow 0.18s ease,
+            border-color 0.18s ease;
+        }
+
+        .menuButton:hover {
+          transform: translateY(-2px);
+          border-color: #cfdcff;
+          box-shadow: 0 14px 30px rgba(14, 30, 70, 0.12);
         }
 
         .menuButton span {
@@ -154,6 +165,7 @@ export default function SiteMenu({ currentUser, onLogout }) {
           display: grid;
           gap: 4px;
           backdrop-filter: blur(16px);
+          animation: menuEnter 0.2s ease both;
         }
 
         .menuPanel a,
@@ -201,11 +213,30 @@ export default function SiteMenu({ currentUser, onLogout }) {
           color: #ffffff;
         }
 
+        @keyframes menuEnter {
+          from {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.98);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
         @media (max-width: 700px) {
           .menuButton {
             width: 46px;
             height: 46px;
             border-radius: 14px;
+          }
+
+          .menuPanel {
+            position: fixed;
+            top: 72px;
+            right: 14px;
+            width: min(320px, calc(100vw - 28px));
           }
         }
       `}</style>
