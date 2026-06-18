@@ -90,11 +90,60 @@ export async function GET(request) {
     return NextResponse.json({ error: listingsError.message }, { status: 500 });
   }
 
+  const { data: savedRows, error: savedError } = await supabase
+    .from("kerb_saved_listings")
+    .select("*")
+    .eq("account_id", session.account_id)
+    .order("created_at", { ascending: false });
+
+  if (savedError) {
+    return NextResponse.json({ error: savedError.message }, { status: 500 });
+  }
+
+  const savedListingIds = [
+    ...new Set((savedRows || []).map((row) => row.listing_id)),
+  ];
+
+  let savedListings = [];
+
+  if (savedListingIds.length > 0) {
+    const { data: savedCars, error: savedCarsError } = await supabase
+      .from("kerb_listings")
+      .select("*")
+      .in("id", savedListingIds);
+
+    if (savedCarsError) {
+      return NextResponse.json(
+        { error: savedCarsError.message },
+        { status: 500 }
+      );
+    }
+
+    const savedCarsById = new Map(
+      (savedCars || []).map((listing) => [String(listing.id), listing])
+    );
+
+    savedListings = (savedRows || [])
+      .map((row) => {
+        const listing = savedCarsById.get(String(row.listing_id));
+
+        if (!listing) return null;
+
+        return {
+          ...listing,
+          saved_at: row.created_at,
+        };
+      })
+      .filter(Boolean);
+  }
+
   return NextResponse.json({
     account,
     email,
     sent_enquiries: sentEnquiries || [],
     received_enquiries: receivedEnquiries || [],
     my_listings: myListings || [],
+    saved_listings: savedListings,
+    saved_listing_ids: savedListingIds,
   });
 }
