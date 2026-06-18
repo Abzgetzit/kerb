@@ -1,4 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import {
+  createListingSubmittedEmail,
+  getListingTitle,
+  getSiteUrl,
+  sendKerbEmail,
+} from "../../lib/kerb-email";
 
 export const runtime = "nodejs";
 
@@ -162,9 +168,22 @@ export async function POST(request) {
       );
     }
 
+    const siteUrl = getSiteUrl(request);
+    const sellerConfirmationEmail = await sendKerbEmail({
+      to: data.seller_email || data.account_email,
+      subject: `Kerb received your ${getListingTitle(data)} listing`,
+      html: createListingSubmittedEmail({
+        listing: data,
+        siteUrl,
+      }),
+    });
+
     return Response.json({
       success: true,
       listing: data,
+      emails: {
+        seller_confirmation: sellerConfirmationEmail,
+      },
     });
   } catch (error) {
     return Response.json(
