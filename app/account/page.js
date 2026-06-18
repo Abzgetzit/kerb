@@ -373,9 +373,10 @@ export default function AccountPage() {
                     </div>
                   </div>
 
-                  <Link href={`/listing/${car.id}`} className="cardLink">
-                    View listing
-                  </Link>
+                  <div className="cardActions listingActions">
+                    <Link href={`/listing/${car.id}`}>View listing</Link>
+                    <Link href={`/listing/${car.id}/edit`}>Edit listing</Link>
+                  </div>
                 </article>
               ))}
             </div>
@@ -908,6 +909,10 @@ const styles = `
   .cardActions a:nth-child(3) {
     background: #eef3ff;
     color: #0048ff;
+  }
+
+  .listingActions {
+    margin-top: 18px;
   }
 
   .emptyBox {
