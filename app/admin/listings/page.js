@@ -73,6 +73,29 @@ function getListingTitle(listing) {
   return title || listing.title || "Untitled listing";
 }
 
+function getFeatures(listing) {
+  if (Array.isArray(listing.features)) {
+    return listing.features.filter(Boolean);
+  }
+
+  if (typeof listing.features === "string" && listing.features.trim()) {
+    try {
+      const parsed = JSON.parse(listing.features);
+
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean);
+      }
+    } catch {
+      return listing.features
+        .split(",")
+        .map((feature) => feature.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
 export default function AdminListingsPage() {
   const [password, setPassword] = useState("");
   const [savedPassword, setSavedPassword] = useState("");
@@ -392,6 +415,7 @@ export default function AdminListingsPage() {
             const photos = getPhotos(listing);
             const status = normaliseStatus(listing.status);
             const isBusy = isUpdatingId === listing.id;
+            const features = getFeatures(listing);
 
             return (
               <article className="listingCard" key={listing.id}>
@@ -476,6 +500,18 @@ export default function AdminListingsPage() {
                       </strong>
                     </div>
                   </div>
+
+                  {features.length > 0 && (
+                    <div className="featuresBox">
+                      <h3>Selected features</h3>
+
+                      <div className="featureTags">
+                        {features.map((feature) => (
+                          <span key={feature}>{feature}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="sellerBox">
                     <h3>Seller details</h3>
@@ -899,6 +935,35 @@ const styles = `
     border-top: 1px solid #edf1f7;
     margin-top: 22px;
     padding-top: 22px;
+  }
+
+  .featuresBox {
+    border-top: 1px solid #edf1f7;
+    margin-top: 22px;
+    padding-top: 22px;
+  }
+
+  .featuresBox h3 {
+    margin: 0 0 14px;
+    font-size: 20px;
+  }
+
+  .featureTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .featureTags span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    border-radius: 999px;
+    background: #eef3ff;
+    color: #0048ff;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 900;
   }
 
   .sellerBox h3 {
