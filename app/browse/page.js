@@ -670,6 +670,11 @@ export default function BrowsePage() {
     sort !== "newest" ||
     Object.values(filters).some(Boolean);
 
+  const activeFilterCount =
+    Object.values(filters).filter(Boolean).length +
+    (search.trim() ? 1 : 0) +
+    (sort !== "newest" ? 1 : 0);
+
   return (
     <>
       <main className="browse-page">
@@ -791,7 +796,11 @@ export default function BrowsePage() {
               {isFilterPanelOpen ? "Hide filters" : "Filter cars"}
             </button>
 
-            <span>{hasActiveFilters ? "Filters active" : "Newest first"}</span>
+            <span>
+              {hasActiveFilters
+                ? `${activeFilterCount} active`
+                : `${visibleCars.length} cars`}
+            </span>
 
             {hasActiveFilters && (
               <button
@@ -1032,7 +1041,11 @@ export default function BrowsePage() {
                 const isSaving = savingListingIds.includes(listingId);
 
                 return (
-                  <article className="car-card" key={car.id || index}>
+                  <article
+                    className="car-card"
+                    key={car.id || index}
+                    style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
+                  >
                     <div className="image-wrap">
                       <img
                         src={image}
@@ -1292,6 +1305,14 @@ export default function BrowsePage() {
           padding: 0 16px;
           box-shadow: 0 8px 20px rgba(13, 23, 55, 0.04);
           min-width: 0;
+          transition: transform 0.18s ease, border-color 0.18s ease,
+            box-shadow 0.18s ease;
+        }
+
+        .filter-card:hover {
+          transform: translateY(-2px);
+          border-color: #d4def0;
+          box-shadow: 0 12px 28px rgba(13, 23, 55, 0.08);
         }
 
         .filter-card .svg-icon {
@@ -1338,6 +1359,15 @@ export default function BrowsePage() {
           align-items: center;
           justify-content: center;
           gap: 10px;
+          transition: transform 0.18s ease, box-shadow 0.18s ease,
+            background 0.18s ease;
+        }
+
+        .filter-button:hover,
+        .post-button:hover,
+        .view-link:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 34px rgba(8, 60, 255, 0.28);
         }
 
         .mobile-filter-toggle,
@@ -1445,6 +1475,7 @@ export default function BrowsePage() {
           border: 1px solid #e5ebf5;
           box-shadow: 0 12px 28px rgba(13, 23, 55, 0.06);
           transition: transform 0.18s ease, box-shadow 0.18s ease;
+          animation: browseCardIn 0.42s ease both;
         }
 
         .car-card:hover {
@@ -1464,6 +1495,11 @@ export default function BrowsePage() {
           height: 100%;
           object-fit: cover;
           display: block;
+          transition: transform 0.32s ease;
+        }
+
+        .car-card:hover .image-wrap img {
+          transform: scale(1.035);
         }
 
         .seller-badge {
@@ -1702,6 +1738,18 @@ export default function BrowsePage() {
           }
         }
 
+        @keyframes browseCardIn {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @media (max-width: 1450px) {
           .topbar {
             padding: 0 18px;
@@ -1882,12 +1930,17 @@ export default function BrowsePage() {
           }
 
           .filters-panel {
-            display: none;
+            display: block;
             margin-top: 12px;
+            animation: panelIn 0.24s ease both;
           }
 
-          .filters-section.filters-open .filters-panel {
-            display: block;
+          .filters-grid {
+            display: none;
+          }
+
+          .filters-section.filters-open .filters-grid {
+            display: grid;
           }
 
           .filters-grid {
@@ -1923,6 +1976,18 @@ export default function BrowsePage() {
 
           .image-wrap {
             height: 220px;
+          }
+        }
+
+        @keyframes panelIn {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>
