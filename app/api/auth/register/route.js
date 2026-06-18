@@ -2,6 +2,11 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import {
+  createAccountWelcomeEmail,
+  getSiteUrl,
+  sendKerbEmail,
+} from "../../../lib/kerb-email";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -142,11 +147,23 @@ export async function POST(request) {
 
   try {
     const sessionToken = await createSession(account);
+    const siteUrl = getSiteUrl(request);
+    const welcomeEmail = await sendKerbEmail({
+      to: account.email,
+      subject: "Welcome to Kerb",
+      html: createAccountWelcomeEmail({
+        name: account.full_name,
+        siteUrl,
+      }),
+    });
 
     return NextResponse.json({
       success: true,
       account,
       session_token: sessionToken,
+      emails: {
+        welcome: welcomeEmail,
+      },
     });
   } catch (error) {
     return NextResponse.json(
