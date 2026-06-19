@@ -549,53 +549,6 @@ export default function ListingPage() {
       : null,
   ].filter(Boolean);
 
-  const overviewItems = [
-    {
-      label: "Make",
-      value: car?.make,
-    },
-    {
-      label: "Model",
-      value: car?.model,
-    },
-    {
-      label: "Year",
-      value: year,
-    },
-    mileage
-      ? {
-          label: "Mileage",
-          value: `${formatNumber(mileage)} miles`,
-        }
-      : null,
-    {
-      label: "Fuel type",
-      value: fuel,
-    },
-    {
-      label: "Gearbox",
-      value: gearbox,
-    },
-    {
-      label: "Body type",
-      value: bodyType,
-    },
-    {
-      label: "Condition",
-      value: condition,
-    },
-    {
-      label: "Location",
-      value: location,
-    },
-    {
-      label: "Finance",
-      value: financeAvailable
-        ? "Advertised by seller/dealer"
-        : "Not advertised",
-    },
-  ].filter((item) => item && item.value);
-
   const listingItems = [
     {
       label: "Seller type",
@@ -982,22 +935,6 @@ export default function ListingPage() {
 
             <section className="details-card">
               <div className="section-heading">
-                <span>Key information</span>
-                <h2>Vehicle details</h2>
-              </div>
-
-              <div className="detail-grid">
-                {overviewItems.map((item) => (
-                  <div className="detail-item" key={item.label}>
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="details-card">
-              <div className="section-heading">
                 <span>Seller notes</span>
                 <h2>Description</h2>
               </div>
@@ -1285,7 +1222,7 @@ function Header({ currentUser, onLogout }) {
           Browse cars
         </Link>
 
-        <Link href="/browse?condition=new" className="nav-item">
+        <Link href="/browse?category=newer-car" className="nav-item">
           <SvgIcon name="new" />
           New cars
         </Link>
@@ -1295,7 +1232,7 @@ function Header({ currentUser, onLogout }) {
           Sell your car
         </Link>
 
-        <Link href="/browse?fuel=electric" className="nav-item">
+        <Link href="/browse?category=electric-hybrid" className="nav-item">
           <SvgIcon name="electric" />
           Electric
         </Link>
