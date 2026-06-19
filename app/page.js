@@ -13,6 +13,8 @@ const supabase =
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
 
+const currentYear = new Date().getFullYear();
+
 function Icon({ name }) {
   const icons = {
     car: (
@@ -229,6 +231,141 @@ function carTitle(car) {
   );
 }
 
+function getCarPrice(car) {
+  return Number(car.price || car.asking_price || car.listing_price || 0);
+}
+
+function normaliseCategory(value) {
+  const category = String(value || "").trim().toLowerCase();
+
+  return [
+    "general",
+    "first-car",
+    "performance",
+    "family-suv",
+    "electric-hybrid",
+    "newer-car",
+  ].includes(category)
+    ? category
+    : "";
+}
+
+function categoryText(car) {
+  return [
+    car.title,
+    car.make,
+    car.model,
+    car.variant,
+    car.model_detail,
+    car.fuel,
+    car.fuel_type,
+    car.body_type,
+    car.condition,
+    car.description,
+    Array.isArray(car.features) ? car.features.join(" ") : car.features,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function includesAny(text, terms) {
+  return terms.some((term) => text.includes(term));
+}
+
+function listingMatchesCategory(car, category) {
+  const selectedCategory = normaliseCategory(category);
+
+  if (!selectedCategory || selectedCategory === "general") return true;
+
+  const listingCategory = normaliseCategory(car.listing_category);
+
+  if (listingCategory === selectedCategory) return true;
+
+  const text = categoryText(car);
+  const fuel = String(car.fuel || car.fuel_type || "").toLowerCase();
+  const bodyType = String(car.body_type || "").toLowerCase();
+  const condition = String(car.condition || "").toLowerCase();
+  const price = getCarPrice(car);
+  const year = Number(car.year || car.registration_year || 0);
+
+  if (selectedCategory === "first-car") {
+    return (
+      (price > 0 && price <= 8000) ||
+      includesAny(text, [
+        "first car",
+        "learner",
+        "cheap insurance",
+        "low insurance",
+        "new driver",
+      ])
+    );
+  }
+
+  if (selectedCategory === "performance") {
+    return includesAny(text, [
+      "performance",
+      "m sport",
+      "amg",
+      "s line",
+      "gti",
+      "gtd",
+      "golf r",
+      "m135",
+      "m140",
+      "m240",
+      "m340",
+      "m3",
+      "m4",
+      "m5",
+      "rs3",
+      "rs4",
+      "rs5",
+      "s3",
+      "s4",
+      "s5",
+      "type r",
+      "vrs",
+      "cupra",
+      "nismo",
+    ]);
+  }
+
+  if (selectedCategory === "family-suv") {
+    return (
+      bodyType.includes("suv") ||
+      bodyType.includes("4x4") ||
+      includesAny(text, ["family suv", "seven seats", "7 seats"])
+    );
+  }
+
+  if (selectedCategory === "electric-hybrid") {
+    return fuel.includes("electric") || fuel.includes("hybrid");
+  }
+
+  if (selectedCategory === "newer-car") {
+    return (
+      condition.includes("new") ||
+      condition.includes("nearly new") ||
+      year >= currentYear - 1
+    );
+  }
+
+  return false;
+}
+
+function getCategoryImage(category, listings) {
+  const match = listings.find(
+    (car) =>
+      listingMatchesCategory(car, category) &&
+      getListingImage(car) !== "/cars/hero-car.png"
+  );
+
+  return match
+    ? getListingImage(match)
+    : getListingImage(listings[0] || {});
+}
+
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [approvedListings, setApprovedListings] = useState([]);
@@ -238,36 +375,48 @@ export default function HomePage() {
   const [newsletterMessage, setNewsletterMessage] = useState("");
 
   const categories = [
-    [
-      "car",
-      "Browse cars",
-      "Search cars listed on Kerb",
-      "/browse",
-    ],
-    [
-      "new",
-      "New cars",
-      "Browse newer cars listed on Kerb",
-      "/browse?condition=new",
-    ],
-    [
-      "electric",
-      "Electric cars",
-      "Find electric and hybrid cars",
-      "/browse?fuel=electric",
-    ],
-    [
-      "body",
-      "Family SUVs",
-      "Practical cars for everyday life",
-      "/browse?body_type=SUV",
-    ],
-    [
-      "mileage",
-      "Performance",
-      "Powerful cars built for driving",
-      "/browse?keyword=performance",
-    ],
+    {
+      icon: "car",
+      title: "Browse cars",
+      text: "Search cars listed on Kerb",
+      href: "/browse",
+      category: "general",
+    },
+    {
+      icon: "new",
+      title: "New cars",
+      text: "Browse newer cars listed on Kerb",
+      href: "/browse?category=newer-car",
+      category: "newer-car",
+    },
+    {
+      icon: "electric",
+      title: "Electric cars",
+      text: "Find electric and hybrid cars",
+      href: "/browse?category=electric-hybrid",
+      category: "electric-hybrid",
+    },
+    {
+      icon: "body",
+      title: "Family SUVs",
+      text: "Practical cars for everyday life",
+      href: "/browse?category=family-suv",
+      category: "family-suv",
+    },
+    {
+      icon: "shield",
+      title: "First cars",
+      text: "Affordable, easy-going picks",
+      href: "/browse?category=first-car",
+      category: "first-car",
+    },
+    {
+      icon: "mileage",
+      title: "Performance",
+      text: "Powerful cars built for driving",
+      href: "/browse?category=performance",
+      category: "performance",
+    },
   ];
 
   useEffect(() => {
@@ -372,7 +521,7 @@ export default function HomePage() {
             <Icon name="car" /> Browse cars
           </Link>
 
-          <Link href="/browse?condition=new">
+          <Link href="/browse?category=newer-car">
             <Icon name="new" /> New cars
           </Link>
 
@@ -380,7 +529,7 @@ export default function HomePage() {
             <Icon name="sell" /> Sell your car
           </Link>
 
-          <Link href="/browse?fuel=electric">
+          <Link href="/browse?category=electric-hybrid">
             <Icon name="electric" /> Electric
           </Link>
 
@@ -503,15 +652,22 @@ export default function HomePage() {
       </section>
 
       <section className="categories">
-        {categories.map((item, index) => (
-          <Link className="categoryCard" href={item[3]} key={index}>
-            <div className="categoryIcon">
-              <Icon name={item[0]} />
+        {categories.map((item) => (
+          <Link className="categoryCard" href={item.href} key={item.title}>
+            <div className="categoryImage">
+              <img
+                src={getCategoryImage(item.category, approvedListings)}
+                alt=""
+              />
+
+              <span>
+                <Icon name={item.icon} />
+              </span>
             </div>
 
             <div>
-              <h3>{item[1]}</h3>
-              <p>{item[2]}</p>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
             </div>
 
             <span className="arrow">›</span>
@@ -705,7 +861,7 @@ export default function HomePage() {
             <p>Browse approved listings and contact sellers directly.</p>
           </Link>
 
-          <Link href="/browse?fuel=electric" className="guideCard">
+          <Link href="/browse?category=electric-hybrid" className="guideCard">
             <Icon name="electric" />
             <h3>Electric cars</h3>
             <p>Filter Kerb listings to find electric and hybrid cars.</p>
@@ -1069,24 +1225,27 @@ export default function HomePage() {
 
         .categories {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 16px;
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+          gap: 14px;
           margin: 20px 0;
         }
 
         .categoryCard {
-          display: flex;
+          display: grid;
+          grid-template-columns: 76px minmax(0, 1fr) auto;
           align-items: center;
-          gap: 14px;
+          gap: 12px;
           background: white;
           border: 1px solid #e6ebf4;
           border-radius: 18px;
-          padding: 16px;
+          padding: 12px;
           box-shadow: 0 8px 25px rgba(10, 20, 40, 0.04);
           text-decoration: none;
           color: inherit;
           transition: transform 0.18s ease, box-shadow 0.18s ease,
             border-color 0.18s ease;
+          min-width: 0;
+          min-height: 82px;
         }
 
         .categoryCard:hover {
@@ -1095,26 +1254,51 @@ export default function HomePage() {
           border-color: #d6e1f4;
         }
 
-        .categoryIcon {
-          width: 52px;
-          height: 46px;
+        .categoryImage {
+          width: 76px;
+          height: 54px;
           border-radius: 14px;
           background: #edf3ff;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .categoryImage img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .categoryImage span {
+          position: absolute;
+          left: 6px;
+          bottom: 6px;
+          width: 24px;
+          height: 24px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.92);
           color: #0048ff;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
+          box-shadow: 0 6px 12px rgba(10, 20, 40, 0.12);
+        }
+
+        .categoryImage .icon {
+          width: 15px;
+          height: 15px;
         }
 
         .categoryCard h3 {
           margin: 0 0 4px;
-          font-size: 15px;
+          font-size: 14px;
+          line-height: 1.1;
         }
 
         .categoryCard p {
           margin: 0;
-          font-size: 12px;
+          font-size: 11px;
           color: #657189;
           line-height: 1.35;
         }
