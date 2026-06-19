@@ -13,8 +13,6 @@ const supabase =
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
 
-const currentYear = new Date().getFullYear();
-
 function Icon({ name }) {
   const icons = {
     car: (
@@ -231,141 +229,6 @@ function carTitle(car) {
   );
 }
 
-function getCarPrice(car) {
-  return Number(car.price || car.asking_price || car.listing_price || 0);
-}
-
-function normaliseCategory(value) {
-  const category = String(value || "").trim().toLowerCase();
-
-  return [
-    "general",
-    "first-car",
-    "performance",
-    "family-suv",
-    "electric-hybrid",
-    "newer-car",
-  ].includes(category)
-    ? category
-    : "";
-}
-
-function categoryText(car) {
-  return [
-    car.title,
-    car.make,
-    car.model,
-    car.variant,
-    car.model_detail,
-    car.fuel,
-    car.fuel_type,
-    car.body_type,
-    car.condition,
-    car.description,
-    Array.isArray(car.features) ? car.features.join(" ") : car.features,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
-function includesAny(text, terms) {
-  return terms.some((term) => text.includes(term));
-}
-
-function listingMatchesCategory(car, category) {
-  const selectedCategory = normaliseCategory(category);
-
-  if (!selectedCategory || selectedCategory === "general") return true;
-
-  const listingCategory = normaliseCategory(car.listing_category);
-
-  if (listingCategory === selectedCategory) return true;
-
-  const text = categoryText(car);
-  const fuel = String(car.fuel || car.fuel_type || "").toLowerCase();
-  const bodyType = String(car.body_type || "").toLowerCase();
-  const condition = String(car.condition || "").toLowerCase();
-  const price = getCarPrice(car);
-  const year = Number(car.year || car.registration_year || 0);
-
-  if (selectedCategory === "first-car") {
-    return (
-      (price > 0 && price <= 8000) ||
-      includesAny(text, [
-        "first car",
-        "learner",
-        "cheap insurance",
-        "low insurance",
-        "new driver",
-      ])
-    );
-  }
-
-  if (selectedCategory === "performance") {
-    return includesAny(text, [
-      "performance",
-      "m sport",
-      "amg",
-      "s line",
-      "gti",
-      "gtd",
-      "golf r",
-      "m135",
-      "m140",
-      "m240",
-      "m340",
-      "m3",
-      "m4",
-      "m5",
-      "rs3",
-      "rs4",
-      "rs5",
-      "s3",
-      "s4",
-      "s5",
-      "type r",
-      "vrs",
-      "cupra",
-      "nismo",
-    ]);
-  }
-
-  if (selectedCategory === "family-suv") {
-    return (
-      bodyType.includes("suv") ||
-      bodyType.includes("4x4") ||
-      includesAny(text, ["family suv", "seven seats", "7 seats"])
-    );
-  }
-
-  if (selectedCategory === "electric-hybrid") {
-    return fuel.includes("electric") || fuel.includes("hybrid");
-  }
-
-  if (selectedCategory === "newer-car") {
-    return (
-      condition.includes("new") ||
-      condition.includes("nearly new") ||
-      year >= currentYear - 1
-    );
-  }
-
-  return false;
-}
-
-function getCategoryImage(category, listings) {
-  const match = listings.find(
-    (car) =>
-      listingMatchesCategory(car, category) &&
-      getListingImage(car) !== "/cars/hero-car.png"
-  );
-
-  return match
-    ? getListingImage(match)
-    : getListingImage(listings[0] || {});
-}
-
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [approvedListings, setApprovedListings] = useState([]);
@@ -381,6 +244,7 @@ export default function HomePage() {
       text: "Search cars listed on Kerb",
       href: "/browse",
       category: "general",
+      image: "/cars/category-browse.svg",
     },
     {
       icon: "new",
@@ -388,6 +252,7 @@ export default function HomePage() {
       text: "Browse newer cars listed on Kerb",
       href: "/browse?category=newer-car",
       category: "newer-car",
+      image: "/cars/category-new.svg",
     },
     {
       icon: "electric",
@@ -395,6 +260,7 @@ export default function HomePage() {
       text: "Find electric and hybrid cars",
       href: "/browse?category=electric-hybrid",
       category: "electric-hybrid",
+      image: "/cars/category-electric.svg",
     },
     {
       icon: "body",
@@ -402,6 +268,7 @@ export default function HomePage() {
       text: "Practical cars for everyday life",
       href: "/browse?category=family-suv",
       category: "family-suv",
+      image: "/cars/category-family-suv.svg",
     },
     {
       icon: "shield",
@@ -409,6 +276,7 @@ export default function HomePage() {
       text: "Affordable, easy-going picks",
       href: "/browse?category=first-car",
       category: "first-car",
+      image: "/cars/category-first-car.svg",
     },
     {
       icon: "mileage",
@@ -416,6 +284,7 @@ export default function HomePage() {
       text: "Powerful cars built for driving",
       href: "/browse?category=performance",
       category: "performance",
+      image: "/cars/category-performance.svg",
     },
   ];
 
@@ -655,10 +524,7 @@ export default function HomePage() {
         {categories.map((item) => (
           <Link className="categoryCard" href={item.href} key={item.title}>
             <div className="categoryImage">
-              <img
-                src={getCategoryImage(item.category, approvedListings)}
-                alt=""
-              />
+              <img src={item.image} alt="" />
 
               <span>
                 <Icon name={item.icon} />
