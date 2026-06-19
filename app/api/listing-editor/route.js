@@ -27,6 +27,15 @@ const allowedFeatures = new Set([
   "Blind spot monitoring",
 ]);
 
+const allowedListingCategories = new Set([
+  "general",
+  "first-car",
+  "performance",
+  "family-suv",
+  "electric-hybrid",
+  "newer-car",
+]);
+
 function cleanText(value) {
   if (value === null || value === undefined) return "";
 
@@ -70,6 +79,12 @@ function cleanFeatures(value) {
         .filter((feature) => feature && allowedFeatures.has(feature))
     ),
   ];
+}
+
+function cleanListingCategory(value) {
+  const category = cleanText(value);
+
+  return allowedListingCategories.has(category) ? category : "general";
 }
 
 function getToken(request) {
@@ -354,6 +369,7 @@ export async function PATCH(request) {
       fuel_type: nullableText(body.fuel_type),
       gearbox: nullableText(body.gearbox),
       features,
+      listing_category: cleanListingCategory(body.listing_category),
     };
 
     const { data: updatedListing, error: updateError } = await verified.supabase
