@@ -66,6 +66,21 @@ const allowedFeatures = new Set([
   "Blind spot monitoring",
 ]);
 
+const allowedListingCategories = new Set([
+  "general",
+  "first-car",
+  "performance",
+  "family-suv",
+  "electric-hybrid",
+  "newer-car",
+]);
+
+function cleanListingCategory(value) {
+  const category = cleanText(value);
+
+  return allowedListingCategories.has(category) ? category : "general";
+}
+
 function cleanFeatures(formData) {
   return [
     ...new Set(
@@ -152,6 +167,9 @@ export async function POST(request) {
     const location = cleanText(formData.get("location"));
     const financeAvailable = cleanBoolean(formData.get("finance_available"));
     const features = cleanFeatures(formData);
+    const listingCategory = cleanListingCategory(
+      formData.get("listing_category")
+    );
 
     const title = [year, make, model].filter(Boolean).join(" ");
 
@@ -179,6 +197,7 @@ export async function POST(request) {
       asking_price: askingPrice,
       price: askingPrice,
       location,
+      listing_category: listingCategory,
 
       finance_available: financeAvailable,
 
