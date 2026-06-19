@@ -29,6 +29,16 @@ function formatMileage(value) {
   return `${new Intl.NumberFormat("en-GB").format(number)} miles`;
 }
 
+function formatDate(value) {
+  if (!value) return "Unknown";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "Unknown";
+
+  return date.toLocaleDateString("en-GB");
+}
+
 function getPhotos(listing) {
   const possiblePhotoFields = [
     listing.photo_urls,
@@ -96,6 +106,59 @@ function getFeatures(listing) {
   return [];
 }
 
+function getStatusNotice(status, result) {
+  if (status === "approved") {
+    const liveEmail = result?.emails?.listing_live;
+
+    if (liveEmail?.sent) {
+      return {
+        type: "success",
+        message: "Listing approved and the seller live email was sent.",
+      };
+    }
+
+    if (liveEmail?.skipped || liveEmail?.error) {
+      return {
+        type: "warning",
+        message: `Listing approved, but the seller live email was not sent${
+          liveEmail?.error ? `: ${liveEmail.error}` : "."
+        }`,
+      };
+    }
+
+    return {
+      type: "success",
+      message: "Listing approved.",
+    };
+  }
+
+  if (status === "pending") {
+    return {
+      type: "success",
+      message: "Listing moved back to pending.",
+    };
+  }
+
+  if (status === "sold") {
+    return {
+      type: "success",
+      message: "Listing marked as sold and removed from public browse results.",
+    };
+  }
+
+  if (status === "rejected") {
+    return {
+      type: "success",
+      message: "Listing rejected and kept out of public browse results.",
+    };
+  }
+
+  return {
+    type: "success",
+    message: "Listing updated.",
+  };
+}
+
 export default function AdminListingsPage() {
   const [password, setPassword] = useState("");
   const [savedPassword, setSavedPassword] = useState("");
@@ -103,6 +166,7 @@ export default function AdminListingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingId, setIsUpdatingId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [notice, setNotice] = useState(null);
   const [filter, setFilter] = useState("pending");
 
   useEffect(() => {
@@ -168,6 +232,7 @@ export default function AdminListingsPage() {
 
     setIsUpdatingId(id);
     setErrorMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch("/api/admin/listings", {
@@ -197,6 +262,7 @@ export default function AdminListingsPage() {
       );
 
       await fetchListings(savedPassword);
+      setNotice(getStatusNotice(cleanStatus, result));
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
@@ -213,6 +279,7 @@ export default function AdminListingsPage() {
 
     setIsUpdatingId(id);
     setErrorMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch("/api/admin/listings", {
@@ -233,6 +300,10 @@ export default function AdminListingsPage() {
       setListings((currentListings) =>
         currentListings.filter((listing) => listing.id !== id)
       );
+      setNotice({
+        type: "success",
+        message: "Listing deleted permanently.",
+      });
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
@@ -337,7 +408,8 @@ export default function AdminListingsPage() {
           <h1>Review car listings</h1>
           <p>
             New submissions stay pending until you approve them. Approved cars
-            appear publicly on the browse page. Bad listings can be deleted.
+            appear publicly on the browse page. Bad listings can be rejected or
+            deleted.
           </p>
         </div>
 
@@ -353,6 +425,10 @@ export default function AdminListingsPage() {
           <div>
             <span>Sold</span>
             <strong>{counts.sold}</strong>
+          </div>
+          <div>
+            <span>Rejected</span>
+            <strong>{counts.rejected}</strong>
           </div>
           <div>
             <span>Total</span>
@@ -383,14 +459,12 @@ export default function AdminListingsPage() {
           Sold ({counts.sold})
         </button>
 
-        {counts.rejected > 0 && (
-          <button
-            className={filter === "rejected" ? "active" : ""}
-            onClick={() => setFilter("rejected")}
-          >
-            Rejected ({counts.rejected})
-          </button>
-        )}
+        <button
+          className={filter === "rejected" ? "active" : ""}
+          onClick={() => setFilter("rejected")}
+        >
+          Rejected ({counts.rejected})
+        </button>
 
         <button
           className={filter === "all" ? "active" : ""}
@@ -401,6 +475,9 @@ export default function AdminListingsPage() {
       </section>
 
       {errorMessage && <div className="errorBox">{errorMessage}</div>}
+      {notice?.message && (
+        <div className={`noticeBox ${notice.type}`}>{notice.message}</div>
+      )}
 
       {isLoading ? (
         <div className="emptyBox">Loading listings...</div>
@@ -416,6 +493,8 @@ export default function AdminListingsPage() {
             const status = normaliseStatus(listing.status);
             const isBusy = isUpdatingId === listing.id;
             const features = getFeatures(listing);
+            const submittedDate = formatDate(listing.created_at);
+            const soldDate = listing.sold_at ? formatDate(listing.sold_at) : "";
 
             return (
               <article className="listingCard" key={listing.id}>
@@ -491,14 +570,15 @@ export default function AdminListingsPage() {
 
                     <div>
                       <span>Submitted</span>
-                      <strong>
-                        {listing.created_at
-                          ? new Date(listing.created_at).toLocaleDateString(
-                              "en-GB"
-                            )
-                          : "Unknown"}
-                      </strong>
+                      <strong>{submittedDate}</strong>
                     </div>
+
+                    {soldDate && (
+                      <div>
+                        <span>Sold</span>
+                        <strong>{soldDate}</strong>
+                      </div>
+                    )}
                   </div>
 
                   {features.length > 0 && (
@@ -549,6 +629,14 @@ export default function AdminListingsPage() {
                     </button>
 
                     <button
+                      className="rejectBtn"
+                      disabled={isBusy}
+                      onClick={() => updateStatus(listing.id, "rejected")}
+                    >
+                      Reject
+                    </button>
+
+                    <button
                       className="pendingBtn"
                       disabled={isBusy}
                       onClick={() => updateStatus(listing.id, "pending")}
@@ -563,6 +651,15 @@ export default function AdminListingsPage() {
                     >
                       Mark sold
                     </button>
+
+                    <a
+                      className="viewBtn"
+                      href={`/listing/${listing.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View listing
+                    </a>
 
                     <button
                       className="deleteBtn"
@@ -703,7 +800,7 @@ const styles = `
 
   .statsGrid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 14px;
   }
 
@@ -800,6 +897,26 @@ const styles = `
     padding: 14px 16px;
     font-weight: 800;
     margin-bottom: 18px;
+  }
+
+  .noticeBox {
+    border-radius: 16px;
+    padding: 15px 18px;
+    font-weight: 900;
+    margin: -8px 0 20px;
+    line-height: 1.45;
+  }
+
+  .noticeBox.success {
+    background: #eafaf0;
+    color: #137333;
+    border: 1px solid #c9efd6;
+  }
+
+  .noticeBox.warning {
+    background: #fff7e8;
+    color: #a15c00;
+    border: 1px solid #ffe0a8;
   }
 
   .listingsGrid {
@@ -986,6 +1103,15 @@ const styles = `
     font-weight: 900;
   }
 
+  .actionRow a {
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-weight: 900;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+
   .actionRow button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -994,6 +1120,11 @@ const styles = `
   .approveBtn {
     background: #13a538;
     color: white;
+  }
+
+  .rejectBtn {
+    background: #fff1f1;
+    color: #b42318;
   }
 
   .pendingBtn {
@@ -1009,6 +1140,11 @@ const styles = `
   .deleteBtn {
     background: #ffe9e9;
     color: #b42318;
+  }
+
+  .viewBtn {
+    background: #eef3ff;
+    color: #0048ff;
   }
 
   @media (max-width: 900px) {
