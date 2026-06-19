@@ -55,13 +55,13 @@ export default function SiteMenu({ currentUser, onLogout }) {
           <Link href="/browse" onClick={closeMenu}>
             Browse cars
           </Link>
-          <Link href="/browse?condition=new" onClick={closeMenu}>
+          <Link href="/browse?category=newer-car" onClick={closeMenu}>
             New cars
           </Link>
           <Link href="/post-car" onClick={closeMenu}>
             Sell your car
           </Link>
-          <Link href="/browse?fuel=electric" onClick={closeMenu}>
+          <Link href="/browse?category=electric-hybrid" onClick={closeMenu}>
             Electric
           </Link>
           <Link href="/browse?finance=true" onClick={closeMenu}>
