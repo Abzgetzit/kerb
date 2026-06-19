@@ -80,6 +80,44 @@ export async function GET(request) {
     return NextResponse.json({ error: receivedError.message }, { status: 500 });
   }
 
+  const enquiryListingIds = [
+    ...new Set(
+      [...(sentEnquiries || []), ...(receivedEnquiries || [])]
+        .map((enquiry) => enquiry.listing_id)
+        .filter(Boolean)
+        .map((listingId) => String(listingId))
+    ),
+  ];
+
+  let enquiryListingsById = new Map();
+
+  if (enquiryListingIds.length > 0) {
+    const { data: enquiryListings, error: enquiryListingsError } =
+      await supabase
+        .from("kerb_listings")
+        .select("*")
+        .in("id", enquiryListingIds);
+
+    if (enquiryListingsError) {
+      return NextResponse.json(
+        { error: enquiryListingsError.message },
+        { status: 500 }
+      );
+    }
+
+    enquiryListingsById = new Map(
+      (enquiryListings || []).map((listing) => [String(listing.id), listing])
+    );
+  }
+
+  function attachListing(enquiries = []) {
+    return enquiries.map((enquiry) => ({
+      ...enquiry,
+      listing:
+        enquiryListingsById.get(String(enquiry.listing_id || "")) || null,
+    }));
+  }
+
   const { data: myListings, error: listingsError } = await supabase
     .from("kerb_listings")
     .select("*")
@@ -140,8 +178,8 @@ export async function GET(request) {
   return NextResponse.json({
     account,
     email,
-    sent_enquiries: sentEnquiries || [],
-    received_enquiries: receivedEnquiries || [],
+    sent_enquiries: attachListing(sentEnquiries || []),
+    received_enquiries: attachListing(receivedEnquiries || []),
     my_listings: myListings || [],
     saved_listings: savedListings,
     saved_listing_ids: savedListingIds,
