@@ -55,6 +55,14 @@ const conditionOptions = [
 
 const fuelOptions = ["Petrol", "Diesel", "Hybrid", "Electric"];
 const gearboxOptions = ["Manual", "Automatic"];
+const listingCategoryOptions = [
+  { value: "general", label: "General listing" },
+  { value: "first-car", label: "First car" },
+  { value: "performance", label: "Performance" },
+  { value: "family-suv", label: "Family SUV" },
+  { value: "electric-hybrid", label: "Electric or hybrid" },
+  { value: "newer-car", label: "Newer car" },
+];
 
 const emptyForm = {
   asking_price: "",
@@ -67,6 +75,7 @@ const emptyForm = {
   location: "",
   fuel_type: "",
   gearbox: "",
+  listing_category: "general",
   features: [],
 };
 
@@ -209,6 +218,7 @@ export default function EditListingPage() {
           location: car.location || "",
           fuel_type: car.fuel_type || car.fuel || "",
           gearbox: car.gearbox || car.transmission || "",
+          listing_category: car.listing_category || "general",
           features: getFeatures(car),
         });
       } catch (error) {
@@ -470,6 +480,22 @@ export default function EditListingPage() {
               >
                 <option value="false">No</option>
                 <option value="true">Yes</option>
+              </select>
+            </label>
+
+            <label>
+              Best fit
+              <select
+                value={form.listing_category}
+                onChange={(event) =>
+                  updateField("listing_category", event.target.value)
+                }
+              >
+                {listingCategoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
