@@ -244,7 +244,7 @@ export default function HomePage() {
       text: "Search cars listed on Kerb",
       href: "/browse",
       category: "general",
-      image: "/cars/category-browse.svg",
+      image: "/cars/category-browse.jpg",
     },
     {
       icon: "new",
@@ -252,7 +252,7 @@ export default function HomePage() {
       text: "Browse newer cars listed on Kerb",
       href: "/browse?category=newer-car",
       category: "newer-car",
-      image: "/cars/category-new.svg",
+      image: "/cars/category-new.jpg",
     },
     {
       icon: "electric",
@@ -260,7 +260,7 @@ export default function HomePage() {
       text: "Find electric and hybrid cars",
       href: "/browse?category=electric-hybrid",
       category: "electric-hybrid",
-      image: "/cars/category-electric.svg",
+      image: "/cars/category-electric.jpg",
     },
     {
       icon: "body",
@@ -268,7 +268,7 @@ export default function HomePage() {
       text: "Practical cars for everyday life",
       href: "/browse?category=family-suv",
       category: "family-suv",
-      image: "/cars/category-family-suv.svg",
+      image: "/cars/category-family-suv.jpg",
     },
     {
       icon: "shield",
@@ -276,7 +276,7 @@ export default function HomePage() {
       text: "Affordable, easy-going picks",
       href: "/browse?category=first-car",
       category: "first-car",
-      image: "/cars/category-first-car.svg",
+      image: "/cars/category-first-car.jpg",
     },
     {
       icon: "mileage",
@@ -284,7 +284,7 @@ export default function HomePage() {
       text: "Powerful cars built for driving",
       href: "/browse?category=performance",
       category: "performance",
-      image: "/cars/category-performance.svg",
+      image: "/cars/category-performance.jpg",
     },
   ];
 
