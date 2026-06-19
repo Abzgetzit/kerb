@@ -107,9 +107,14 @@ export async function PATCH(request) {
     );
   }
 
+  const updates = {
+    status,
+    sold_at: status === "sold" ? new Date().toISOString() : null,
+  };
+
   const { data, error } = await supabase
     .from("kerb_listings")
-    .update({ status })
+    .update(updates)
     .eq("id", id)
     .select("*")
     .single();
@@ -134,6 +139,7 @@ export async function PATCH(request) {
   }
 
   return NextResponse.json({
+    success: true,
     listing: data,
     emails: {
       listing_live: liveEmail,
