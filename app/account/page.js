@@ -746,14 +746,34 @@ function ListingMiniCard({ car, mode }) {
 
 function EnquiryCard({ enquiry, mode }) {
   const status = normaliseStatus(enquiry.status);
+  const listing = enquiry.listing || {};
+  const listingTitle = enquiry.listing_title || getTitle(listing);
+  const listingPrice = listing.price || listing.asking_price;
+  const listingLocation = listing.location || listing.city || "";
 
   return (
-    <article className="card">
-      <span className={`status ${status}`}>{status}</span>
+    <article className="card enquiryCard">
+      <div className="enquiryHeader">
+        <Link href={`/listing/${enquiry.listing_id}`} className="enquiryImage">
+          <img
+            src={getImage(listing)}
+            alt={listingTitle}
+            onError={(event) => {
+              event.currentTarget.src = "/cars/hero-car.png";
+            }}
+          />
+        </Link>
 
-      <h3>{enquiry.listing_title || "Kerb listing"}</h3>
-
-      <p>{formatDate(enquiry.created_at)}</p>
+        <div>
+          <span className={`status ${status}`}>{status}</span>
+          <h3>{listingTitle}</h3>
+          <p>
+            {formatDate(enquiry.created_at)}
+            {listingPrice ? ` · ${formatPrice(listingPrice)}` : ""}
+            {listingLocation ? ` · ${listingLocation}` : ""}
+          </p>
+        </div>
+      </div>
 
       <div className="messageBox">
         <span>{mode === "sent" ? "Your message" : "Buyer message"}</span>
@@ -808,6 +828,16 @@ function EnquiryCard({ enquiry, mode }) {
 
         {mode === "received" && enquiry.buyer_phone && (
           <a href={`tel:${enquiry.buyer_phone}`}>Call buyer</a>
+        )}
+
+        {mode === "sent" && enquiry.seller_email && (
+          <a
+            href={`mailto:${enquiry.seller_email}?subject=Kerb enquiry about ${encodeURIComponent(
+              listingTitle
+            )}`}
+          >
+            Email seller
+          </a>
         )}
       </div>
     </article>
@@ -1118,6 +1148,53 @@ const styles = `
     overflow: hidden;
   }
 
+  .enquiryCard {
+    display: grid;
+    gap: 16px;
+  }
+
+  .enquiryHeader {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 16px;
+    align-items: center;
+  }
+
+  .enquiryImage {
+    display: block;
+    width: 150px;
+    aspect-ratio: 16 / 10;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #eef2f7;
+    border: 1px solid #e5eaf4;
+  }
+
+  .enquiryImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.28s ease;
+  }
+
+  .enquiryCard:hover .enquiryImage img {
+    transform: scale(1.035);
+  }
+
+  .enquiryHeader .status {
+    margin-bottom: 8px;
+  }
+
+  .enquiryHeader h3 {
+    margin-bottom: 6px;
+  }
+
+  .enquiryHeader p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
   .cardImage img,
   .miniImage img {
     width: 100%;
@@ -1395,6 +1472,14 @@ const styles = `
 
     .miniImage {
       height: 170px;
+    }
+
+    .enquiryHeader {
+      grid-template-columns: 1fr;
+    }
+
+    .enquiryImage {
+      width: 100%;
     }
   }
 `;
