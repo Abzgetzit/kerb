@@ -24,6 +24,7 @@ const defaultFilters = {
   fuel: "",
   condition: "",
   finance: "",
+  category: "",
 };
 
 function formatPrice(value) {
@@ -178,6 +179,138 @@ function carHasFinance(car) {
   );
 }
 
+const listingCategoryValues = new Set([
+  "general",
+  "first-car",
+  "performance",
+  "family-suv",
+  "electric-hybrid",
+  "newer-car",
+]);
+
+function normaliseCategory(value) {
+  const category = String(value || "").trim().toLowerCase();
+
+  return listingCategoryValues.has(category) ? category : "";
+}
+
+function textValue(value) {
+  if (!value) return "";
+
+  if (Array.isArray(value)) return value.join(" ");
+
+  if (typeof value === "object") {
+    return Object.values(value).filter(Boolean).join(" ");
+  }
+
+  return String(value);
+}
+
+function categorySearchText(car) {
+  return [
+    car.title,
+    car.make,
+    car.model,
+    car.variant,
+    car.model_detail,
+    car.fuel,
+    car.fuel_type,
+    car.body_type,
+    car.condition,
+    car.description,
+    car.features,
+  ]
+    .map(textValue)
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function includesAny(text, terms) {
+  return terms.some((term) => text.includes(term));
+}
+
+function carMatchesCategory(car, category) {
+  const selectedCategory = normaliseCategory(category);
+
+  if (!selectedCategory || selectedCategory === "general") return true;
+
+  const listingCategory = normaliseCategory(car.listing_category);
+
+  if (listingCategory === selectedCategory) return true;
+
+  const text = categorySearchText(car);
+  const fuel = String(car.fuel || car.fuel_type || "").toLowerCase();
+  const bodyType = String(car.body_type || "").toLowerCase();
+  const condition = String(car.condition || "").toLowerCase();
+  const year = Number(car.year || car.registration_year || 0);
+  const price = getCarPrice(car);
+
+  if (selectedCategory === "first-car") {
+    return (
+      (price > 0 && price <= 8000) ||
+      includesAny(text, [
+        "first car",
+        "learner",
+        "cheap insurance",
+        "low insurance",
+        "new driver",
+      ])
+    );
+  }
+
+  if (selectedCategory === "performance") {
+    return includesAny(text, [
+      "performance",
+      "m sport",
+      "amg",
+      "s line",
+      "gti",
+      "gtd",
+      "golf r",
+      "m135",
+      "m140",
+      "m240",
+      "m340",
+      "m3",
+      "m4",
+      "m5",
+      "rs3",
+      "rs4",
+      "rs5",
+      "s3",
+      "s4",
+      "s5",
+      "type r",
+      "vrs",
+      "cupra",
+      "nismo",
+    ]);
+  }
+
+  if (selectedCategory === "family-suv") {
+    return (
+      bodyType.includes("suv") ||
+      bodyType.includes("4x4") ||
+      includesAny(text, ["family suv", "seven seats", "7 seats"])
+    );
+  }
+
+  if (selectedCategory === "electric-hybrid") {
+    return fuel.includes("electric") || fuel.includes("hybrid");
+  }
+
+  if (selectedCategory === "newer-car") {
+    return (
+      condition.includes("new") ||
+      condition.includes("nearly new") ||
+      year >= currentYear - 1
+    );
+  }
+
+  return false;
+}
+
 function SvgIcon({ name }) {
   const icons = {
     car: (
@@ -328,6 +461,7 @@ export default function BrowsePage() {
         fuel: params.get("fuel") || "",
         condition: params.get("condition") || "",
         finance: params.get("finance") || "",
+        category: params.get("category") || "",
       };
 
       setFilters(urlFilters);
@@ -458,6 +592,7 @@ export default function BrowsePage() {
     if (nextFilters.fuel) params.set("fuel", nextFilters.fuel);
     if (nextFilters.condition) params.set("condition", nextFilters.condition);
     if (nextFilters.finance) params.set("finance", nextFilters.finance);
+    if (nextFilters.category) params.set("category", nextFilters.category);
     if (nextSearch.trim()) params.set("keyword", nextSearch.trim());
     if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
 
@@ -647,6 +782,10 @@ export default function BrowsePage() {
         return false;
       }
 
+      if (filters.category && !carMatchesCategory(car, filters.category)) {
+        return false;
+      }
+
       return true;
     });
 
@@ -696,11 +835,16 @@ export default function BrowsePage() {
             </Link>
 
             <Link
-              href="/browse?condition=new"
+              href="/browse?category=newer-car"
               className={
-                filters.condition === "new" ? "nav-item active" : "nav-item"
+                filters.category === "newer-car" ||
+                filters.condition === "new"
+                  ? "nav-item active"
+                  : "nav-item"
               }
-              onClick={(event) => applyPreset(event, { condition: "new" })}
+              onClick={(event) =>
+                applyPreset(event, { category: "newer-car" })
+              }
             >
               <SvgIcon name="new" />
               New cars
@@ -712,11 +856,17 @@ export default function BrowsePage() {
             </Link>
 
             <Link
-              href="/browse?fuel=electric"
+              href="/browse?category=electric-hybrid"
               className={
-                filters.fuel === "electric" ? "nav-item active" : "nav-item"
+                filters.category === "electric-hybrid" ||
+                filters.fuel === "electric" ||
+                filters.fuel === "electric-hybrid"
+                  ? "nav-item active"
+                  : "nav-item"
               }
-              onClick={(event) => applyPreset(event, { fuel: "electric" })}
+              onClick={(event) =>
+                applyPreset(event, { category: "electric-hybrid" })
+              }
             >
               <SvgIcon name="electric" />
               Electric
