@@ -396,6 +396,21 @@ export default function ListingPage() {
   }, []);
 
   useEffect(() => {
+    if (!currentUser) return;
+
+    setEnquiryForm((current) => ({
+      ...current,
+      buyer_name:
+        current.buyer_name ||
+        currentUser.name ||
+        currentUser.full_name ||
+        currentUser.fullName ||
+        "",
+      buyer_email: current.buyer_email || currentUser.email || "",
+    }));
+  }, [currentUser]);
+
+  useEffect(() => {
     async function loadSavedState() {
       const token = localStorage.getItem("kerbSessionToken");
 
@@ -742,13 +757,13 @@ export default function ListingPage() {
         throw new Error(result.error || "Could not send enquiry.");
       }
 
-      setEnquirySuccess("Enquiry sent. The seller can now contact you.");
-      setEnquiryForm({
-        buyer_name: "",
-        buyer_email: "",
-        buyer_phone: "",
+      setEnquirySuccess(
+        "Message sent to the seller. You can track it from My account."
+      );
+      setEnquiryForm((current) => ({
+        ...current,
         message: "Hi, is this car still available?",
-      });
+      }));
     } catch (error) {
       setEnquiryError(error.message || "Something went wrong.");
     } finally {
@@ -1122,83 +1137,116 @@ export default function ListingPage() {
                 reply using your contact details.
               </p>
 
-              <form onSubmit={submitEnquiry} className="enquiry-form">
-                <label>
-                  Your name
-                  <input
-                    value={enquiryForm.buyer_name}
-                    onChange={(event) =>
-                      setEnquiryForm((current) => ({
-                        ...current,
-                        buyer_name: event.target.value,
-                      }))
-                    }
-                    placeholder="Enter your name"
-                    required
-                  />
-                </label>
+              <div className="enquiry-listing-preview">
+                <img
+                  src={photos[mainPhotoIndex] || photos[0] || "/cars/hero-car.png"}
+                  alt={title}
+                  onError={(event) => {
+                    event.currentTarget.src = "/cars/hero-car.png";
+                  }}
+                />
 
-                <label>
-                  Your email
-                  <input
-                    type="email"
-                    value={enquiryForm.buyer_email}
-                    onChange={(event) =>
-                      setEnquiryForm((current) => ({
-                        ...current,
-                        buyer_email: event.target.value,
-                      }))
-                    }
-                    placeholder="Enter your email"
-                    required
-                  />
-                </label>
+                <div>
+                  <strong>{title}</strong>
+                  <span>
+                    {formatPrice(price)}
+                    {location ? ` · ${location}` : ""}
+                  </span>
+                </div>
+              </div>
 
-                <label>
-                  Your phone
-                  <input
-                    value={enquiryForm.buyer_phone}
-                    onChange={(event) =>
-                      setEnquiryForm((current) => ({
-                        ...current,
-                        buyer_phone: event.target.value,
-                      }))
-                    }
-                    placeholder="Enter your phone number"
-                  />
-                </label>
-
-                <label>
-                  Message
-                  <textarea
-                    value={enquiryForm.message}
-                    onChange={(event) =>
-                      setEnquiryForm((current) => ({
-                        ...current,
-                        message: event.target.value,
-                      }))
-                    }
-                    placeholder="Write your message"
-                    required
-                  />
-                </label>
-
-                {enquirySuccess && (
+              {enquirySuccess ? (
+                <div className="enquiry-complete">
                   <div className="success-message">{enquirySuccess}</div>
-                )}
 
-                {enquiryError && (
-                  <div className="error-message">{enquiryError}</div>
-                )}
+                  <div className="enquiry-complete-actions">
+                    <button
+                      type="button"
+                      onClick={() => setIsEnquiryOpen(false)}
+                    >
+                      Close
+                    </button>
 
-                <button
-                  className="send-enquiry-button"
-                  type="submit"
-                  disabled={isSendingEnquiry}
-                >
-                  {isSendingEnquiry ? "Sending..." : "Send enquiry"}
-                </button>
-              </form>
+                    <Link href="/account?tab=sent">View sent enquiries</Link>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={submitEnquiry} className="enquiry-form">
+                  <div className="enquiry-fields">
+                    <label>
+                      Your name
+                      <input
+                        value={enquiryForm.buyer_name}
+                        onChange={(event) =>
+                          setEnquiryForm((current) => ({
+                            ...current,
+                            buyer_name: event.target.value,
+                          }))
+                        }
+                        placeholder="Enter your name"
+                        required
+                      />
+                    </label>
+
+                    <label>
+                      Your email
+                      <input
+                        type="email"
+                        value={enquiryForm.buyer_email}
+                        onChange={(event) =>
+                          setEnquiryForm((current) => ({
+                            ...current,
+                            buyer_email: event.target.value,
+                          }))
+                        }
+                        placeholder="Enter your email"
+                        required
+                      />
+                    </label>
+                  </div>
+
+                  <label>
+                    Your phone
+                    <input
+                      value={enquiryForm.buyer_phone}
+                      onChange={(event) =>
+                        setEnquiryForm((current) => ({
+                          ...current,
+                          buyer_phone: event.target.value,
+                        }))
+                      }
+                      placeholder="Enter your phone number"
+                    />
+                  </label>
+
+                  <label>
+                    Message
+                    <textarea
+                      value={enquiryForm.message}
+                      onChange={(event) =>
+                        setEnquiryForm((current) => ({
+                          ...current,
+                          message: event.target.value,
+                        }))
+                      }
+                      placeholder="Write your message"
+                      required
+                    />
+                  </label>
+
+                  {enquiryError && (
+                    <div className="error-message">{enquiryError}</div>
+                  )}
+
+                  <button
+                    className="send-enquiry-button"
+                    type="submit"
+                    disabled={isSendingEnquiry}
+                  >
+                    {isSendingEnquiry ? "Sending..." : "Send message"}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         )}
@@ -2138,8 +2186,50 @@ const styles = `
     line-height: 1.55;
   }
 
+  .enquiry-listing-preview {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 14px;
+    align-items: center;
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 18px;
+  }
+
+  .enquiry-listing-preview img {
+    width: 110px;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #eef2f7;
+  }
+
+  .enquiry-listing-preview strong,
+  .enquiry-listing-preview span {
+    display: block;
+  }
+
+  .enquiry-listing-preview strong {
+    margin-bottom: 4px;
+    color: #071126;
+  }
+
+  .enquiry-listing-preview span {
+    color: #657189;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
   .enquiry-form {
     display: grid;
+    gap: 14px;
+  }
+
+  .enquiry-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 14px;
   }
 
@@ -2207,6 +2297,37 @@ const styles = `
   .send-enquiry-button:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+  }
+
+  .enquiry-complete {
+    display: grid;
+    gap: 14px;
+  }
+
+  .enquiry-complete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .enquiry-complete-actions button,
+  .enquiry-complete-actions a {
+    border: none;
+    border-radius: 13px;
+    padding: 13px 18px;
+    font-weight: 950;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .enquiry-complete-actions button {
+    background: #eef3ff;
+    color: #0048ff;
+  }
+
+  .enquiry-complete-actions a {
+    background: #0b45ff;
+    color: white;
   }
 
   @keyframes listingFadeUp {
@@ -2346,6 +2467,15 @@ const styles = `
 
     .enquiry-modal {
       padding: 24px;
+    }
+
+    .enquiry-fields,
+    .enquiry-listing-preview {
+      grid-template-columns: 1fr;
+    }
+
+    .enquiry-listing-preview img {
+      width: 100%;
     }
   }
 `;
