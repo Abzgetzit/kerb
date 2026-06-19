@@ -146,6 +146,15 @@ const carFeatureOptions = [
   "Blind spot monitoring",
 ];
 
+const listingCategoryOptions = [
+  { value: "general", label: "General listing" },
+  { value: "first-car", label: "First car" },
+  { value: "performance", label: "Performance" },
+  { value: "family-suv", label: "Family SUV" },
+  { value: "electric-hybrid", label: "Electric or hybrid" },
+  { value: "newer-car", label: "Newer car" },
+];
+
 const modelValueGuide = {
   "BMW|1 Series": 31000,
   "BMW|2 Series": 34000,
@@ -232,6 +241,7 @@ export default function PostCarPage() {
   const [bodyType, setBodyType] = useState("");
   const [condition, setCondition] = useState("");
   const [financeAvailable, setFinanceAvailable] = useState("false");
+  const [listingCategory, setListingCategory] = useState("general");
   const [photos, setPhotos] = useState([]);
   const photoUrlsRef = useRef([]);
 
@@ -379,6 +389,7 @@ export default function PostCarPage() {
     formData.set("body_type", bodyType);
     formData.set("condition", condition);
     formData.set("finance_available", financeAvailable);
+    formData.set("listing_category", listingCategory);
 
     if (currentUser?.id) {
       formData.set("account_id", currentUser.id);
@@ -707,6 +718,21 @@ export default function PostCarPage() {
               >
                 <option value="false">No</option>
                 <option value="true">Yes</option>
+              </select>
+            </label>
+
+            <label>
+              Best fit
+              <select
+                name="listing_category"
+                value={listingCategory}
+                onChange={(e) => setListingCategory(e.target.value)}
+              >
+                {listingCategoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
