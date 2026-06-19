@@ -240,51 +240,51 @@ export default function HomePage() {
   const categories = [
     {
       icon: "car",
-      title: "Browse cars",
-      text: "Search cars listed on Kerb",
+      title: "Used cars",
+      text: "Great value daily drivers",
       href: "/browse",
       category: "general",
-      image: "/cars/category-browse.jpg",
+      image: "/cars/category-browse.png",
     },
     {
       icon: "new",
       title: "New cars",
-      text: "Browse newer cars listed on Kerb",
+      text: "Latest models and offers",
       href: "/browse?category=newer-car",
       category: "newer-car",
-      image: "/cars/category-new.jpg",
+      image: "/cars/category-new.png",
     },
     {
       icon: "electric",
       title: "Electric cars",
-      text: "Find electric and hybrid cars",
+      text: "Clean, efficient and future-ready",
       href: "/browse?category=electric-hybrid",
       category: "electric-hybrid",
-      image: "/cars/category-electric.jpg",
+      image: "/cars/category-electric.png",
     },
     {
       icon: "body",
       title: "Family SUVs",
-      text: "Practical cars for everyday life",
+      text: "Space, comfort and safety",
       href: "/browse?category=family-suv",
       category: "family-suv",
-      image: "/cars/category-family-suv.jpg",
+      image: "/cars/category-family-suv.png",
     },
     {
       icon: "shield",
       title: "First cars",
-      text: "Affordable, easy-going picks",
+      text: "Affordable and reliable picks",
       href: "/browse?category=first-car",
       category: "first-car",
-      image: "/cars/category-first-car.jpg",
+      image: "/cars/category-first-car.png",
     },
     {
       icon: "mileage",
       title: "Performance",
-      text: "Powerful cars built for driving",
+      text: "Power, style and thrill",
       href: "/browse?category=performance",
       category: "performance",
-      image: "/cars/category-performance.jpg",
+      image: "/cars/category-performance.png",
     },
   ];
 
@@ -1092,39 +1092,39 @@ export default function HomePage() {
         .categories {
           display: grid;
           grid-template-columns: repeat(6, minmax(0, 1fr));
-          gap: 14px;
-          margin: 20px 0;
+          gap: 13px;
+          margin: 16px 8px 22px;
         }
 
         .categoryCard {
           display: grid;
-          grid-template-columns: 76px minmax(0, 1fr) auto;
+          grid-template-columns: 84px minmax(0, 1fr) 14px;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           background: white;
           border: 1px solid #e6ebf4;
-          border-radius: 18px;
-          padding: 12px;
-          box-shadow: 0 8px 25px rgba(10, 20, 40, 0.04);
+          border-radius: 12px;
+          padding: 10px 12px;
+          box-shadow: 0 6px 18px rgba(10, 20, 40, 0.035);
           text-decoration: none;
           color: inherit;
           transition: transform 0.18s ease, box-shadow 0.18s ease,
             border-color 0.18s ease;
           min-width: 0;
-          min-height: 82px;
+          min-height: 70px;
         }
 
         .categoryCard:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 16px 35px rgba(10, 20, 40, 0.08);
+          transform: translateY(-2px);
+          box-shadow: 0 14px 28px rgba(10, 20, 40, 0.07);
           border-color: #d6e1f4;
         }
 
         .categoryImage {
-          width: 76px;
-          height: 54px;
-          border-radius: 14px;
-          background: #edf3ff;
+          width: 84px;
+          height: 46px;
+          border-radius: 10px;
+          background: white;
           overflow: hidden;
           position: relative;
         }
@@ -1132,23 +1132,12 @@ export default function HomePage() {
         .categoryImage img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
           display: block;
         }
 
         .categoryImage span {
-          position: absolute;
-          left: 6px;
-          bottom: 6px;
-          width: 24px;
-          height: 24px;
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.92);
-          color: #0048ff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 6px 12px rgba(10, 20, 40, 0.12);
+          display: none;
         }
 
         .categoryImage .icon {
@@ -1157,22 +1146,24 @@ export default function HomePage() {
         }
 
         .categoryCard h3 {
-          margin: 0 0 4px;
-          font-size: 14px;
-          line-height: 1.1;
+          margin: 0 0 3px;
+          font-size: 13px;
+          line-height: 1.15;
+          letter-spacing: 0;
         }
 
         .categoryCard p {
           margin: 0;
           font-size: 11px;
           color: #657189;
-          line-height: 1.35;
+          line-height: 1.3;
         }
 
         .arrow {
           margin-left: auto;
-          font-size: 26px;
+          font-size: 25px;
           color: #172033;
+          line-height: 1;
         }
 
         .launchGrid {
