@@ -43,12 +43,6 @@ const categoryLabels = new Map(
   categoryOptions.map((category) => [category.value, category.label])
 );
 
-const priceOptions = [
-  0, 1000, 2000, 3000, 4000, 5000, 7500, 10000, 12500, 15000, 17500, 20000,
-  25000, 30000, 35000, 40000, 45000, 50000, 60000, 70000, 80000, 90000,
-  100000, 110000, 120000, 130000, 140000, 150000,
-];
-
 const mileageOptions = Array.from({ length: 16 }, (_, index) => index * 10000);
 
 const approximateUkLocations = [
@@ -74,20 +68,6 @@ function formatPrice(value) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) return "Price on request";
-
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  }).format(number);
-}
-
-function formatPriceOption(value) {
-  const number = Number(value);
-
-  if (!Number.isFinite(number)) return "Any";
-  if (number === 0) return "£0";
-  if (number >= 150000) return "£150,000+";
 
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -223,6 +203,10 @@ function getCarMileage(car) {
 
 function includesText(value, query) {
   return String(value || "").toLowerCase().includes(String(query || "").toLowerCase());
+}
+
+function cleanMoneyInput(value) {
+  return String(value || "").replace(/[^0-9]/g, "").slice(0, 9);
 }
 
 function normaliseLocationText(value) {
@@ -975,7 +959,7 @@ export default function BrowsePage() {
         const price = getCarPrice(car);
         const maxPrice = Number(filters.priceMax);
 
-        if (maxPrice < 150000 && (!price || price > maxPrice)) return false;
+        if (maxPrice > 0 && (!price || price > maxPrice)) return false;
       }
 
       if (filters.mileageMin) {
@@ -1272,45 +1256,47 @@ export default function BrowsePage() {
                 </label>
               )}
 
-              <label className="filter-card range-card">
+              <div className="filter-card range-card">
                 <SvgIcon name="price" />
                 <div className="range-content">
                   <p>Price</p>
-                  <div className="range-controls">
-                    <select
-                      value={filters.priceMin}
-                      onChange={(event) =>
-                        setFilter("priceMin", event.target.value)
-                      }
-                      aria-label="Minimum price"
-                    >
-                      <option value="">From</option>
-                      {priceOptions.map((price) => (
-                        <option key={`price-min-${price}`} value={price}>
-                          {formatPriceOption(price)}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="range-controls price-controls">
+                    <div className="price-input-wrap">
+                      <span>£</span>
+                      <input
+                        value={filters.priceMin}
+                        onChange={(event) =>
+                          setFilter(
+                            "priceMin",
+                            cleanMoneyInput(event.target.value)
+                          )
+                        }
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="From"
+                        aria-label="Minimum price"
+                      />
+                    </div>
 
-                    <select
-                      value={filters.priceMax}
-                      onChange={(event) =>
-                        setFilter("priceMax", event.target.value)
-                      }
-                      aria-label="Maximum price"
-                    >
-                      <option value="">To</option>
-                      {priceOptions
-                        .filter((price) => price > 0)
-                        .map((price) => (
-                          <option key={`price-max-${price}`} value={price}>
-                            {formatPriceOption(price)}
-                          </option>
-                        ))}
-                    </select>
+                    <div className="price-input-wrap">
+                      <span>£</span>
+                      <input
+                        value={filters.priceMax}
+                        onChange={(event) =>
+                          setFilter(
+                            "priceMax",
+                            cleanMoneyInput(event.target.value)
+                          )
+                        }
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="To"
+                        aria-label="Maximum price"
+                      />
+                    </div>
                   </div>
                 </div>
-              </label>
+              </div>
 
               <label className="filter-card range-card">
                 <SvgIcon name="mileage" />
@@ -1879,6 +1865,31 @@ export default function BrowsePage() {
           border-radius: 9px;
           background: #f7f9fd;
           padding: 0 7px;
+          font-size: 12px;
+        }
+
+        .price-input-wrap {
+          min-width: 0;
+          height: 29px;
+          border: 1px solid #e5ebf5;
+          border-radius: 9px;
+          background: #f7f9fd;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 0 7px;
+        }
+
+        .price-input-wrap span {
+          color: #6d7691;
+          font-size: 12px;
+          font-weight: 900;
+          line-height: 1;
+        }
+
+        .price-input-wrap input {
+          height: 100%;
+          min-width: 0;
           font-size: 12px;
         }
 
