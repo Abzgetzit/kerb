@@ -240,8 +240,8 @@ export default function HomePage() {
   const categories = [
     {
       icon: "car",
-      title: "Used cars",
-      text: "Great value daily drivers",
+      title: "Browse cars",
+      text: "Search cars listed on Kerb",
       href: "/browse",
       category: "general",
       image: "/cars/category-browse.png",
