@@ -110,6 +110,21 @@ function getTitle(car) {
   return car.title || fallback || "Car listing";
 }
 
+function normaliseStatus(status) {
+  return String(status || "").trim().toLowerCase();
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    pending: "Pending review",
+    approved: "Live",
+    rejected: "Not approved",
+    sold: "Sold",
+  };
+
+  return labels[normaliseStatus(status)] || "Kerb listing";
+}
+
 function getFeatures(car) {
   if (Array.isArray(car?.features)) {
     return car.features.filter(Boolean);
@@ -293,8 +308,14 @@ export default function EditListingPage() {
         throw new Error(result.error || "Could not save changes.");
       }
 
+      const wasRejected = normaliseStatus(listing?.status) === "rejected";
+
       setListing(result.listing);
-      setSuccessMessage("Listing changes saved.");
+      setSuccessMessage(
+        wasRejected
+          ? "Listing changes saved and sent back for review."
+          : "Listing changes saved."
+      );
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
@@ -341,7 +362,9 @@ export default function EditListingPage() {
           <div className="pill">Edit listing</div>
           <h1>{title}</h1>
           <p>
-            {listing?.status ? `Status: ${listing.status}` : "Kerb listing"}
+            {listing?.status
+              ? `Status: ${getStatusLabel(listing.status)}`
+              : "Kerb listing"}
           </p>
         </div>
 
