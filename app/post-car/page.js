@@ -52,7 +52,27 @@ const modelDetails = {
   BMW: {
     "1 Series": ["116i", "118i", "118d", "120i", "120d", "128ti", "M135i"],
     "2 Series": ["218i", "220i", "220d", "225e", "M235i", "M240i"],
-    "3 Series": ["318i", "318d", "320i", "320d", "330i", "330d", "330e", "335d", "335i", "M340i", "M340d", "M3"],
+    "3 Series": [
+      "318i",
+      "318i M Sport",
+      "318d",
+      "318d M Sport",
+      "320i",
+      "320i M Sport",
+      "320d",
+      "320d M Sport",
+      "330i",
+      "330i M Sport",
+      "330d",
+      "330d M Sport",
+      "330e",
+      "330e M Sport",
+      "335d",
+      "335i",
+      "M340i",
+      "M340d",
+      "M3",
+    ],
     "4 Series": ["420i", "420d", "430i", "430d", "435d", "M440i", "M440d", "M4"],
     "5 Series": ["520i", "520d", "530i", "530d", "530e", "540i", "M550i", "M5"],
     X3: ["xDrive20d", "xDrive30e", "xDrive30d", "M40i", "M40d", "X3 M"],
@@ -183,10 +203,19 @@ const modelValueGuide = {
 };
 
 const modelDetailValueGuide = {
+  "BMW|3 Series|318i": 36000,
+  "BMW|3 Series|318i M Sport": 38500,
+  "BMW|3 Series|318d": 35000,
+  "BMW|3 Series|318d M Sport": 37500,
   "BMW|3 Series|320d": 36000,
-  "BMW|3 Series|320i": 35000,
+  "BMW|3 Series|320d M Sport": 41000,
+  "BMW|3 Series|320i": 39000,
+  "BMW|3 Series|320i M Sport": 41500,
+  "BMW|3 Series|330i M Sport": 50000,
   "BMW|3 Series|330e": 47000,
+  "BMW|3 Series|330e M Sport": 50000,
   "BMW|3 Series|330d": 48000,
+  "BMW|3 Series|330d M Sport": 51000,
   "BMW|3 Series|335d": 50000,
   "BMW|3 Series|335i": 47000,
   "BMW|3 Series|M340i": 58000,
@@ -210,16 +239,44 @@ const modelDetailValueGuide = {
   "Volkswagen|Golf|R": 50000,
 };
 
+function normaliseModelDetail(value) {
+  return String(value || "")
+    .replace(/\s+(M Sport|AMG Line|S Line|S-Line|ST-Line|ST Line|R-Line|R Line|GT Line|Titanium|Vignale|Black Edition)$/i, "")
+    .trim();
+}
+
+function getTrimMultiplier(value) {
+  const detail = String(value || "").toLowerCase();
+
+  if (detail.includes("black edition")) return 1.08;
+  if (detail.includes("m sport")) return 1.07;
+  if (detail.includes("amg line")) return 1.07;
+  if (detail.includes("s line") || detail.includes("s-line")) return 1.06;
+  if (detail.includes("r line") || detail.includes("r-line")) return 1.05;
+  if (detail.includes("st line") || detail.includes("st-line")) return 1.04;
+  if (detail.includes("gt line")) return 1.04;
+  if (detail.includes("titanium")) return 1.03;
+  if (detail.includes("vignale")) return 1.05;
+
+  return 1;
+}
+
 function getGuidePrice({ make, model, modelDetail }) {
   const detailKey = `${make}|${model}|${modelDetail}`;
   const modelKey = `${make}|${model}`;
+  const exactDetailGuide = modelDetailValueGuide[detailKey];
 
-  return (
-    modelDetailValueGuide[detailKey] ||
+  if (exactDetailGuide) return exactDetailGuide;
+
+  const normalisedDetail = normaliseModelDetail(modelDetail);
+  const normalisedDetailKey = `${make}|${model}|${normalisedDetail}`;
+  const baseGuide =
+    modelDetailValueGuide[normalisedDetailKey] ||
     modelValueGuide[modelKey] ||
     makeFallbackGuide[make] ||
-    22000
-  );
+    22000;
+
+  return roundToNearestHundred(baseGuide * getTrimMultiplier(modelDetail));
 }
 
 function cleanNumber(value) {
