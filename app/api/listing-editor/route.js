@@ -81,6 +81,118 @@ function cleanFeatures(value) {
   ];
 }
 
+function getFileExtension(fileName = "") {
+  const extension = String(fileName).split(".").pop();
+
+  if (!extension || extension === fileName) return "jpg";
+
+  return extension.toLowerCase();
+}
+
+function parsePhotoField(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.map(cleanText).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const text = cleanText(value);
+
+    if (!text) return [];
+
+    try {
+      const parsed = JSON.parse(text);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map(cleanText).filter(Boolean);
+      }
+
+      if (typeof parsed === "string") {
+        return [cleanText(parsed)].filter(Boolean);
+      }
+    } catch {
+      return [text];
+    }
+  }
+
+  return [];
+}
+
+function getListingPhotoUrls(listing) {
+  const urls = [
+    ...parsePhotoField(listing?.photo_urls),
+    ...parsePhotoField(listing?.photos),
+    ...parsePhotoField(listing?.image_urls),
+    ...parsePhotoField(listing?.images),
+    ...parsePhotoField(listing?.image_url),
+  ];
+
+  return [...new Set(urls)].filter(Boolean);
+}
+
+function getStoragePathFromPublicUrl(url) {
+  const marker = "/storage/v1/object/public/kerb-car-photos/";
+  const text = cleanText(url);
+  const markerIndex = text.indexOf(marker);
+
+  if (markerIndex === -1) return "";
+
+  return decodeURIComponent(text.slice(markerIndex + marker.length));
+}
+
+async function removeStoragePhotos(supabase, urls = []) {
+  const paths = urls
+    .map(getStoragePathFromPublicUrl)
+    .filter(Boolean);
+
+  if (paths.length === 0) return;
+
+  const { error } = await supabase.storage
+    .from("kerb-car-photos")
+    .remove(paths);
+
+  if (error) {
+    console.error("Kerb photo delete error:", error);
+  }
+}
+
+async function uploadPhotos(supabase, photos = []) {
+  const uploadedUrls = [];
+
+  for (const photo of photos) {
+    if (!photo || typeof photo === "string" || photo.size <= 0) continue;
+
+    const fileExt = getFileExtension(photo.name);
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const filePath = `listings/${fileName}`;
+    const arrayBuffer = await photo.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+
+    const { error: uploadError } = await supabase.storage
+      .from("kerb-car-photos")
+      .upload(filePath, fileBuffer, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: photo.type || "image/jpeg",
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("kerb-car-photos")
+      .getPublicUrl(filePath);
+
+    if (publicUrlData?.publicUrl) {
+      uploadedUrls.push(publicUrlData.publicUrl);
+    }
+  }
+
+  return uploadedUrls;
+}
+
 function cleanListingCategory(value) {
   const category = cleanText(value);
 
@@ -346,7 +458,43 @@ export async function GET(request) {
 
 export async function PATCH(request) {
   try {
-    const body = await request.json();
+    const contentType = request.headers.get("content-type") || "";
+    let body = {};
+    let newPhotos = [];
+    let photoUrlsWereProvided = false;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+
+      body = {
+        listing_id: formData.get("listing_id"),
+        asking_price: formData.get("asking_price"),
+        mileage: formData.get("mileage"),
+        condition: formData.get("condition"),
+        body_type: formData.get("body_type"),
+        finance_available: formData.get("finance_available"),
+        description: formData.get("description"),
+        seller_phone: formData.get("seller_phone"),
+        location: formData.get("location"),
+        fuel_type: formData.get("fuel_type"),
+        gearbox: formData.get("gearbox"),
+        listing_category: formData.get("listing_category"),
+        features: formData.getAll("features"),
+        existing_photo_urls: formData.get("existing_photo_urls"),
+      };
+
+      photoUrlsWereProvided = formData.has("existing_photo_urls");
+      newPhotos = formData
+        .getAll("new_photos")
+        .filter((photo) => photo && typeof photo !== "string" && photo.size > 0);
+    } else {
+      body = await request.json();
+      photoUrlsWereProvided = Object.prototype.hasOwnProperty.call(
+        body,
+        "existing_photo_urls"
+      );
+    }
+
     const listingId = cleanText(body.listing_id);
     const verified = await getVerifiedListing({ request, listingId });
 
@@ -355,6 +503,23 @@ export async function PATCH(request) {
     const askingPrice = cleanNumber(body.asking_price);
     const mileage = cleanNumber(body.mileage);
     const features = cleanFeatures(body.features);
+    const currentPhotoUrls = getListingPhotoUrls(verified.listing);
+    const currentPhotoUrlSet = new Set(currentPhotoUrls);
+    const requestedExistingPhotoUrls = photoUrlsWereProvided
+      ? parsePhotoField(body.existing_photo_urls)
+      : currentPhotoUrls;
+    const keptPhotoUrls = requestedExistingPhotoUrls.filter((url) =>
+      currentPhotoUrlSet.has(url)
+    );
+    const uploadSlots = Math.max(12 - keptPhotoUrls.length, 0);
+    const uploadedPhotoUrls = await uploadPhotos(
+      verified.supabase,
+      newPhotos.slice(0, uploadSlots)
+    );
+    const nextPhotoUrls = [...keptPhotoUrls, ...uploadedPhotoUrls].slice(0, 12);
+    const removedPhotoUrls = currentPhotoUrls.filter(
+      (url) => !nextPhotoUrls.includes(url)
+    );
 
     const updates = {
       asking_price: askingPrice,
@@ -370,6 +535,9 @@ export async function PATCH(request) {
       gearbox: nullableText(body.gearbox),
       features,
       listing_category: cleanListingCategory(body.listing_category),
+      image_url: nextPhotoUrls[0] || null,
+      photos: nextPhotoUrls,
+      photo_urls: nextPhotoUrls,
     };
 
     if (cleanText(verified.listing.status).toLowerCase() === "rejected") {
@@ -384,15 +552,20 @@ export async function PATCH(request) {
       .single();
 
     if (updateError) {
+      await removeStoragePhotos(verified.supabase, uploadedPhotoUrls);
+
       return Response.json(
         { error: updateError.message },
         { status: 400 }
       );
     }
 
+    await removeStoragePhotos(verified.supabase, removedPhotoUrls);
+
     return Response.json({
       success: true,
       listing: updatedListing,
+      photos: nextPhotoUrls,
     });
   } catch (error) {
     return Response.json(
