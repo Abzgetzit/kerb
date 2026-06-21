@@ -372,6 +372,10 @@ export async function PATCH(request) {
       listing_category: cleanListingCategory(body.listing_category),
     };
 
+    if (cleanText(verified.listing.status).toLowerCase() === "rejected") {
+      updates.status = "pending";
+    }
+
     const { data: updatedListing, error: updateError } = await verified.supabase
       .from("kerb_listings")
       .update(updates)
