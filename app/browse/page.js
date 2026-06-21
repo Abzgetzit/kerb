@@ -17,8 +17,11 @@ const currentYear = new Date().getFullYear();
 
 const defaultFilters = {
   location: "",
+  radius: "",
   make: "",
+  priceMin: "",
   priceMax: "",
+  mileageMin: "",
   mileageMax: "",
   bodyType: "",
   fuel: "",
@@ -40,6 +43,34 @@ const categoryLabels = new Map(
   categoryOptions.map((category) => [category.value, category.label])
 );
 
+const priceOptions = [
+  0, 1000, 2500, 5000, 7500, 10000, 15000, 20000, 25000, 30000, 35000, 40000,
+  45000, 50000, 60000, 70000, 80000, 90000, 100000, 150000,
+];
+
+const mileageOptions = Array.from({ length: 16 }, (_, index) => index * 10000);
+
+const radiusOptions = [5, 10, 20, 30, 50, 75, 100, 150, 200];
+
+const approximateUkLocations = [
+  { keys: ["leicester", "le1", "le2", "le3", "le4", "le5"], lat: 52.6369, lng: -1.1398 },
+  { keys: ["birmingham", "b1", "b2", "b3", "b4", "b5"], lat: 52.4862, lng: -1.8904 },
+  { keys: ["london", "e1", "ec1", "n1", "nw1", "se1", "sw1", "w1"], lat: 51.5072, lng: -0.1276 },
+  { keys: ["manchester", "m1", "m2", "m3", "m4"], lat: 53.4808, lng: -2.2426 },
+  { keys: ["nottingham", "ng1", "ng2", "ng3"], lat: 52.9548, lng: -1.1581 },
+  { keys: ["coventry", "cv1", "cv2", "cv3"], lat: 52.4068, lng: -1.5197 },
+  { keys: ["derby", "de1", "de2", "de3"], lat: 52.9225, lng: -1.4746 },
+  { keys: ["loughborough", "le11", "le12"], lat: 52.7721, lng: -1.2062 },
+  { keys: ["northampton", "nn1", "nn2", "nn3"], lat: 52.2405, lng: -0.9027 },
+  { keys: ["sheffield", "s1", "s2", "s3"], lat: 53.3811, lng: -1.4701 },
+  { keys: ["leeds", "ls1", "ls2", "ls3"], lat: 53.8008, lng: -1.5491 },
+  { keys: ["bristol", "bs1", "bs2", "bs3"], lat: 51.4545, lng: -2.5879 },
+  { keys: ["liverpool", "l1", "l2", "l3"], lat: 53.4084, lng: -2.9916 },
+  { keys: ["cardiff", "cf10", "cf11", "cf14"], lat: 51.4816, lng: -3.1791 },
+  { keys: ["glasgow", "g1", "g2", "g3"], lat: 55.8642, lng: -4.2518 },
+  { keys: ["edinburgh", "eh1", "eh2", "eh3"], lat: 55.9533, lng: -3.1883 },
+];
+
 function formatPrice(value) {
   const number = Number(value);
 
@@ -50,6 +81,27 @@ function formatPrice(value) {
     currency: "GBP",
     maximumFractionDigits: 0,
   }).format(number);
+}
+
+function formatPriceOption(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "Any";
+  if (number === 0) return "£0";
+  if (number >= 150000) return "£150k+";
+  if (number >= 1000) return `£${number / 1000}k`;
+
+  return `£${number}`;
+}
+
+function formatMileageOption(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) return "Any";
+  if (number === 0) return "0 miles";
+  if (number >= 150000) return "150k+ miles";
+
+  return `${number / 1000}k miles`;
 }
 
 function getTitle(car) {
@@ -169,6 +221,46 @@ function getCarMileage(car) {
 
 function includesText(value, query) {
   return String(value || "").toLowerCase().includes(String(query || "").toLowerCase());
+}
+
+function normaliseLocationText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getApproximateLocation(value) {
+  const text = normaliseLocationText(value);
+
+  if (!text) return null;
+
+  return (
+    approximateUkLocations.find((location) =>
+      location.keys.some((key) => text.includes(key))
+    ) || null
+  );
+}
+
+function getDistanceMiles(fromLocation, toLocation) {
+  if (!fromLocation || !toLocation) return null;
+
+  const earthRadiusMiles = 3958.8;
+  const degreesToRadians = Math.PI / 180;
+  const lat1 = fromLocation.lat * degreesToRadians;
+  const lat2 = toLocation.lat * degreesToRadians;
+  const deltaLat = (toLocation.lat - fromLocation.lat) * degreesToRadians;
+  const deltaLng = (toLocation.lng - fromLocation.lng) * degreesToRadians;
+  const haversine =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+
+  return (
+    2 *
+    earthRadiusMiles *
+    Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+  );
 }
 
 function carHasFinance(car) {
@@ -552,8 +644,11 @@ export default function BrowsePage() {
 
       const urlFilters = {
         location: params.get("location") || "",
+        radius: params.get("radius") || "",
         make: params.get("make") || "",
+        priceMin: params.get("priceMin") || "",
         priceMax: params.get("priceMax") || "",
+        mileageMin: params.get("mileageMin") || "",
         mileageMax: params.get("mileageMax") || "",
         bodyType: params.get("body_type") || params.get("bodyType") || "",
         fuel: params.get("fuel") || "",
@@ -683,8 +778,11 @@ export default function BrowsePage() {
     const params = new URLSearchParams();
 
     if (nextFilters.location) params.set("location", nextFilters.location);
+    if (nextFilters.radius) params.set("radius", nextFilters.radius);
     if (nextFilters.make) params.set("make", nextFilters.make);
+    if (nextFilters.priceMin) params.set("priceMin", nextFilters.priceMin);
     if (nextFilters.priceMax) params.set("priceMax", nextFilters.priceMax);
+    if (nextFilters.mileageMin) params.set("mileageMin", nextFilters.mileageMin);
     if (nextFilters.mileageMax) params.set("mileageMax", nextFilters.mileageMax);
     if (nextFilters.bodyType) params.set("body_type", nextFilters.bodyType);
     if (nextFilters.fuel) params.set("fuel", nextFilters.fuel);
@@ -803,6 +901,8 @@ export default function BrowsePage() {
     let list = [...cars];
 
     const query = search.trim().toLowerCase();
+    const searchLocation = getApproximateLocation(filters.location);
+    const radiusMiles = Number(filters.radius || 0);
 
     list = list.filter((car) => {
       const searchableText = [
@@ -830,28 +930,57 @@ export default function BrowsePage() {
 
       if (query && !searchableText.includes(query)) return false;
 
-      if (
-        filters.location &&
-        !includesText(
-          [car.location, car.city, car.postcode].filter(Boolean).join(" "),
+      if (filters.location) {
+        const carLocationText = [car.location, car.city, car.postcode]
+          .filter(Boolean)
+          .join(" ");
+        const carLocation = getApproximateLocation(carLocationText);
+        const directLocationMatch = includesText(
+          carLocationText,
           filters.location
-        )
-      ) {
-        return false;
+        );
+
+        if (searchLocation && carLocation && radiusMiles > 0) {
+          const distance = getDistanceMiles(searchLocation, carLocation);
+
+          if (distance === null || distance > radiusMiles) return false;
+        } else if (!directLocationMatch) {
+          return false;
+        }
       }
 
       if (filters.make && !includesText(car.make, filters.make)) {
         return false;
       }
 
+      if (filters.priceMin) {
+        const price = getCarPrice(car);
+        const minPrice = Number(filters.priceMin);
+
+        if (minPrice > 0 && (!price || price < minPrice)) return false;
+      }
+
       if (filters.priceMax) {
         const price = getCarPrice(car);
-        if (!price || price > Number(filters.priceMax)) return false;
+        const maxPrice = Number(filters.priceMax);
+
+        if (maxPrice < 150000 && (!price || price > maxPrice)) return false;
+      }
+
+      if (filters.mileageMin) {
+        const mileage = getCarMileage(car);
+        const minMileage = Number(filters.mileageMin);
+
+        if (minMileage > 0 && (!mileage || mileage < minMileage)) return false;
       }
 
       if (filters.mileageMax) {
         const mileage = getCarMileage(car);
-        if (!mileage || mileage > Number(filters.mileageMax)) return false;
+        const maxMileage = Number(filters.mileageMax);
+
+        if (maxMileage < 150000 && (!mileage || mileage > maxMileage)) {
+          return false;
+        }
       }
 
       if (filters.bodyType && !includesText(car.body_type, filters.bodyType)) {
@@ -1078,23 +1207,34 @@ export default function BrowsePage() {
 
           <div className="filters-panel">
             <div className="filters-grid">
-              <label className="filter-card">
+              <label className="filter-card location-card">
                 <SvgIcon name="location" />
-                <div>
-                  <p>Location</p>
-                  <select
-                    value={filters.location}
-                    onChange={(event) =>
-                      setFilter("location", event.target.value)
-                    }
-                  >
-                    <option value="">Any location</option>
-                    <option value="Leicester">Leicester</option>
-                    <option value="Birmingham">Birmingham</option>
-                    <option value="London">London</option>
-                    <option value="Manchester">Manchester</option>
-                    <option value="Nottingham">Nottingham</option>
-                  </select>
+                <div className="location-content">
+                  <p>Postcode or town</p>
+                  <div className="location-controls">
+                    <input
+                      value={filters.location}
+                      onChange={(event) =>
+                        setFilter("location", event.target.value)
+                      }
+                      placeholder="Any location"
+                    />
+
+                    <select
+                      value={filters.radius}
+                      onChange={(event) =>
+                        setFilter("radius", event.target.value)
+                      }
+                      aria-label="Search radius"
+                    >
+                      <option value="">Any miles</option>
+                      {radiusOptions.map((radius) => (
+                        <option key={radius} value={radius}>
+                          {radius} miles
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </label>
 
@@ -1116,42 +1256,83 @@ export default function BrowsePage() {
                 </div>
               </label>
 
-              <label className="filter-card">
+              <label className="filter-card range-card">
                 <SvgIcon name="price" />
-                <div>
+                <div className="range-content">
                   <p>Price</p>
-                  <select
-                    value={filters.priceMax}
-                    onChange={(event) =>
-                      setFilter("priceMax", event.target.value)
-                    }
-                  >
-                    <option value="">Any price</option>
-                    <option value="5000">Up to £5,000</option>
-                    <option value="10000">Up to £10,000</option>
-                    <option value="20000">Up to £20,000</option>
-                    <option value="30000">Up to £30,000</option>
-                    <option value="50000">Up to £50,000</option>
-                  </select>
+                  <div className="range-controls">
+                    <select
+                      value={filters.priceMin}
+                      onChange={(event) =>
+                        setFilter("priceMin", event.target.value)
+                      }
+                      aria-label="Minimum price"
+                    >
+                      <option value="">From</option>
+                      {priceOptions.map((price) => (
+                        <option key={`price-min-${price}`} value={price}>
+                          {formatPriceOption(price)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={filters.priceMax}
+                      onChange={(event) =>
+                        setFilter("priceMax", event.target.value)
+                      }
+                      aria-label="Maximum price"
+                    >
+                      <option value="">To</option>
+                      {priceOptions
+                        .filter((price) => price > 0)
+                        .map((price) => (
+                          <option key={`price-max-${price}`} value={price}>
+                            {formatPriceOption(price)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               </label>
 
-              <label className="filter-card">
+              <label className="filter-card range-card">
                 <SvgIcon name="mileage" />
-                <div>
+                <div className="range-content">
                   <p>Mileage</p>
-                  <select
-                    value={filters.mileageMax}
-                    onChange={(event) =>
-                      setFilter("mileageMax", event.target.value)
-                    }
-                  >
-                    <option value="">Any miles</option>
-                    <option value="10000">Up to 10,000</option>
-                    <option value="30000">Up to 30,000</option>
-                    <option value="60000">Up to 60,000</option>
-                    <option value="100000">Up to 100,000</option>
-                  </select>
+                  <div className="range-controls">
+                    <select
+                      value={filters.mileageMin}
+                      onChange={(event) =>
+                        setFilter("mileageMin", event.target.value)
+                      }
+                      aria-label="Minimum mileage"
+                    >
+                      <option value="">From</option>
+                      {mileageOptions.map((mileage) => (
+                        <option key={`mileage-min-${mileage}`} value={mileage}>
+                          {formatMileageOption(mileage)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={filters.mileageMax}
+                      onChange={(event) =>
+                        setFilter("mileageMax", event.target.value)
+                      }
+                      aria-label="Maximum mileage"
+                    >
+                      <option value="">To</option>
+                      {mileageOptions
+                        .filter((mileage) => mileage > 0)
+                        .map((mileage) => (
+                          <option key={`mileage-max-${mileage}`} value={mileage}>
+                            {formatMileageOption(mileage)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               </label>
 
@@ -1233,7 +1414,7 @@ export default function BrowsePage() {
                   setSearch(event.target.value);
                   updateUrl(filters, event.target.value, sort);
                 }}
-                placeholder="Search make, model, fuel, location..."
+                placeholder="Search make, model, fuel, postcode..."
                 className="search-input"
               />
 
@@ -1573,13 +1754,21 @@ export default function BrowsePage() {
 
         .filters-grid {
           display: grid;
-          grid-template-columns: repeat(7, minmax(118px, 1fr)) 150px;
+          grid-template-columns:
+            minmax(250px, 1.35fr)
+            minmax(150px, 0.9fr)
+            minmax(205px, 1.08fr)
+            minmax(205px, 1.08fr)
+            minmax(145px, 0.85fr)
+            minmax(145px, 0.85fr)
+            minmax(160px, 0.92fr)
+            150px;
           gap: 14px;
           align-items: center;
         }
 
         .filter-card {
-          height: 64px;
+          min-height: 64px;
           background: white;
           border: 1px solid #e5ebf5;
           border-radius: 16px;
@@ -1605,7 +1794,7 @@ export default function BrowsePage() {
           color: #11182f;
         }
 
-        .filter-card div {
+        .filter-card > div {
           min-width: 0;
           flex: 1;
         }
@@ -1627,6 +1816,62 @@ export default function BrowsePage() {
           font-weight: 900;
           cursor: pointer;
           padding: 0;
+        }
+
+        .filter-card input {
+          width: 100%;
+          border: none;
+          outline: none;
+          background: transparent;
+          color: #12182f;
+          font-size: 13px;
+          font-weight: 900;
+          min-width: 0;
+          padding: 0;
+        }
+
+        .filter-card input::placeholder {
+          color: #12182f;
+          opacity: 1;
+        }
+
+        .location-card,
+        .range-card {
+          padding-top: 9px;
+          padding-bottom: 9px;
+          align-items: center;
+        }
+
+        .location-content,
+        .range-content {
+          display: grid;
+          gap: 5px;
+        }
+
+        .location-controls,
+        .range-controls {
+          display: grid;
+          gap: 7px;
+          align-items: center;
+        }
+
+        .location-controls {
+          grid-template-columns: minmax(0, 1.15fr) minmax(92px, 0.85fr);
+        }
+
+        .range-controls {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+
+        .location-controls select,
+        .range-controls select {
+          min-width: 0;
+          height: 29px;
+          border: 1px solid #e5ebf5;
+          border-radius: 9px;
+          background: #f7f9fd;
+          padding: 0 7px;
+          font-size: 12px;
         }
 
         .filter-button {
@@ -2233,8 +2478,10 @@ export default function BrowsePage() {
           }
 
           .filter-card {
-            height: 58px;
+            min-height: 58px;
             border-radius: 15px;
+            padding-top: 9px;
+            padding-bottom: 9px;
           }
 
           .filter-button {
