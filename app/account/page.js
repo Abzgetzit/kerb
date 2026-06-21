@@ -32,6 +32,10 @@ function normaliseStatus(status) {
   return String(status || "new").trim().toLowerCase();
 }
 
+function getEnquiryActivityDate(enquiry) {
+  return enquiry?.last_message_at || enquiry?.created_at || "";
+}
+
 function getListingStatusInfo(status) {
   const cleanStatus = normaliseStatus(status);
 
@@ -305,7 +309,11 @@ export default function AccountPage() {
     }));
 
     return [...sent, ...received]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .sort(
+        (a, b) =>
+          new Date(getEnquiryActivityDate(b)) -
+          new Date(getEnquiryActivityDate(a))
+      )
       .slice(0, 4);
   }, [accountData]);
 
@@ -589,7 +597,7 @@ export default function AccountPage() {
                         : "Enquiry received"}
                     </span>
                     <strong>{activity.listing_title || "Kerb listing"}</strong>
-                    <small>{formatDate(activity.created_at)}</small>
+                    <small>{formatDate(getEnquiryActivityDate(activity))}</small>
                   </div>
                 ))}
               </div>
@@ -883,6 +891,8 @@ function EnquiryCard({ enquiry, mode }) {
   const listingTitle = enquiry.listing_title || getTitle(listing);
   const listingPrice = listing.price || listing.asking_price;
   const listingLocation = listing.location || listing.city || "";
+  const latestMessage = enquiry.last_message_preview || enquiry.message;
+  const latestMessageDate = getEnquiryActivityDate(enquiry);
 
   return (
     <article className="card enquiryCard">
@@ -901,7 +911,7 @@ function EnquiryCard({ enquiry, mode }) {
           <span className={`status ${status}`}>{status}</span>
           <h3>{listingTitle}</h3>
           <p>
-            {formatDate(enquiry.created_at)}
+            {formatDate(latestMessageDate)}
             {listingPrice ? ` · ${formatPrice(listingPrice)}` : ""}
             {listingLocation ? ` · ${listingLocation}` : ""}
           </p>
@@ -909,8 +919,8 @@ function EnquiryCard({ enquiry, mode }) {
       </div>
 
       <div className="messageBox">
-        <span>{mode === "sent" ? "Your message" : "Buyer message"}</span>
-        <p>{enquiry.message || "No message provided."}</p>
+        <span>Latest message</span>
+        <p>{latestMessage || "No message provided."}</p>
       </div>
 
       <div className="detailsGrid">
@@ -947,6 +957,8 @@ function EnquiryCard({ enquiry, mode }) {
       </div>
 
       <div className="cardActions">
+        <Link href={`/enquiries/${enquiry.id}`}>Open chat</Link>
+
         <Link href={`/listing/${enquiry.listing_id}`}>View listing</Link>
 
         {mode === "received" && enquiry.buyer_email && (
@@ -1529,8 +1541,7 @@ const styles = `
     margin-top: 18px;
   }
 
-  .cardActions a:nth-child(2),
-  .cardActions a:nth-child(3) {
+  .cardActions a:not(:first-child) {
     background: #eef3ff;
     color: #0048ff;
   }
