@@ -1,21 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
-import {
-  escapeHtml,
-  getListingTitle,
-  getSiteUrl,
-  sendKerbEmail,
-} from "../../../../lib/kerb-email";
+"use client";
 
-export const runtime = "nodejs";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const supabase =
-  supabaseUrl && serviceRoleKey
-    ? createClient(supabaseUrl, serviceRoleKey)
-    : null;
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import SiteMenu from "../../components/SiteMenu";
 
 function cleanText(value) {
   return String(value || "").trim();
@@ -25,352 +13,739 @@ function normaliseEmail(value) {
   return cleanText(value).toLowerCase();
 }
 
-function getToken(request) {
-  return cleanText(request.headers.get("x-kerb-session-token"));
+function formatDate(value) {
+  if (!value) return "";
+
+  return new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function getMessagePreview(message) {
-  const text = cleanText(message).replace(/\s+/g, " ");
+function formatPrice(value) {
+  const number = Number(value);
 
-  return text.length > 220 ? `${text.slice(0, 217)}...` : text;
+  if (!Number.isFinite(number) || number <= 0) return "POA";
+
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(number);
 }
 
-function getDisplayName(account, fallbackEmail) {
+function getTitle(listing, enquiry) {
+  if (enquiry?.listing_title) return enquiry.listing_title;
+  if (listing?.title) return listing.title;
+
   return (
-    cleanText(account?.full_name) ||
-    cleanText(account?.name) ||
-    cleanText(fallbackEmail).split("@")[0] ||
-    "Kerb user"
+    [listing?.year, listing?.make, listing?.model]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "Kerb listing"
   );
 }
 
-async function getSession(request) {
-  const token = getToken(request);
+function parseImageField(value) {
+  if (!value) return [];
 
-  if (!token) return { error: "Not logged in.", status: 401 };
+  if (Array.isArray(value)) return value.filter(Boolean);
 
-  const now = new Date().toISOString();
+  if (typeof value === "string") {
+    const trimmed = value.trim();
 
-  const { data: session, error: sessionError } = await supabase
-    .from("kerb_account_sessions")
-    .select("*")
-    .eq("session_token", token)
-    .gt("expires_at", now)
-    .maybeSingle();
+    if (!trimmed) return [];
 
-  if (sessionError) return { error: sessionError.message, status: 500 };
-
-  if (!session) {
-    return { error: "Session expired. Please log in again.", status: 401 };
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [trimmed];
+    } catch {
+      return [trimmed];
+    }
   }
 
-  const { data: account, error: accountError } = await supabase
-    .from("kerb_accounts")
-    .select("*")
-    .eq("id", session.account_id)
-    .maybeSingle();
-
-  if (accountError) return { error: accountError.message, status: 500 };
-
-  return { session, account };
+  return [];
 }
 
-function getParticipantRole({ enquiry, email }) {
-  const normalisedEmail = normaliseEmail(email);
-  const buyerEmail = normaliseEmail(enquiry?.buyer_email);
-  const sellerEmail = normaliseEmail(enquiry?.seller_email);
+function getImage(listing) {
+  const images = [
+    ...parseImageField(listing?.image_url),
+    ...parseImageField(listing?.photo_url),
+    ...parseImageField(listing?.photos),
+    ...parseImageField(listing?.photo_urls),
+    ...parseImageField(listing?.images),
+    ...parseImageField(listing?.image_urls),
+  ];
 
-  if (normalisedEmail && normalisedEmail === buyerEmail) return "buyer";
-  if (normalisedEmail && normalisedEmail === sellerEmail) return "seller";
-
-  return "";
+  return images[0] || "/cars/hero-car.png";
 }
 
-async function getThread(request, enquiryId) {
-  if (!supabase) {
-    return {
-      error: NextResponse.json(
-        { error: "Supabase server client is not configured." },
-        { status: 500 }
-      ),
-    };
+function getKerbUser() {
+  try {
+    const savedUser = localStorage.getItem("kerbUser");
+
+    if (savedUser) return JSON.parse(savedUser);
+  } catch {
+    localStorage.removeItem("kerbUser");
   }
 
-  const sessionResult = await getSession(request);
+  const savedEmail = localStorage.getItem("kerbAccountEmail");
 
-  if (sessionResult.error) {
-    return {
-      error: NextResponse.json(
-        { error: sessionResult.error },
-        { status: sessionResult.status }
-      ),
-    };
+  return savedEmail ? { email: savedEmail } : null;
+}
+
+export default function EnquiryConversationPage() {
+  const params = useParams();
+  const enquiryId = params?.id;
+  const messagesEndRef = useRef(null);
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [thread, setThread] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [reply, setReply] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [notice, setNotice] = useState("");
+
+  function handleLogout() {
+    localStorage.removeItem("kerbSessionToken");
+    localStorage.removeItem("kerbAccountEmail");
+    localStorage.removeItem("kerbUser");
+    window.dispatchEvent(new Event("kerb-auth-change"));
+    window.location.href = "/";
   }
 
-  const { session, account } = sessionResult;
-  const accountEmail = normaliseEmail(session.email || account?.email);
+  async function loadThread() {
+    setIsLoading(true);
+    setErrorMessage("");
 
-  const { data: enquiry, error: enquiryError } = await supabase
-    .from("kerb_enquiries")
-    .select("*")
-    .eq("id", enquiryId)
-    .maybeSingle();
+    const token = localStorage.getItem("kerbSessionToken");
 
-  if (enquiryError) {
-    return {
-      error: NextResponse.json(
-        { error: enquiryError.message },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!enquiry) {
-    return {
-      error: NextResponse.json(
-        { error: "Conversation could not be found." },
-        { status: 404 }
-      ),
-    };
-  }
-
-  const participantRole = getParticipantRole({
-    enquiry,
-    email: accountEmail,
-  });
-
-  if (!participantRole) {
-    return {
-      error: NextResponse.json(
-        { error: "You do not have access to this conversation." },
-        { status: 403 }
-      ),
-    };
-  }
-
-  let listing = null;
-
-  if (enquiry.listing_id) {
-    const { data: listingData, error: listingError } = await supabase
-      .from("kerb_listings")
-      .select("*")
-      .eq("id", enquiry.listing_id)
-      .maybeSingle();
-
-    if (listingError) {
-      return {
-        error: NextResponse.json(
-          { error: listingError.message },
-          { status: 500 }
-        ),
-      };
+    if (!token) {
+      window.location.href = "/login";
+      return;
     }
 
-    listing = listingData || null;
+    try {
+      const response = await fetch(`/api/enquiries/${enquiryId}/messages`, {
+        headers: {
+          "x-kerb-session-token": token,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not load this conversation.");
+      }
+
+      setThread(result);
+      setMessages(result.messages || []);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  return {
-    session,
-    account,
-    accountEmail,
-    enquiry,
-    listing,
-    participantRole,
-  };
-}
+  async function sendReply(event) {
+    event.preventDefault();
+    setNotice("");
+    setErrorMessage("");
 
-function createReplyEmailHtml({
-  senderName,
-  listingTitle,
-  message,
-  conversationUrl,
-}) {
-  return `
-    <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
-      <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:18px; padding:28px; border:1px solid #e5eaf4;">
-        <div style="font-size:28px; font-weight:900; color:#0048ff; letter-spacing:-1px; margin-bottom:24px;">Kerb</div>
-        <h1 style="margin:0 0 12px; color:#071126; font-size:26px; line-height:1.18;">New message about ${escapeHtml(listingTitle)}</h1>
-        <p style="margin:0 0 18px; color:#59657a; line-height:1.6;">
-          ${escapeHtml(senderName)} replied to your Kerb conversation.
-        </p>
-        <div style="background:#f7f9fd; border:1px solid #e5eaf4; border-radius:14px; padding:18px; margin-bottom:22px;">
-          <p style="margin:0; color:#172033; line-height:1.6;">${escapeHtml(message)}</p>
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const message = reply.trim();
+
+    if (!message) {
+      setErrorMessage("Write a message before sending.");
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const response = await fetch(`/api/enquiries/${enquiryId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not send your reply.");
+      }
+
+      setMessages((currentMessages) => [...currentMessages, result.message]);
+      setThread((currentThread) => ({
+        ...(currentThread || {}),
+        enquiry: result.enquiry || currentThread?.enquiry,
+      }));
+      setReply("");
+      setNotice("Reply sent.");
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong.");
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  useEffect(() => {
+    setCurrentUser(getKerbUser());
+
+    if (enquiryId) {
+      loadThread();
+    }
+  }, [enquiryId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const enquiry = thread?.enquiry || {};
+  const listing = thread?.listing || {};
+  const listingTitle = getTitle(listing, enquiry);
+  const accountEmail = normaliseEmail(thread?.account_email);
+  const isSeller = thread?.participant_role === "seller";
+  const otherPartyName = isSeller
+    ? enquiry.buyer_name || "Buyer"
+    : listing.seller_name || enquiry.seller_email || "Seller";
+  const otherPartyEmail = isSeller ? enquiry.buyer_email : enquiry.seller_email;
+  const otherPartyPhone = isSeller ? enquiry.buyer_phone : enquiry.seller_phone;
+
+  return (
+    <main className="page">
+      <header className="navbar">
+        <Link href="/" className="logo">
+          Kerb
+        </Link>
+
+        <div className="navActions">
+          <Link href="/browse">Browse cars</Link>
+          <Link href="/account">My account</Link>
         </div>
-        <a href="${escapeHtml(conversationUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
-          Open conversation
-        </a>
-        <p style="margin:24px 0 0; color:#7a8499; font-size:13px; line-height:1.5;">
-          You can reply from your Kerb account.
-        </p>
-      </div>
-    </div>
-  `;
+
+        <SiteMenu currentUser={currentUser} onLogout={handleLogout} />
+      </header>
+
+      {isLoading ? (
+        <section className="stateBox">
+          <h1>Loading conversation...</h1>
+        </section>
+      ) : errorMessage && !thread ? (
+        <section className="stateBox">
+          <h1>Could not open this chat</h1>
+          <p>{errorMessage}</p>
+          <Link href="/account">Back to account</Link>
+        </section>
+      ) : (
+        <section className="chatShell">
+          <div className="chatHeader">
+            <Link href="/account" className="backLink">
+              Back to account
+            </Link>
+
+            <div className="listingPreview">
+              <Link href={`/listing/${enquiry.listing_id}`} className="listingImage">
+                <img
+                  src={getImage(listing)}
+                  alt={listingTitle}
+                  onError={(event) => {
+                    event.currentTarget.src = "/cars/hero-car.png";
+                  }}
+                />
+              </Link>
+
+              <div>
+                <span>{isSeller ? "Buyer conversation" : "Seller conversation"}</span>
+                <h1>{listingTitle}</h1>
+                <p>
+                  {formatPrice(listing.price || listing.asking_price)}
+                  {listing.location ? ` · ${listing.location}` : ""}
+                </p>
+              </div>
+
+              <Link href={`/listing/${enquiry.listing_id}`} className="listingButton">
+                View listing
+              </Link>
+            </div>
+          </div>
+
+          <div className="chatGrid">
+            <aside className="sidePanel">
+              <span>{isSeller ? "Buyer" : "Seller"}</span>
+              <h2>{otherPartyName}</h2>
+              <p>{otherPartyEmail || "Email not provided"}</p>
+
+              {otherPartyPhone && (
+                <a href={`tel:${otherPartyPhone}`}>{otherPartyPhone}</a>
+              )}
+
+              <div className="threadMeta">
+                <div>
+                  <span>Status</span>
+                  <strong>{enquiry.status || "new"}</strong>
+                </div>
+                <div>
+                  <span>Started</span>
+                  <strong>{formatDate(enquiry.created_at)}</strong>
+                </div>
+              </div>
+            </aside>
+
+            <section className="conversationPanel">
+              <div className="messagesList">
+                {messages.map((message) => {
+                  const isMine =
+                    normaliseEmail(message.sender_email) === accountEmail;
+
+                  return (
+                    <article
+                      className={`messageBubble ${isMine ? "mine" : "theirs"}`}
+                      key={message.id}
+                    >
+                      <div>
+                        <strong>
+                          {isMine
+                            ? "You"
+                            : message.sender_name ||
+                              (message.sender_role === "seller"
+                                ? "Seller"
+                                : "Buyer")}
+                        </strong>
+                        <span>{formatDate(message.created_at)}</span>
+                      </div>
+                      <p>{message.message}</p>
+                    </article>
+                  );
+                })}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              <form className="replyBox" onSubmit={sendReply}>
+                <label>
+                  Reply to {otherPartyName}
+                  <textarea
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    placeholder="Write your reply..."
+                    maxLength={1200}
+                  />
+                </label>
+
+                {notice && <div className="noticeBox">{notice}</div>}
+                {errorMessage && <div className="errorBox">{errorMessage}</div>}
+
+                <button type="submit" disabled={isSending}>
+                  {isSending ? "Sending..." : "Send reply"}
+                </button>
+              </form>
+            </section>
+          </div>
+        </section>
+      )}
+
+      <style jsx global>{styles}</style>
+    </main>
+  );
 }
 
-export async function GET(request, { params }) {
-  const enquiryId = cleanText(params?.id);
-
-  if (!enquiryId) {
-    return NextResponse.json(
-      { error: "Conversation id is required." },
-      { status: 400 }
-    );
+const styles = `
+  * {
+    box-sizing: border-box;
   }
 
-  const thread = await getThread(request, enquiryId);
-
-  if (thread.error) return thread.error;
-
-  const { data: messages, error: messagesError } = await supabase
-    .from("kerb_enquiry_messages")
-    .select("*")
-    .eq("enquiry_id", enquiryId)
-    .order("created_at", { ascending: true });
-
-  if (messagesError) {
-    return NextResponse.json({ error: messagesError.message }, { status: 500 });
+  body {
+    margin: 0;
+    background: #f7f9fd;
+    color: #071126;
+    font-family: Inter, Arial, sans-serif;
   }
 
-  const fallbackMessages =
-    (messages || []).length > 0
-      ? messages
-      : [
-          {
-            id: `${thread.enquiry.id}-initial`,
-            enquiry_id: thread.enquiry.id,
-            sender_role: "buyer",
-            sender_email: thread.enquiry.buyer_email,
-            sender_name: thread.enquiry.buyer_name,
-            message: thread.enquiry.message,
-            created_at: thread.enquiry.created_at,
-          },
-        ];
-
-  return NextResponse.json({
-    success: true,
-    enquiry: thread.enquiry,
-    listing: thread.listing,
-    messages: fallbackMessages,
-    participant_role: thread.participantRole,
-    account_email: thread.accountEmail,
-  });
-}
-
-export async function POST(request, { params }) {
-  const enquiryId = cleanText(params?.id);
-
-  if (!enquiryId) {
-    return NextResponse.json(
-      { error: "Conversation id is required." },
-      { status: 400 }
-    );
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 
-  let body;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid request body." },
-      { status: 400 }
-    );
+  button,
+  textarea {
+    font-family: inherit;
   }
 
-  const message = cleanText(body?.message);
-
-  if (!message) {
-    return NextResponse.json({ error: "Message is required." }, { status: 400 });
+  button {
+    cursor: pointer;
   }
 
-  if (message.length < 2) {
-    return NextResponse.json(
-      { error: "Please write a little more detail." },
-      { status: 400 }
-    );
+  .page {
+    min-height: 100vh;
+    padding: 24px 36px 56px;
+    background:
+      radial-gradient(circle at top left, rgba(0, 72, 255, 0.06), transparent 34%),
+      #f7f9fd;
   }
 
-  if (message.length > 1200) {
-    return NextResponse.json(
-      { error: "Please keep your message under 1,200 characters." },
-      { status: 400 }
-    );
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    margin-bottom: 28px;
   }
 
-  const thread = await getThread(request, enquiryId);
-
-  if (thread.error) return thread.error;
-
-  const senderName = getDisplayName(thread.account, thread.accountEmail);
-  const now = new Date().toISOString();
-
-  const { data: newMessage, error: insertError } = await supabase
-    .from("kerb_enquiry_messages")
-    .insert({
-      enquiry_id: enquiryId,
-      sender_role: thread.participantRole,
-      sender_email: thread.accountEmail,
-      sender_name: senderName,
-      message,
-      created_at: now,
-    })
-    .select("*")
-    .single();
-
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  .logo {
+    color: #0048ff;
+    font-size: 46px;
+    font-weight: 950;
+    letter-spacing: -2px;
   }
 
-  const nextStatus =
-    thread.participantRole === "seller" &&
-    normaliseEmail(thread.enquiry.status) !== "closed"
-      ? "contacted"
-      : thread.enquiry.status || "new";
-
-  const { data: updatedEnquiry, error: updateError } = await supabase
-    .from("kerb_enquiries")
-    .update({
-      status: nextStatus,
-      last_message_at: now,
-      last_message_preview: getMessagePreview(message),
-      last_message_sender_role: thread.participantRole,
-    })
-    .eq("id", enquiryId)
-    .select("*")
-    .single();
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  .navActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
   }
 
-  const recipientEmail =
-    thread.participantRole === "buyer"
-      ? thread.enquiry.seller_email
-      : thread.enquiry.buyer_email;
+  .navActions a {
+    border: 1px solid #e0e6f2;
+    border-radius: 999px;
+    padding: 11px 16px;
+    background: white;
+    color: #172033;
+    font-weight: 900;
+  }
 
-  const siteUrl = getSiteUrl(request);
-  const conversationUrl = `${siteUrl}/enquiries/${enquiryId}`;
-  const listingTitle =
-    updatedEnquiry.listing_title ||
-    getListingTitle(thread.listing) ||
-    "a Kerb listing";
+  .stateBox,
+  .chatShell {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
 
-  const email = await sendKerbEmail({
-    to: recipientEmail,
-    replyTo: thread.accountEmail,
-    subject: `New Kerb message about ${listingTitle}`,
-    html: createReplyEmailHtml({
-      senderName,
-      listingTitle,
-      message,
-      conversationUrl,
-    }),
-  });
+  .stateBox {
+    border: 1px solid #e0e6f2;
+    border-radius: 24px;
+    background: white;
+    padding: 42px;
+    box-shadow: 0 18px 54px rgba(10, 20, 40, 0.08);
+  }
 
-  return NextResponse.json({
-    success: true,
-    enquiry: updatedEnquiry,
-    message: newMessage,
-    email,
-  });
-}
+  .stateBox h1 {
+    margin: 0 0 12px;
+    font-size: 34px;
+  }
+
+  .stateBox p {
+    color: #59657a;
+    font-weight: 750;
+  }
+
+  .stateBox a,
+  .listingButton,
+  .replyBox button {
+    border: none;
+    border-radius: 14px;
+    background: #0048ff;
+    color: white;
+    padding: 14px 18px;
+    font-weight: 950;
+    display: inline-flex;
+    width: fit-content;
+  }
+
+  .backLink {
+    display: inline-flex;
+    color: #0048ff;
+    font-weight: 950;
+    margin-bottom: 16px;
+  }
+
+  .listingPreview {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #e0e6f2;
+    border-radius: 24px;
+    padding: 18px;
+    background: white;
+    box-shadow: 0 18px 54px rgba(10, 20, 40, 0.08);
+  }
+
+  .listingImage {
+    height: 110px;
+    border-radius: 18px;
+    background: #eef2f7;
+    overflow: hidden;
+    border: 1px solid #e5eaf4;
+  }
+
+  .listingImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .listingPreview span,
+  .sidePanel > span,
+  .threadMeta span,
+  .replyBox label {
+    color: #657189;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .listingPreview h1 {
+    margin: 6px 0;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -1px;
+  }
+
+  .listingPreview p {
+    margin: 0;
+    color: #59657a;
+    font-weight: 850;
+  }
+
+  .chatGrid {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .sidePanel,
+  .conversationPanel {
+    border: 1px solid #e0e6f2;
+    border-radius: 24px;
+    background: white;
+    box-shadow: 0 18px 54px rgba(10, 20, 40, 0.08);
+  }
+
+  .sidePanel {
+    padding: 24px;
+    align-self: start;
+    display: grid;
+    gap: 12px;
+  }
+
+  .sidePanel h2 {
+    margin: 0;
+    font-size: 24px;
+  }
+
+  .sidePanel p {
+    margin: 0;
+    color: #59657a;
+    font-weight: 800;
+    word-break: break-word;
+  }
+
+  .sidePanel a {
+    color: #0048ff;
+    font-weight: 950;
+  }
+
+  .threadMeta {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .threadMeta div {
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    background: #f7f9fd;
+    padding: 14px;
+  }
+
+  .threadMeta strong {
+    display: block;
+    margin-top: 5px;
+    text-transform: capitalize;
+  }
+
+  .conversationPanel {
+    overflow: hidden;
+  }
+
+  .messagesList {
+    min-height: 420px;
+    max-height: 62vh;
+    overflow: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #fbfcff;
+  }
+
+  .messageBubble {
+    max-width: min(72%, 620px);
+    border: 1px solid #e5eaf4;
+    border-radius: 20px;
+    padding: 15px 16px;
+    background: white;
+    box-shadow: 0 10px 26px rgba(10, 20, 40, 0.06);
+  }
+
+  .messageBubble.mine {
+    margin-left: auto;
+    background: #0048ff;
+    color: white;
+    border-color: #0048ff;
+  }
+
+  .messageBubble div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .messageBubble span {
+    color: #7a8499;
+    font-size: 12px;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+
+  .messageBubble.mine span {
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .messageBubble p {
+    margin: 0;
+    line-height: 1.55;
+    font-weight: 750;
+    white-space: pre-wrap;
+  }
+
+  .replyBox {
+    border-top: 1px solid #e0e6f2;
+    padding: 18px;
+    display: grid;
+    gap: 12px;
+    background: white;
+  }
+
+  .replyBox label {
+    display: grid;
+    gap: 9px;
+  }
+
+  .replyBox textarea {
+    min-height: 120px;
+    resize: vertical;
+    border: 1px solid #dbe3f0;
+    border-radius: 16px;
+    padding: 14px;
+    color: #071126;
+    font-size: 16px;
+    font-weight: 750;
+    outline: none;
+  }
+
+  .replyBox textarea:focus {
+    border-color: #0048ff;
+    box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.12);
+  }
+
+  .replyBox button {
+    justify-content: center;
+  }
+
+  .replyBox button:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+  }
+
+  .noticeBox,
+  .errorBox {
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-weight: 900;
+  }
+
+  .noticeBox {
+    background: #ecfdf3;
+    color: #067647;
+  }
+
+  .errorBox {
+    background: #fff1f1;
+    color: #b42318;
+  }
+
+  @media (max-width: 900px) {
+    .page {
+      padding: 18px;
+    }
+
+    .navActions {
+      display: none;
+    }
+
+    .listingPreview,
+    .chatGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .listingImage {
+      height: 190px;
+    }
+
+    .listingButton {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .messagesList {
+      min-height: 360px;
+      max-height: none;
+    }
+
+    .messageBubble {
+      max-width: 92%;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .logo {
+      font-size: 40px;
+    }
+
+    .listingPreview,
+    .sidePanel,
+    .replyBox {
+      padding: 16px;
+    }
+
+    .messagesList {
+      padding: 16px;
+    }
+
+    .messageBubble {
+      max-width: 100%;
+    }
+
+    .messageBubble div {
+      flex-direction: column;
+      gap: 3px;
+    }
+  }
+`;
