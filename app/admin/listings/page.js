@@ -21,6 +21,32 @@ function formatMoney(value) {
   }).format(number);
 }
 
+function roundToNearestHundred(value) {
+  return Math.round(value / 100) * 100;
+}
+
+function getGuidePriceRange(listing) {
+  const low = Number(listing.valuation_low);
+  const high = Number(listing.valuation_high);
+
+  if (!Number.isFinite(low) || !Number.isFinite(high) || low <= 0 || high <= 0) {
+    return "Not generated";
+  }
+
+  const askingPrice = Number(
+    listing.asking_price || listing.price || listing.listing_price || 0
+  );
+
+  if (askingPrice > 0 && high > askingPrice * 1.35) {
+    const adjustedLow = roundToNearestHundred(askingPrice * 0.9);
+    const adjustedHigh = roundToNearestHundred(askingPrice * 1.08);
+
+    return `${formatMoney(adjustedLow)} - ${formatMoney(adjustedHigh)}`;
+  }
+
+  return `${formatMoney(low)} - ${formatMoney(high)}`;
+}
+
 function formatMileage(value) {
   const number = Number(value);
 
@@ -558,14 +584,8 @@ export default function AdminListingsPage() {
                     </div>
 
                     <div>
-                      <span>Guide price</span>
-                      <strong>
-                        {listing.valuation_low && listing.valuation_high
-                          ? `${formatMoney(
-                              listing.valuation_low
-                            )} - ${formatMoney(listing.valuation_high)}`
-                          : "Not generated"}
-                      </strong>
+                      <span>Rough guide</span>
+                      <strong>{getGuidePriceRange(listing)}</strong>
                     </div>
 
                     <div>
