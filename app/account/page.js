@@ -32,12 +32,64 @@ function normaliseStatus(status) {
   return String(status || "new").trim().toLowerCase();
 }
 
+function getListingStatusInfo(status) {
+  const cleanStatus = normaliseStatus(status);
+
+  const statuses = {
+    pending: {
+      className: "pending",
+      label: "Pending review",
+      short: "Waiting for approval",
+      message:
+        "This listing is saved but not live yet. Kerb will review it before buyers can see it.",
+    },
+    approved: {
+      className: "approved",
+      label: "Live",
+      short: "Visible on Kerb",
+      message: "This listing is live on Kerb and buyers can message you.",
+    },
+    rejected: {
+      className: "rejected",
+      label: "Not approved",
+      short: "Needs changes",
+      message:
+        "This listing was not approved. Edit the details or photos, then resubmit it for review.",
+    },
+    sold: {
+      className: "sold",
+      label: "Sold",
+      short: "Archived as sold",
+      message:
+        "This listing is marked as sold and hidden from public browse results.",
+    },
+  };
+
+  return (
+    statuses[cleanStatus] || {
+      className: "pending",
+      label: "Pending review",
+      short: "Waiting for approval",
+      message:
+        "This listing is saved but not live yet. Kerb will review it before buyers can see it.",
+    }
+  );
+}
+
 function getTitle(car) {
   if (car.title) return car.title;
 
   return (
     [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing"
   );
+}
+
+function formatMileage(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) return "TBC";
+
+  return `${new Intl.NumberFormat("en-GB").format(number)} miles`;
 }
 
 function normaliseImageUrl(value) {
@@ -213,6 +265,25 @@ export default function AccountPage() {
     };
   }, [accountData]);
 
+  const listingStatusCounts = useMemo(() => {
+    const listings = accountData?.my_listings || [];
+
+    return {
+      pending: listings.filter(
+        (listing) => normaliseStatus(listing.status) === "pending"
+      ).length,
+      approved: listings.filter(
+        (listing) => normaliseStatus(listing.status) === "approved"
+      ).length,
+      rejected: listings.filter(
+        (listing) => normaliseStatus(listing.status) === "rejected"
+      ).length,
+      sold: listings.filter(
+        (listing) => normaliseStatus(listing.status) === "sold"
+      ).length,
+    };
+  }, [accountData]);
+
   const latestListings = useMemo(
     () => (accountData?.my_listings || []).slice(0, 3),
     [accountData]
@@ -325,6 +396,27 @@ export default function AccountPage() {
           </div>
         </div>
       </section>
+
+      {stats.listings > 0 && (
+        <section className="statusSummary" aria-label="Listing status summary">
+          {[
+            ["pending", "Pending review"],
+            ["approved", "Live"],
+            ["rejected", "Needs changes"],
+            ["sold", "Sold"],
+          ].map(([status, label]) => (
+            <button
+              type="button"
+              key={status}
+              className={`statusSummaryItem ${status}`}
+              onClick={() => setActiveTab("listings")}
+            >
+              <span>{label}</span>
+              <strong>{listingStatusCounts[status]}</strong>
+            </button>
+          ))}
+        </section>
+      )}
 
       <section className="tabs">
         <button
@@ -529,43 +621,69 @@ export default function AccountPage() {
             />
           ) : (
             <div className="cardsGrid">
-              {accountData.my_listings.map((car) => (
-                <article className="card mediaCard" key={car.id}>
-                  <ListingCardImage car={car} />
+              {accountData.my_listings.map((car) => {
+                const statusInfo = getListingStatusInfo(car.status);
+                const status = normaliseStatus(car.status);
+                let viewLabel = "Preview listing";
 
-                  <div className="cardContent">
-                    <span className={`status ${normaliseStatus(car.status)}`}>
-                      {normaliseStatus(car.status)}
-                    </span>
+                if (status === "approved") {
+                  viewLabel = "View live listing";
+                } else if (status === "sold") {
+                  viewLabel = "View sold listing";
+                }
 
-                    <h3>{getTitle(car)}</h3>
+                return (
+                  <article className="card mediaCard" key={car.id}>
+                    <ListingCardImage car={car} />
 
-                    <p>
-                      {car.location || "Location TBC"} ·{" "}
-                      {formatDate(car.created_at)}
-                    </p>
+                    <div className="cardContent">
+                      <span className={`status ${statusInfo.className}`}>
+                        {statusInfo.label}
+                      </span>
 
-                    <div className="detailsGrid">
-                      <div>
-                        <span>Price</span>
-                        <strong>
-                          {formatPrice(car.price || car.asking_price)}
-                        </strong>
+                      <h3>{getTitle(car)}</h3>
+
+                      <p>
+                        {car.location || "Location TBC"} ·{" "}
+                        {formatDate(car.created_at)}
+                      </p>
+
+                      <div
+                        className={`listingStatusNote ${statusInfo.className}`}
+                      >
+                        <strong>{statusInfo.short}</strong>
+                        <span>{statusInfo.message}</span>
                       </div>
 
-                      <div>
-                        <span>Mileage</span>
-                        <strong>{car.mileage || "TBC"}</strong>
+                      <div className="detailsGrid">
+                        <div>
+                          <span>Price</span>
+                          <strong>
+                            {formatPrice(car.price || car.asking_price)}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Mileage</span>
+                          <strong>{formatMileage(car.mileage)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="cardActions listingActions">
+                        <Link href={`/listing/${car.id}`}>
+                          {viewLabel}
+                        </Link>
+
+                        <Link href={`/listing/${car.id}/edit`}>
+                          {status === "rejected"
+                            ? "Edit and resubmit"
+                            : "Edit listing"}
+                        </Link>
                       </div>
                     </div>
-
-                    <div className="cardActions listingActions">
-                      <Link href={`/listing/${car.id}`}>View listing</Link>
-                      <Link href={`/listing/${car.id}/edit`}>Edit listing</Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
@@ -609,7 +727,7 @@ export default function AccountPage() {
 
                       <div>
                         <span>Mileage</span>
-                        <strong>{car.mileage || "TBC"}</strong>
+                        <strong>{formatMileage(car.mileage)}</strong>
                       </div>
                     </div>
 
@@ -711,6 +829,9 @@ function ListingCardImage({ car }) {
 }
 
 function ListingMiniCard({ car, mode }) {
+  const statusInfo = getListingStatusInfo(car.status);
+  const status = normaliseStatus(car.status);
+
   return (
     <article className="miniCard">
       <Link href={`/listing/${car.id}`} className="miniImage">
@@ -724,8 +845,12 @@ function ListingMiniCard({ car, mode }) {
       </Link>
 
       <div>
-        <span className={`status ${mode === "saved" ? "saved" : normaliseStatus(car.status)}`}>
-          {mode === "saved" ? "Saved" : normaliseStatus(car.status)}
+        <span
+          className={`status ${
+            mode === "saved" ? "saved" : statusInfo.className
+          }`}
+        >
+          {mode === "saved" ? "Saved" : statusInfo.label}
         </span>
         <h3>{getTitle(car)}</h3>
         <p>
@@ -733,10 +858,18 @@ function ListingMiniCard({ car, mode }) {
           {car.location || "Location TBC"}
         </p>
 
+        {mode === "listing" && (
+          <small className={`miniStatusText ${statusInfo.className}`}>
+            {statusInfo.short}
+          </small>
+        )}
+
         <div className="miniActions">
           <Link href={`/listing/${car.id}`}>View</Link>
           {mode === "listing" && (
-            <Link href={`/listing/${car.id}/edit`}>Edit</Link>
+            <Link href={`/listing/${car.id}/edit`}>
+              {status === "rejected" ? "Fix listing" : "Edit"}
+            </Link>
           )}
         </div>
       </div>
@@ -990,6 +1123,60 @@ const styles = `
     color: #0048ff;
   }
 
+  .statusSummary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: -4px 0 22px;
+  }
+
+  .statusSummaryItem {
+    border: 1px solid #e5eaf4;
+    border-radius: 18px;
+    background: white;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 10px 28px rgba(10, 20, 40, 0.045);
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .statusSummaryItem:hover {
+    transform: translateY(-2px);
+    border-color: #cfdcff;
+    box-shadow: 0 16px 34px rgba(10, 20, 40, 0.08);
+  }
+
+  .statusSummaryItem span {
+    color: #657189;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .statusSummaryItem strong {
+    color: #071126;
+    font-size: 24px;
+  }
+
+  .statusSummaryItem.pending strong {
+    color: #a15c00;
+  }
+
+  .statusSummaryItem.approved strong {
+    color: #0048ff;
+  }
+
+  .statusSummaryItem.rejected strong {
+    color: #b42318;
+  }
+
+  .statusSummaryItem.sold strong {
+    color: #59657a;
+  }
+
   .tabs {
     display: flex;
     flex-wrap: wrap;
@@ -1233,13 +1420,60 @@ const styles = `
 
   .status.closed,
   .status.sold {
-    background: #eafaf0;
-    color: #137333;
+    background: #f0f3f8;
+    color: #59657a;
+  }
+
+  .status.rejected {
+    background: #fff1f1;
+    color: #b42318;
   }
 
   .status.saved {
     background: #fff1f1;
     color: #d7193f;
+  }
+
+  .listingStatusNote {
+    border-radius: 16px;
+    padding: 13px 14px;
+    margin-top: 16px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #e5eaf4;
+    background: #f7f9fd;
+  }
+
+  .listingStatusNote strong {
+    font-size: 13px;
+    color: #071126;
+  }
+
+  .listingStatusNote span {
+    color: #59657a;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .listingStatusNote.pending {
+    background: #fffaf0;
+    border-color: #ffe0a8;
+  }
+
+  .listingStatusNote.approved {
+    background: #eef3ff;
+    border-color: #cfdcff;
+  }
+
+  .listingStatusNote.rejected {
+    background: #fff5f5;
+    border-color: #ffd1d1;
+  }
+
+  .listingStatusNote.sold {
+    background: #f3f5f9;
+    border-color: #e2e8f3;
   }
 
   .detailsGrid {
@@ -1347,6 +1581,29 @@ const styles = `
     font-size: 13px;
   }
 
+  .miniStatusText {
+    display: block;
+    margin-top: 7px;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .miniStatusText.pending {
+    color: #a15c00;
+  }
+
+  .miniStatusText.approved {
+    color: #0048ff;
+  }
+
+  .miniStatusText.rejected {
+    color: #b42318;
+  }
+
+  .miniStatusText.sold {
+    color: #59657a;
+  }
+
   .miniActions {
     display: flex;
     gap: 8px;
@@ -1418,7 +1675,8 @@ const styles = `
   @media (max-width: 1000px) {
     .hero,
     .overviewGrid,
-    .cardsGrid {
+    .cardsGrid,
+    .statusSummary {
       grid-template-columns: 1fr;
     }
 
