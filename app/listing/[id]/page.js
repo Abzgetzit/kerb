@@ -354,6 +354,7 @@ export default function ListingPage() {
   const [isSendingEnquiry, setIsSendingEnquiry] = useState(false);
   const [enquirySuccess, setEnquirySuccess] = useState("");
   const [enquiryError, setEnquiryError] = useState("");
+  const [sentEnquiryId, setSentEnquiryId] = useState("");
   const [enquiryForm, setEnquiryForm] = useState({
     buyer_name: "",
     buyer_email: "",
@@ -758,8 +759,9 @@ export default function ListingPage() {
       }
 
       setEnquirySuccess(
-        "Message sent to the seller. You can track it from My account."
+        "Message sent to the seller. Your chat has been started."
       );
+      setSentEnquiryId(result.enquiry?.id || "");
       setEnquiryForm((current) => ({
         ...current,
         message: "Hi, is this car still available?",
@@ -1168,6 +1170,9 @@ export default function ListingPage() {
                     </button>
 
                     <Link href="/account?tab=sent">View sent enquiries</Link>
+                    {sentEnquiryId && (
+                      <Link href={`/enquiries/${sentEnquiryId}`}>Open chat</Link>
+                    )}
                   </div>
                 </div>
               ) : (
