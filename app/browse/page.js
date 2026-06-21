@@ -17,8 +17,8 @@ const currentYear = new Date().getFullYear();
 
 const defaultFilters = {
   location: "",
-  radius: "",
   make: "",
+  model: "",
   priceMin: "",
   priceMax: "",
   mileageMin: "",
@@ -44,13 +44,12 @@ const categoryLabels = new Map(
 );
 
 const priceOptions = [
-  0, 1000, 2500, 5000, 7500, 10000, 15000, 20000, 25000, 30000, 35000, 40000,
-  45000, 50000, 60000, 70000, 80000, 90000, 100000, 150000,
+  0, 1000, 2000, 3000, 4000, 5000, 7500, 10000, 12500, 15000, 17500, 20000,
+  25000, 30000, 35000, 40000, 45000, 50000, 60000, 70000, 80000, 90000,
+  100000, 110000, 120000, 130000, 140000, 150000,
 ];
 
 const mileageOptions = Array.from({ length: 16 }, (_, index) => index * 10000);
-
-const radiusOptions = [5, 10, 20, 30, 50, 75, 100, 150, 200];
 
 const approximateUkLocations = [
   { keys: ["leicester", "le1", "le2", "le3", "le4", "le5"], lat: 52.6369, lng: -1.1398 },
@@ -88,10 +87,13 @@ function formatPriceOption(value) {
 
   if (!Number.isFinite(number)) return "Any";
   if (number === 0) return "£0";
-  if (number >= 150000) return "£150k+";
-  if (number >= 1000) return `£${number / 1000}k`;
+  if (number >= 150000) return "£150,000+";
 
-  return `£${number}`;
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(number);
 }
 
 function formatMileageOption(value) {
@@ -99,9 +101,9 @@ function formatMileageOption(value) {
 
   if (!Number.isFinite(number)) return "Any";
   if (number === 0) return "0 miles";
-  if (number >= 150000) return "150k+ miles";
+  if (number >= 150000) return "150,000+ miles";
 
-  return `${number / 1000}k miles`;
+  return `${new Intl.NumberFormat("en-GB").format(number)} miles`;
 }
 
 function getTitle(car) {
@@ -240,26 +242,6 @@ function getApproximateLocation(value) {
     approximateUkLocations.find((location) =>
       location.keys.some((key) => text.includes(key))
     ) || null
-  );
-}
-
-function getDistanceMiles(fromLocation, toLocation) {
-  if (!fromLocation || !toLocation) return null;
-
-  const earthRadiusMiles = 3958.8;
-  const degreesToRadians = Math.PI / 180;
-  const lat1 = fromLocation.lat * degreesToRadians;
-  const lat2 = toLocation.lat * degreesToRadians;
-  const deltaLat = (toLocation.lat - fromLocation.lat) * degreesToRadians;
-  const deltaLng = (toLocation.lng - fromLocation.lng) * degreesToRadians;
-  const haversine =
-    Math.sin(deltaLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
-
-  return (
-    2 *
-    earthRadiusMiles *
-    Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
   );
 }
 
@@ -644,8 +626,8 @@ export default function BrowsePage() {
 
       const urlFilters = {
         location: params.get("location") || "",
-        radius: params.get("radius") || "",
         make: params.get("make") || "",
+        model: params.get("model") || "",
         priceMin: params.get("priceMin") || "",
         priceMax: params.get("priceMax") || "",
         mileageMin: params.get("mileageMin") || "",
@@ -778,8 +760,8 @@ export default function BrowsePage() {
     const params = new URLSearchParams();
 
     if (nextFilters.location) params.set("location", nextFilters.location);
-    if (nextFilters.radius) params.set("radius", nextFilters.radius);
     if (nextFilters.make) params.set("make", nextFilters.make);
+    if (nextFilters.model) params.set("model", nextFilters.model);
     if (nextFilters.priceMin) params.set("priceMin", nextFilters.priceMin);
     if (nextFilters.priceMax) params.set("priceMax", nextFilters.priceMax);
     if (nextFilters.mileageMin) params.set("mileageMin", nextFilters.mileageMin);
@@ -803,6 +785,10 @@ export default function BrowsePage() {
       ...filters,
       [key]: value,
     };
+
+    if (key === "make") {
+      nextFilters.model = "";
+    }
 
     setFilters(nextFilters);
     updateUrl(nextFilters);
@@ -897,12 +883,29 @@ export default function BrowsePage() {
     return [...new Set(cars.map((car) => car.make).filter(Boolean))].sort();
   }, [cars]);
 
+  const availableModels = useMemo(() => {
+    if (!filters.make) return [];
+
+    const selectedMake = String(filters.make).trim().toLowerCase();
+
+    return [
+      ...new Set(
+        cars
+          .filter(
+            (car) =>
+              String(car.make || "").trim().toLowerCase() === selectedMake
+          )
+          .map((car) => car.model)
+          .filter(Boolean)
+      ),
+    ].sort();
+  }, [cars, filters.make]);
+
   const visibleCars = useMemo(() => {
     let list = [...cars];
 
     const query = search.trim().toLowerCase();
     const searchLocation = getApproximateLocation(filters.location);
-    const radiusMiles = Number(filters.radius || 0);
 
     list = list.filter((car) => {
       const searchableText = [
@@ -939,17 +942,25 @@ export default function BrowsePage() {
           carLocationText,
           filters.location
         );
+        const approximateLocationMatch =
+          searchLocation && carLocation && searchLocation === carLocation;
 
-        if (searchLocation && carLocation && radiusMiles > 0) {
-          const distance = getDistanceMiles(searchLocation, carLocation);
-
-          if (distance === null || distance > radiusMiles) return false;
-        } else if (!directLocationMatch) {
+        if (!directLocationMatch && !approximateLocationMatch) {
           return false;
         }
       }
 
       if (filters.make && !includesText(car.make, filters.make)) {
+        return false;
+      }
+
+      if (
+        filters.model &&
+        !includesText(
+          [car.model, car.model_detail, car.variant].filter(Boolean).join(" "),
+          filters.model
+        )
+      ) {
         return false;
       }
 
@@ -1210,38 +1221,21 @@ export default function BrowsePage() {
               <label className="filter-card location-card">
                 <SvgIcon name="location" />
                 <div className="location-content">
-                  <p>Postcode or town</p>
-                  <div className="location-controls">
-                    <input
-                      value={filters.location}
-                      onChange={(event) =>
-                        setFilter("location", event.target.value)
-                      }
-                      placeholder="Any location"
-                    />
-
-                    <select
-                      value={filters.radius}
-                      onChange={(event) =>
-                        setFilter("radius", event.target.value)
-                      }
-                      aria-label="Search radius"
-                    >
-                      <option value="">Any miles</option>
-                      {radiusOptions.map((radius) => (
-                        <option key={radius} value={radius}>
-                          {radius} miles
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <p>Town or city</p>
+                  <input
+                    value={filters.location}
+                    onChange={(event) =>
+                      setFilter("location", event.target.value)
+                    }
+                    placeholder="Any location"
+                  />
                 </div>
               </label>
 
               <label className="filter-card">
                 <SvgIcon name="car" />
                 <div>
-                  <p>Make & model</p>
+                  <p>Make</p>
                   <select
                     value={filters.make}
                     onChange={(event) => setFilter("make", event.target.value)}
@@ -1255,6 +1249,28 @@ export default function BrowsePage() {
                   </select>
                 </div>
               </label>
+
+              {filters.make && availableModels.length > 0 && (
+                <label className="filter-card">
+                  <SvgIcon name="car" />
+                  <div>
+                    <p>Model</p>
+                    <select
+                      value={filters.model}
+                      onChange={(event) =>
+                        setFilter("model", event.target.value)
+                      }
+                    >
+                      <option value="">Any model</option>
+                      {availableModels.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              )}
 
               <label className="filter-card range-card">
                 <SvgIcon name="price" />
@@ -1414,7 +1430,7 @@ export default function BrowsePage() {
                   setSearch(event.target.value);
                   updateUrl(filters, event.target.value, sort);
                 }}
-                placeholder="Search make, model, fuel, postcode..."
+                placeholder="Search make, model, fuel, location..."
                 className="search-input"
               />
 
@@ -1748,21 +1764,18 @@ export default function BrowsePage() {
           padding: 26px 32px 0;
         }
 
+        .filters-panel {
+          max-width: 100%;
+          overflow: hidden;
+        }
+
         .mobile-filter-bar {
           display: none;
         }
 
         .filters-grid {
           display: grid;
-          grid-template-columns:
-            minmax(250px, 1.35fr)
-            minmax(150px, 0.9fr)
-            minmax(205px, 1.08fr)
-            minmax(205px, 1.08fr)
-            minmax(145px, 0.85fr)
-            minmax(145px, 0.85fr)
-            minmax(160px, 0.92fr)
-            150px;
+          grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
           gap: 14px;
           align-items: center;
         }
@@ -1808,6 +1821,7 @@ export default function BrowsePage() {
 
         .filter-card select {
           width: 100%;
+          min-width: 0;
           border: none;
           outline: none;
           background: transparent;
@@ -1848,22 +1862,16 @@ export default function BrowsePage() {
           gap: 5px;
         }
 
-        .location-controls,
         .range-controls {
           display: grid;
           gap: 7px;
           align-items: center;
         }
 
-        .location-controls {
-          grid-template-columns: minmax(0, 1.15fr) minmax(92px, 0.85fr);
-        }
-
         .range-controls {
           grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         }
 
-        .location-controls select,
         .range-controls select {
           min-width: 0;
           height: 29px;
@@ -1888,6 +1896,7 @@ export default function BrowsePage() {
           align-items: center;
           justify-content: center;
           gap: 10px;
+          min-width: 0;
           transition: transform 0.18s ease, box-shadow 0.18s ease,
             background 0.18s ease;
         }
@@ -1964,12 +1973,14 @@ export default function BrowsePage() {
 
         .clear-button {
           height: 46px;
+          border: none;
           border-radius: 14px;
           background: #eef3ff;
           color: #0b45ff;
           padding: 0 18px;
           font-weight: 950;
           white-space: nowrap;
+          cursor: pointer;
         }
 
         .results-section {
