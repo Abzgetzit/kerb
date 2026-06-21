@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import SiteMenu from "../../../components/SiteMenu";
@@ -148,6 +148,54 @@ function getFeatures(car) {
   return [];
 }
 
+function normaliseImageUrl(value) {
+  if (!value) return "";
+
+  return String(value).trim();
+}
+
+function parseImageField(value) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.map(normaliseImageUrl).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      if (Array.isArray(parsed)) {
+        return parsed.map(normaliseImageUrl).filter(Boolean);
+      }
+
+      if (typeof parsed === "string") {
+        return [normaliseImageUrl(parsed)].filter(Boolean);
+      }
+    } catch {
+      return [normaliseImageUrl(trimmed)].filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
+function getListingImages(car) {
+  const images = [
+    ...parseImageField(car?.photo_urls),
+    ...parseImageField(car?.photos),
+    ...parseImageField(car?.image_urls),
+    ...parseImageField(car?.images),
+    ...parseImageField(car?.image_url),
+  ];
+
+  return [...new Set(images)].filter(Boolean);
+}
+
 function createKerbUserFromStorage() {
   const savedUser = localStorage.getItem("kerbUser");
   const savedEmail = localStorage.getItem("kerbAccountEmail");
@@ -179,8 +227,13 @@ export default function EditListingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [existingPhotos, setExistingPhotos] = useState([]);
+  const [newPhotos, setNewPhotos] = useState([]);
+  const photoUrlsRef = useRef([]);
 
   const title = useMemo(() => getTitle(listing), [listing]);
+  const totalPhotoCount = existingPhotos.length + newPhotos.length;
+  const remainingPhotoSlots = Math.max(12 - totalPhotoCount, 0);
 
   useEffect(() => {
     const user = createKerbUserFromStorage();
@@ -222,6 +275,8 @@ export default function EditListingPage() {
         const car = result.listing;
 
         setListing(car);
+        setExistingPhotos(getListingImages(car));
+        setNewPhotos([]);
         setForm({
           asking_price: car.asking_price || car.price || "",
           mileage: car.mileage || "",
@@ -245,6 +300,13 @@ export default function EditListingPage() {
 
     loadListingForEdit();
   }, [listingId]);
+
+  useEffect(() => {
+    return () => {
+      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      photoUrlsRef.current = [];
+    };
+  }, []);
 
   function handleLogout() {
     localStorage.removeItem("kerbSessionToken");
@@ -274,6 +336,52 @@ export default function EditListingPage() {
     });
   }
 
+  function handlePhotoUpload(event) {
+    const files = Array.from(event.target.files || []).slice(
+      0,
+      remainingPhotoSlots
+    );
+
+    const previews = files.map((file) => {
+      const url = URL.createObjectURL(file);
+      photoUrlsRef.current.push(url);
+
+      return {
+        id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
+        file,
+        name: file.name,
+        url,
+      };
+    });
+
+    setNewPhotos((currentPhotos) =>
+      [...currentPhotos, ...previews].slice(0, 12 - existingPhotos.length)
+    );
+
+    event.target.value = "";
+  }
+
+  function removeExistingPhoto(photoUrl) {
+    setExistingPhotos((currentPhotos) =>
+      currentPhotos.filter((url) => url !== photoUrl)
+    );
+  }
+
+  function removeNewPhoto(photoId) {
+    setNewPhotos((currentPhotos) => {
+      const photoToRemove = currentPhotos.find((photo) => photo.id === photoId);
+
+      if (photoToRemove) {
+        URL.revokeObjectURL(photoToRemove.url);
+        photoUrlsRef.current = photoUrlsRef.current.filter(
+          (url) => url !== photoToRemove.url
+        );
+      }
+
+      return currentPhotos.filter((photo) => photo.id !== photoId);
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -289,17 +397,36 @@ export default function EditListingPage() {
     setSuccessMessage("");
 
     try {
+      const formData = new FormData();
+
+      formData.set("listing_id", listingId);
+      formData.set("asking_price", form.asking_price);
+      formData.set("mileage", form.mileage);
+      formData.set("condition", form.condition);
+      formData.set("body_type", form.body_type);
+      formData.set("finance_available", form.finance_available);
+      formData.set("description", form.description);
+      formData.set("seller_phone", form.seller_phone);
+      formData.set("location", form.location);
+      formData.set("fuel_type", form.fuel_type);
+      formData.set("gearbox", form.gearbox);
+      formData.set("listing_category", form.listing_category);
+      formData.set("existing_photo_urls", JSON.stringify(existingPhotos));
+
+      form.features.forEach((feature) => {
+        formData.append("features", feature);
+      });
+
+      newPhotos.forEach((photo) => {
+        formData.append("new_photos", photo.file);
+      });
+
       const response = await fetch("/api/listing-editor", {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
           "x-kerb-session-token": token,
         },
-        body: JSON.stringify({
-          listing_id: listingId,
-          ...form,
-          finance_available: form.finance_available === "true",
-        }),
+        body: formData,
       });
 
       const result = await response.json();
@@ -311,6 +438,10 @@ export default function EditListingPage() {
       const wasRejected = normaliseStatus(listing?.status) === "rejected";
 
       setListing(result.listing);
+      setExistingPhotos(getListingImages(result.listing));
+      newPhotos.forEach((photo) => URL.revokeObjectURL(photo.url));
+      photoUrlsRef.current = [];
+      setNewPhotos([]);
       setSuccessMessage(
         wasRejected
           ? "Listing changes saved and sent back for review."
@@ -522,6 +653,80 @@ export default function EditListingPage() {
               </select>
             </label>
           </div>
+        </section>
+
+        <section className="form-section">
+          <div className="section-heading photoHeading">
+            <div>
+              <h2>Photos</h2>
+              <p>
+                Keep up to 12 photos. Remove individual images or add new ones.
+              </p>
+            </div>
+
+            <span>{totalPhotoCount}/12 photos</span>
+          </div>
+
+          <label className="photoUpload">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              disabled={remainingPhotoSlots === 0}
+            />
+            <strong>
+              {remainingPhotoSlots === 0
+                ? "Photo limit reached"
+                : "Add car photos"}
+            </strong>
+            <span>
+              {remainingPhotoSlots === 0
+                ? "Remove a photo before adding another."
+                : `${remainingPhotoSlots} slot${
+                    remainingPhotoSlots === 1 ? "" : "s"
+                  } remaining`}
+            </span>
+          </label>
+
+          {totalPhotoCount > 0 ? (
+            <div className="photoGrid">
+              {existingPhotos.map((photoUrl, index) => (
+                <div className="photoTile" key={photoUrl}>
+                  <img src={photoUrl} alt={`Current car photo ${index + 1}`} />
+
+                  {index === 0 && <span className="coverBadge">Cover</span>}
+
+                  <button
+                    type="button"
+                    onClick={() => removeExistingPhoto(photoUrl)}
+                    aria-label="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {newPhotos.map((photo) => (
+                <div className="photoTile newPhoto" key={photo.id}>
+                  <img src={photo.url} alt={photo.name} />
+                  <span className="coverBadge">New</span>
+
+                  <button
+                    type="button"
+                    onClick={() => removeNewPhoto(photo.id)}
+                    aria-label="Remove new photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="noPhotos">
+              Add at least one clear photo before submitting changes.
+            </div>
+          )}
         </section>
 
         <section className="form-section">
@@ -792,6 +997,130 @@ const styles = `
     margin-bottom: 18px;
   }
 
+  .photoHeading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .photoHeading p {
+    margin-top: 6px;
+  }
+
+  .photoHeading > span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border-radius: 999px;
+    padding: 0 12px;
+    background: #eef3ff;
+    color: #0048ff;
+    font-size: 13px;
+    font-weight: 950;
+    white-space: nowrap;
+  }
+
+  .photoUpload {
+    min-height: 118px;
+    border: 2px dashed #cfdcff;
+    border-radius: 20px;
+    background: #f8fbff;
+    display: grid;
+    place-items: center;
+    gap: 6px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    color: #071126;
+    margin-bottom: 18px;
+  }
+
+  .photoUpload input {
+    display: none;
+  }
+
+  .photoUpload strong {
+    font-size: 18px;
+  }
+
+  .photoUpload span {
+    color: #657189;
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .photoUpload:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+
+  .photoGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .photoTile {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #eef2f7;
+    border: 1px solid #dfe6f1;
+  }
+
+  .photoTile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .photoTile button {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(7, 17, 38, 0.78);
+    color: white;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .coverBadge {
+    position: absolute;
+    left: 9px;
+    bottom: 9px;
+    min-height: 28px;
+    border-radius: 999px;
+    padding: 0 10px;
+    background: white;
+    color: #0048ff;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .newPhoto {
+    border-color: #0048ff;
+  }
+
+  .noPhotos {
+    border: 1px dashed #d7e1f2;
+    border-radius: 16px;
+    padding: 18px;
+    background: #fbfcff;
+    color: #657189;
+    font-weight: 850;
+  }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -923,6 +1252,10 @@ const styles = `
     .featureChecklist {
       grid-template-columns: repeat(2, 1fr);
     }
+
+    .photoGrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   @media (max-width: 760px) {
@@ -944,8 +1277,13 @@ const styles = `
     }
 
     .grid,
-    .featureChecklist {
+    .featureChecklist,
+    .photoGrid {
       grid-template-columns: 1fr;
+    }
+
+    .photoHeading {
+      flex-direction: column;
     }
 
     .form-section {
