@@ -33,6 +33,31 @@ function cleanBoolean(value) {
   return text === "true" || text === "yes" || text === "1";
 }
 
+function roundToNearestHundred(value) {
+  return Math.round(value / 100) * 100;
+}
+
+function getSafeValuation({ low, high, askingPrice }) {
+  if (!low || !high) {
+    return {
+      low,
+      high,
+    };
+  }
+
+  if (askingPrice && high > askingPrice * 1.35) {
+    return {
+      low: roundToNearestHundred(askingPrice * 0.9),
+      high: roundToNearestHundred(askingPrice * 1.08),
+    };
+  }
+
+  return {
+    low,
+    high,
+  };
+}
+
 function getFileExtension(fileName = "") {
   const extension = String(fileName).split(".").pop();
 
@@ -166,6 +191,11 @@ export async function POST(request) {
     const askingPrice = cleanNumber(formData.get("asking_price"));
     const location = cleanText(formData.get("location"));
     const financeAvailable = cleanBoolean(formData.get("finance_available"));
+    const valuation = getSafeValuation({
+      low: cleanNumber(formData.get("valuation_low")),
+      high: cleanNumber(formData.get("valuation_high")),
+      askingPrice,
+    });
     const features = cleanFeatures(formData);
     const listingCategory = cleanListingCategory(
       formData.get("listing_category")
@@ -204,8 +234,8 @@ export async function POST(request) {
       description: cleanText(formData.get("description")),
       features,
 
-      valuation_low: cleanNumber(formData.get("valuation_low")),
-      valuation_high: cleanNumber(formData.get("valuation_high")),
+      valuation_low: valuation.low,
+      valuation_high: valuation.high,
 
       image_url: photoUrls[0] || null,
       photos: photoUrls,
