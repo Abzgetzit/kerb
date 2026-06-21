@@ -111,11 +111,17 @@ export async function GET(request) {
   }
 
   function attachListing(enquiries = []) {
-    return enquiries.map((enquiry) => ({
-      ...enquiry,
-      listing:
-        enquiryListingsById.get(String(enquiry.listing_id || "")) || null,
-    }));
+    return enquiries
+      .map((enquiry) => ({
+        ...enquiry,
+        listing:
+          enquiryListingsById.get(String(enquiry.listing_id || "")) || null,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.last_message_at || b.created_at) -
+          new Date(a.last_message_at || a.created_at)
+      );
   }
 
   const listingOwnerFilters = [
