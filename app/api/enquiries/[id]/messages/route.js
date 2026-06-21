@@ -207,8 +207,14 @@ function createReplyEmailHtml({
   `;
 }
 
+async function getEnquiryId(params) {
+  const resolvedParams = await params;
+
+  return cleanText(resolvedParams?.id);
+}
+
 export async function GET(request, { params }) {
-  const enquiryId = cleanText(params?.id);
+  const enquiryId = await getEnquiryId(params);
 
   if (!enquiryId) {
     return NextResponse.json(
@@ -257,7 +263,7 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
-  const enquiryId = cleanText(params?.id);
+  const enquiryId = await getEnquiryId(params);
 
   if (!enquiryId) {
     return NextResponse.json(
