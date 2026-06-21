@@ -222,6 +222,41 @@ function getGuidePrice({ make, model, modelDetail }) {
   );
 }
 
+function cleanNumber(value) {
+  const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
+
+  return Number.isFinite(number) ? number : 0;
+}
+
+function roundToNearestHundred(value) {
+  return Math.round(value / 100) * 100;
+}
+
+function getAgeFactor(age) {
+  const factors = [
+    0.92,
+    0.78,
+    0.68,
+    0.6,
+    0.53,
+    0.46,
+    0.39,
+    0.32,
+    0.26,
+    0.21,
+    0.17,
+    0.135,
+    0.105,
+    0.085,
+    0.07,
+    0.06,
+  ];
+
+  if (age < factors.length) return factors[age];
+
+  return Math.max(0.04, 0.06 * Math.pow(0.9, age - 15));
+}
+
 export default function PostCarPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -236,6 +271,7 @@ export default function PostCarPage() {
   const [customModel, setCustomModel] = useState("");
   const [year, setYear] = useState("");
   const [mileage, setMileage] = useState("");
+  const [askingPrice, setAskingPrice] = useState("");
   const [fuel, setFuel] = useState("");
   const [gearbox, setGearbox] = useState("");
   const [bodyType, setBodyType] = useState("");
@@ -283,34 +319,52 @@ export default function PostCarPage() {
     if (!make || !year || !mileage) return null;
 
     const carAge = new Date().getFullYear() - Number(year);
-    const mileageNumber = Number(String(mileage).replace(/[^0-9]/g, ""));
+    const mileageNumber = cleanNumber(mileage);
+    const askingPriceNumber = cleanNumber(askingPrice);
 
     if (!Number.isFinite(carAge) || !Number.isFinite(mileageNumber)) return null;
 
     const cleanAge = Math.max(carAge, 0);
     const guidePrice = getGuidePrice({ make, model, modelDetail });
-    const depreciationFactor = Math.max(0.22, Math.pow(0.88, cleanAge));
-    const expectedMileage = Math.max(cleanAge, 1) * 8000;
+    const depreciationFactor = getAgeFactor(cleanAge);
+    const expectedMileage = Math.max(cleanAge, 1) * 9000;
     const mileageDelta = mileageNumber - expectedMileage;
-    const mileageRate = guidePrice >= 50000 ? 0.08 : 0.055;
+    const mileageRate = guidePrice >= 50000 ? 0.035 : 0.02;
 
     let estimate = guidePrice * depreciationFactor - mileageDelta * mileageRate;
 
     if (fuel === "Electric") estimate *= 1.06;
     if (fuel === "Hybrid") estimate *= 1.04;
-    if (gearbox === "Automatic") estimate *= 1.025;
+    if (fuel === "Diesel" && cleanAge >= 8) estimate *= 0.94;
+    if (gearbox === "Automatic") estimate *= 1.02;
     if (condition === "New") estimate = guidePrice * 0.95;
     if (condition === "Nearly new") estimate = Math.max(estimate, guidePrice * 0.78);
+    if (condition === "Excellent") estimate *= 1.05;
+    if (condition === "Good") estimate *= 1;
     if (condition === "Fair") estimate *= 0.9;
     if (condition === "Needs work") estimate *= 0.72;
+
+    if (askingPriceNumber > 0 && estimate > askingPriceNumber * 1.35) {
+      estimate = askingPriceNumber * 0.98;
+    }
 
     estimate = Math.max(estimate, 1200);
 
     return {
-      low: Math.round((estimate * 0.92) / 100) * 100,
-      high: Math.round((estimate * 1.08) / 100) * 100,
+      low: roundToNearestHundred(estimate * 0.92),
+      high: roundToNearestHundred(estimate * 1.08),
     };
-  }, [make, model, modelDetail, year, mileage, fuel, gearbox, condition]);
+  }, [
+    make,
+    model,
+    modelDetail,
+    year,
+    mileage,
+    askingPrice,
+    fuel,
+    gearbox,
+    condition,
+  ]);
 
   function handleLogout() {
     localStorage.removeItem("kerbSessionToken");
@@ -700,7 +754,13 @@ export default function PostCarPage() {
 
             <label>
               Asking price
-              <input name="asking_price" placeholder="£12,995" required />
+              <input
+                name="asking_price"
+                value={askingPrice}
+                onChange={(e) => setAskingPrice(e.target.value)}
+                placeholder="£12,995"
+                required
+              />
             </label>
 
             <label>
@@ -748,14 +808,15 @@ export default function PostCarPage() {
           {valuation && (
             <div className="valuationBox">
               <div>
-                <span>Estimated guide price</span>
+                <span>Rough guide price</span>
                 <strong>
                   £{valuation.low.toLocaleString()} - £{valuation.high.toLocaleString()}
                 </strong>
               </div>
               <p>
-                This guide uses make, model, version, age, mileage, fuel and
-                condition. It is still an estimate, not a guaranteed sale price.
+                This is a conservative Kerb estimate using make, model, version,
+                age, mileage, fuel, condition and your asking price. It is not a
+                guaranteed sale price.
               </p>
             </div>
           )}
