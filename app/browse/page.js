@@ -27,6 +27,19 @@ const defaultFilters = {
   category: "",
 };
 
+const categoryOptions = [
+  { value: "", label: "All categories" },
+  { value: "first-car", label: "First cars" },
+  { value: "performance", label: "Performance cars" },
+  { value: "family-suv", label: "Family SUVs" },
+  { value: "electric-hybrid", label: "Electric & hybrid" },
+  { value: "newer-car", label: "Newer cars" },
+];
+
+const categoryLabels = new Map(
+  categoryOptions.map((category) => [category.value, category.label])
+);
+
 function formatPrice(value) {
   const number = Number(value);
 
@@ -180,7 +193,6 @@ function carHasFinance(car) {
 }
 
 const listingCategoryValues = new Set([
-  "general",
   "first-car",
   "performance",
   "family-suv",
@@ -191,7 +203,17 @@ const listingCategoryValues = new Set([
 function normaliseCategory(value) {
   const category = String(value || "").trim().toLowerCase();
 
+  if (category === "general") return "";
+
   return listingCategoryValues.has(category) ? category : "";
+}
+
+function getCategoryLabel(value) {
+  const category = normaliseCategory(value);
+
+  if (!category) return "";
+
+  return categoryLabels.get(category) || "";
 }
 
 function textValue(value) {
@@ -213,6 +235,7 @@ function categorySearchText(car) {
     car.model,
     car.variant,
     car.model_detail,
+    car.listing_category,
     car.fuel,
     car.fuel_type,
     car.body_type,
@@ -245,23 +268,58 @@ function carMatchesCategory(car, category) {
   const condition = String(car.condition || "").toLowerCase();
   const year = Number(car.year || car.registration_year || 0);
   const price = getCarPrice(car);
+  const mileage = getCarMileage(car);
 
   if (selectedCategory === "first-car") {
+    const isSmallOrEasyCar = includesAny(text, [
+      "abarth 595",
+      "aygo",
+      "c1",
+      "citigo",
+      "clio",
+      "corsa",
+      "fabia",
+      "fiat 500",
+      "fiesta",
+      "hatchback",
+      "i10",
+      "i20",
+      "ibiza",
+      "jazz",
+      "mazda2",
+      "micra",
+      "panda",
+      "picanto",
+      "polo",
+      "rio",
+      "sandero",
+      "swift",
+      "up",
+      "yaris",
+    ]);
+
     return (
-      (price > 0 && price <= 8000) ||
       includesAny(text, [
         "first car",
         "learner",
         "cheap insurance",
         "low insurance",
         "new driver",
-      ])
+        "ideal first",
+      ]) ||
+      (price > 0 &&
+        price <= 10000 &&
+        (!mileage || mileage <= 90000) &&
+        (bodyType.includes("hatchback") || isSmallOrEasyCar))
     );
   }
 
   if (selectedCategory === "performance") {
     return includesAny(text, [
       "performance",
+      "hot hatch",
+      "sports",
+      "sport",
       "m sport",
       "amg",
       "s line",
@@ -285,6 +343,10 @@ function carMatchesCategory(car, category) {
       "vrs",
       "cupra",
       "nismo",
+      "f-type",
+      "v6",
+      "v8",
+      "quadrifoglio",
     ]);
   }
 
@@ -292,19 +354,55 @@ function carMatchesCategory(car, category) {
     return (
       bodyType.includes("suv") ||
       bodyType.includes("4x4") ||
-      includesAny(text, ["family suv", "seven seats", "7 seats"])
+      bodyType.includes("crossover") ||
+      includesAny(text, [
+        "family suv",
+        "seven seats",
+        "7 seats",
+        "7-seater",
+        "qashqai",
+        "sportage",
+        "tucson",
+        "tiguan",
+        "kuga",
+        "rav4",
+        "x3",
+        "x5",
+        "q5",
+        "glc",
+        "xc60",
+        "xc90",
+      ])
     );
   }
 
   if (selectedCategory === "electric-hybrid") {
-    return fuel.includes("electric") || fuel.includes("hybrid");
+    return (
+      fuel.includes("electric") ||
+      fuel.includes("hybrid") ||
+      includesAny(text, [
+        "bev",
+        "ev",
+        "phev",
+        "plug-in",
+        "e-tron",
+        "ioniq",
+        "leaf",
+        "model 3",
+        "model y",
+        "taycan",
+        "id.3",
+        "id.4",
+      ])
+    );
   }
 
   if (selectedCategory === "newer-car") {
     return (
       condition.includes("new") ||
       condition.includes("nearly new") ||
-      year >= currentYear - 1
+      year >= currentYear - 2 ||
+      (year >= currentYear - 3 && mileage > 0 && mileage <= 15000)
     );
   }
 
@@ -461,7 +559,7 @@ export default function BrowsePage() {
         fuel: params.get("fuel") || "",
         condition: params.get("condition") || "",
         finance: params.get("finance") || "",
-        category: params.get("category") || "",
+        category: normaliseCategory(params.get("category")),
       };
 
       setFilters(urlFilters);
@@ -712,6 +810,7 @@ export default function BrowsePage() {
         car.make,
         car.model,
         car.variant,
+        car.model_detail,
         car.year,
         car.fuel,
         car.fuel_type,
@@ -721,6 +820,8 @@ export default function BrowsePage() {
         car.city,
         car.postcode,
         car.body_type,
+        car.listing_category,
+        car.features,
         car.description,
       ]
         .filter(Boolean)
@@ -790,7 +891,12 @@ export default function BrowsePage() {
     });
 
     if (sort === "price-low") {
-      list.sort((a, b) => getCarPrice(a) - getCarPrice(b));
+      list.sort((a, b) => {
+        const aPrice = getCarPrice(a) || Number.MAX_SAFE_INTEGER;
+        const bPrice = getCarPrice(b) || Number.MAX_SAFE_INTEGER;
+
+        return aPrice - bPrice;
+      });
     }
 
     if (sort === "price-high") {
@@ -798,7 +904,12 @@ export default function BrowsePage() {
     }
 
     if (sort === "mileage-low") {
-      list.sort((a, b) => getCarMileage(a) - getCarMileage(b));
+      list.sort((a, b) => {
+        const aMileage = getCarMileage(a) || Number.MAX_SAFE_INTEGER;
+        const bMileage = getCarMileage(b) || Number.MAX_SAFE_INTEGER;
+
+        return aMileage - bMileage;
+      });
     }
 
     return list;
@@ -813,6 +924,8 @@ export default function BrowsePage() {
     Object.values(filters).filter(Boolean).length +
     (search.trim() ? 1 : 0) +
     (sort !== "newest" ? 1 : 0);
+
+  const selectedCategoryLabel = getCategoryLabel(filters.category);
 
   return (
     <>
@@ -1081,6 +1194,25 @@ export default function BrowsePage() {
                 </div>
               </label>
 
+              <label className="filter-card">
+                <SvgIcon name="sliders" />
+                <div>
+                  <p>Category</p>
+                  <select
+                    value={filters.category}
+                    onChange={(event) =>
+                      setFilter("category", event.target.value)
+                    }
+                  >
+                    {categoryOptions.map((category) => (
+                      <option key={category.value || "all"} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+
               <button
                 className="filter-button"
                 type="button"
@@ -1139,9 +1271,11 @@ export default function BrowsePage() {
             <h1>
               {loading
                 ? "Loading cars..."
-                : `${visibleCars.length} car${
-                    visibleCars.length === 1 ? "" : "s"
-                  } found`}
+                : selectedCategoryLabel
+                  ? `${visibleCars.length} ${selectedCategoryLabel.toLowerCase()} found`
+                  : `${visibleCars.length} car${
+                      visibleCars.length === 1 ? "" : "s"
+                    } found`}
             </h1>
           </div>
 
@@ -1439,8 +1573,8 @@ export default function BrowsePage() {
 
         .filters-grid {
           display: grid;
-          grid-template-columns: repeat(6, minmax(130px, 1fr)) 160px;
-          gap: 20px;
+          grid-template-columns: repeat(7, minmax(118px, 1fr)) 150px;
+          gap: 14px;
           align-items: center;
         }
 
