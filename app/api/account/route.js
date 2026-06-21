@@ -118,10 +118,19 @@ export async function GET(request) {
     }));
   }
 
+  const listingOwnerFilters = [
+    `seller_email.ilike.${email}`,
+    `account_email.ilike.${email}`,
+  ];
+
+  if (session.account_id) {
+    listingOwnerFilters.push(`account_id.eq.${session.account_id}`);
+  }
+
   const { data: myListings, error: listingsError } = await supabase
     .from("kerb_listings")
     .select("*")
-    .ilike("seller_email", email)
+    .or(listingOwnerFilters.join(","))
     .order("created_at", { ascending: false });
 
   if (listingsError) {
