@@ -40,7 +40,7 @@ function createSellerEmailHtml({
   buyerPhone,
   message,
   listingTitle,
-  listingUrl,
+  conversationUrl,
 }) {
   return `
     <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
@@ -62,19 +62,19 @@ function createSellerEmailHtml({
           <p style="margin:0; color:#172033; line-height:1.6;">${escapeHtml(message)}</p>
         </div>
 
-        <a href="${escapeHtml(listingUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
-          View listing
+        <a href="${escapeHtml(conversationUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
+          Open conversation
         </a>
 
         <p style="margin:24px 0 0; color:#7a8499; font-size:13px;">
-          Reply directly to the buyer using their email or phone number above.
+          You can reply from your Kerb account, or contact the buyer using their details above.
         </p>
       </div>
     </div>
   `;
 }
 
-function createBuyerEmailHtml({ buyerName, listingTitle, listingUrl }) {
+function createBuyerEmailHtml({ buyerName, listingTitle, conversationUrl }) {
   return `
     <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
       <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:18px; padding:28px; border:1px solid #e5eaf4;">
@@ -85,11 +85,11 @@ function createBuyerEmailHtml({ buyerName, listingTitle, listingUrl }) {
         </p>
 
         <p style="margin:0 0 22px; color:#59657a; line-height:1.6;">
-          The seller can now contact you directly using the details you provided.
+          The seller can now reply in your Kerb conversation.
         </p>
 
-        <a href="${escapeHtml(listingUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
-          View listing
+        <a href="${escapeHtml(conversationUrl)}" style="display:inline-block; background:#0048ff; color:#ffffff; text-decoration:none; padding:14px 20px; border-radius:12px; font-weight:bold;">
+          Open conversation
         </a>
 
         <p style="margin:24px 0 0; color:#7a8499; font-size:13px;">
@@ -153,6 +153,20 @@ export async function POST(request) {
     );
   }
 
+  if (message.length < 8) {
+    return NextResponse.json(
+      { error: "Please write a little more detail in your message." },
+      { status: 400 }
+    );
+  }
+
+  if (message.length > 1200) {
+    return NextResponse.json(
+      { error: "Please keep your message under 1,200 characters." },
+      { status: 400 }
+    );
+  }
+
   const { data: listing, error: listingError } = await supabase
     .from("kerb_listings")
     .select("*")
@@ -184,6 +198,9 @@ export async function POST(request) {
       seller_phone: sellerPhone || null,
       listing_title: listingTitle,
       status: "new",
+      last_message_at: new Date().toISOString(),
+      last_message_preview: message.replace(/\s+/g, " ").slice(0, 220),
+      last_message_sender_role: "buyer",
     })
     .select("*")
     .single();
@@ -192,12 +209,27 @@ export async function POST(request) {
     return NextResponse.json({ error: enquiryError.message }, { status: 500 });
   }
 
+  const { error: messageError } = await supabase
+    .from("kerb_enquiry_messages")
+    .insert({
+      enquiry_id: enquiry.id,
+      sender_role: "buyer",
+      sender_email: buyerEmail,
+      sender_name: buyerName,
+      message,
+      created_at: enquiry.created_at || new Date().toISOString(),
+    });
+
+  if (messageError) {
+    return NextResponse.json({ error: messageError.message }, { status: 500 });
+  }
+
   const siteUrl =
     request.headers.get("origin") ||
     process.env.NEXT_PUBLIC_SITE_URL ||
     "https://kerb.vercel.app";
 
-  const listingUrl = `${siteUrl}/listing/${listingId}`;
+  const conversationUrl = `${siteUrl}/enquiries/${enquiry.id}`;
 
   const emailResults = {
     seller_email_sent: false,
@@ -220,7 +252,7 @@ export async function POST(request) {
             buyerPhone,
             message,
             listingTitle,
-            listingUrl,
+            conversationUrl,
           }),
         });
 
@@ -241,7 +273,7 @@ export async function POST(request) {
         html: createBuyerEmailHtml({
           buyerName,
           listingTitle,
-          listingUrl,
+          conversationUrl,
         }),
       });
 
