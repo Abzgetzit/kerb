@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 const VALID_STATUSES = ["pending", "approved", "sold", "rejected"];
+const MODERATION_REASONS = [
+  "Needs better photos",
+  "Price looks suspicious",
+  "Missing key details",
+  "Possible duplicate",
+  "Needs clearer description",
+  "Looks good",
+];
 
 function normaliseStatus(status) {
   const cleaned = String(status || "pending").trim().toLowerCase();
@@ -173,6 +181,24 @@ function getStatusNotice(status, result) {
   }
 
   if (status === "rejected") {
+    const rejectedEmail = result?.emails?.listing_rejected;
+
+    if (rejectedEmail?.sent) {
+      return {
+        type: "success",
+        message: "Listing rejected and the seller was emailed what to fix.",
+      };
+    }
+
+    if (rejectedEmail?.skipped || rejectedEmail?.error) {
+      return {
+        type: "warning",
+        message: `Listing rejected, but the seller email was not sent${
+          rejectedEmail?.error ? `: ${rejectedEmail.error}` : "."
+        }`,
+      };
+    }
+
     return {
       type: "success",
       message: "Listing rejected and kept out of public browse results.",
@@ -194,6 +220,7 @@ export default function AdminListingsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState(null);
   const [filter, setFilter] = useState("pending");
+  const [moderationDrafts, setModerationDrafts] = useState({});
 
   useEffect(() => {
     const storedPassword = localStorage.getItem("kerbAdminPassword");
@@ -253,8 +280,25 @@ export default function AdminListingsPage() {
     setListings([]);
   }
 
+  function getModerationDraft(id) {
+    return moderationDrafts[id] || { reason: "", note: "" };
+  }
+
+  function updateModerationDraft(id, field, value) {
+    setModerationDrafts((current) => ({
+      ...current,
+      [id]: {
+        ...(current[id] || { reason: "", note: "" }),
+        [field]: value,
+      },
+    }));
+  }
+
   async function updateStatus(id, status) {
     const cleanStatus = normaliseStatus(status);
+    const draft = getModerationDraft(id);
+    const moderationReason =
+      draft.reason || (cleanStatus === "rejected" ? "Needs changes" : "");
 
     setIsUpdatingId(id);
     setErrorMessage("");
@@ -267,7 +311,12 @@ export default function AdminListingsPage() {
           "Content-Type": "application/json",
           "x-admin-password": savedPassword,
         },
-        body: JSON.stringify({ id, status: cleanStatus }),
+        body: JSON.stringify({
+          id,
+          status: cleanStatus,
+          moderation_reason: moderationReason,
+          moderation_note: draft.note || "",
+        }),
       });
 
       const result = await response.json();
@@ -288,6 +337,11 @@ export default function AdminListingsPage() {
       );
 
       await fetchListings(savedPassword);
+      setModerationDrafts((current) => {
+        const nextDrafts = { ...current };
+        delete nextDrafts[id];
+        return nextDrafts;
+      });
       setNotice(getStatusNotice(cleanStatus, result));
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
@@ -521,6 +575,7 @@ export default function AdminListingsPage() {
             const features = getFeatures(listing);
             const submittedDate = formatDate(listing.created_at);
             const soldDate = listing.sold_at ? formatDate(listing.sold_at) : "";
+            const moderationDraft = getModerationDraft(listing.id);
 
             return (
               <article className="listingCard" key={listing.id}>
@@ -637,6 +692,64 @@ export default function AdminListingsPage() {
                         <strong>{listing.seller_type || "Private seller"}</strong>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="moderationBox">
+                    <div className="moderationHeader">
+                      <div>
+                        <h3>Moderation reason</h3>
+                        <p>
+                          Add a quick note before approving or rejecting. Sellers
+                          will see this if the listing needs changes.
+                        </p>
+                      </div>
+                    </div>
+
+                    {(listing.moderation_reason || listing.moderation_note) && (
+                      <div className="existingModeration">
+                        <span>Previous note</span>
+                        <strong>
+                          {listing.moderation_reason || "Moderation note"}
+                        </strong>
+                        {listing.moderation_note && (
+                          <p>{listing.moderation_note}</p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="reasonButtons">
+                      {MODERATION_REASONS.map((reason) => (
+                        <button
+                          type="button"
+                          key={reason}
+                          className={
+                            moderationDraft.reason === reason ? "active" : ""
+                          }
+                          onClick={() =>
+                            updateModerationDraft(
+                              listing.id,
+                              "reason",
+                              moderationDraft.reason === reason ? "" : reason
+                            )
+                          }
+                        >
+                          {reason}
+                        </button>
+                      ))}
+                    </div>
+
+                    <textarea
+                      value={moderationDraft.note}
+                      onChange={(event) =>
+                        updateModerationDraft(
+                          listing.id,
+                          "note",
+                          event.target.value
+                        )
+                      }
+                      placeholder="Optional admin note, for example: please upload clearer exterior photos and check the asking price."
+                      rows={3}
+                    />
                   </div>
 
                   <div className="actionRow">
@@ -1106,6 +1219,87 @@ const styles = `
   .sellerBox h3 {
     margin: 0 0 14px;
     font-size: 20px;
+  }
+
+  .moderationBox {
+    border-top: 1px solid #edf1f7;
+    margin-top: 22px;
+    padding-top: 22px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .moderationHeader h3 {
+    margin: 0 0 6px;
+    font-size: 20px;
+  }
+
+  .moderationHeader p {
+    font-size: 14px;
+  }
+
+  .existingModeration {
+    border: 1px solid #ffe0a8;
+    border-radius: 14px;
+    background: #fffaf0;
+    padding: 14px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .existingModeration span {
+    color: #a15c00;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .existingModeration strong {
+    color: #071126;
+    font-size: 14px;
+  }
+
+  .existingModeration p {
+    font-size: 14px;
+  }
+
+  .reasonButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .reasonButtons button {
+    border: 1px solid #dce5f4;
+    border-radius: 999px;
+    background: #f7f9fd;
+    color: #43506a;
+    padding: 10px 13px;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .reasonButtons button.active {
+    border-color: #0048ff;
+    background: #eef3ff;
+    color: #0048ff;
+  }
+
+  textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #dfe6f1;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    outline: none;
+    background: #fbfcff;
+  }
+
+  textarea:focus {
+    border-color: #0048ff;
+    box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
   }
 
   .actionRow {
