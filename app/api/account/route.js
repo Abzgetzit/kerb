@@ -159,6 +159,30 @@ export async function GET(request) {
     (enquiry) => enquiry.is_unread
   ).length;
 
+  const messageThreadsById = new Map();
+
+  [...receivedWithListings, ...sentWithListings].forEach((enquiry) => {
+    const enquiryId = String(enquiry.id || "");
+
+    if (!enquiryId || messageThreadsById.has(enquiryId)) return;
+
+    messageThreadsById.set(enquiryId, {
+      ...enquiry,
+      conversation_mode:
+        enquiry.participant_role === "seller" ? "received" : "sent",
+    });
+  });
+
+  const messageThreads = [...messageThreadsById.values()]
+    .sort(
+      (a, b) =>
+        new Date(getEnquiryActivityDate(b)) -
+        new Date(getEnquiryActivityDate(a))
+    );
+  const unreadMessageCount = messageThreads.filter(
+    (enquiry) => enquiry.is_unread
+  ).length;
+
   const listingOwnerFilters = [
     `seller_email.ilike.${email}`,
     `account_email.ilike.${email}`,
@@ -177,6 +201,73 @@ export async function GET(request) {
   if (listingsError) {
     return NextResponse.json({ error: listingsError.message }, { status: 500 });
   }
+
+  const myListingIds = [
+    ...new Set((myListings || []).map((listing) => String(listing.id))),
+  ].filter(Boolean);
+
+  let savedCountsByListingId = new Map();
+
+  if (myListingIds.length > 0) {
+    const { data: listingSaveRows, error: listingSaveError } = await supabase
+      .from("kerb_saved_listings")
+      .select("listing_id")
+      .in("listing_id", myListingIds);
+
+    if (listingSaveError) {
+      return NextResponse.json(
+        { error: listingSaveError.message },
+        { status: 500 }
+      );
+    }
+
+    savedCountsByListingId = (listingSaveRows || []).reduce((counts, row) => {
+      const listingId = String(row.listing_id || "");
+
+      if (!listingId) return counts;
+
+      counts.set(listingId, (counts.get(listingId) || 0) + 1);
+
+      return counts;
+    }, new Map());
+  }
+
+  const receivedEnquiriesByListingId = receivedWithListings.reduce(
+    (groups, enquiry) => {
+      const listingId = String(enquiry.listing_id || "");
+
+      if (!listingId) return groups;
+
+      const currentGroup = groups.get(listingId) || [];
+      currentGroup.push(enquiry);
+      groups.set(listingId, currentGroup);
+
+      return groups;
+    },
+    new Map()
+  );
+
+  const myListingsWithAnalytics = (myListings || []).map((listing) => {
+    const listingId = String(listing.id || "");
+    const listingEnquiries = receivedEnquiriesByListingId.get(listingId) || [];
+    const latestEnquiry = listingEnquiries[0] || null;
+
+    return {
+      ...listing,
+      analytics: {
+        view_count: Number(listing.view_count || 0),
+        save_count: savedCountsByListingId.get(listingId) || 0,
+        enquiry_count: listingEnquiries.length,
+        unread_enquiry_count: listingEnquiries.filter(
+          (enquiry) => enquiry.is_unread
+        ).length,
+        last_enquiry_at: latestEnquiry
+          ? getEnquiryActivityDate(latestEnquiry)
+          : null,
+        last_message_preview: latestEnquiry?.last_message_preview || "",
+      },
+    };
+  });
 
   const { data: savedRows, error: savedError } = await supabase
     .from("kerb_saved_listings")
@@ -230,10 +321,12 @@ export async function GET(request) {
     email,
     sent_enquiries: sentWithListings,
     received_enquiries: receivedWithListings,
+    messages: messageThreads,
+    message_count: messageThreads.length,
     unread_sent_count: unreadSentCount,
     unread_received_count: unreadReceivedCount,
-    unread_total: unreadSentCount + unreadReceivedCount,
-    my_listings: myListings || [],
+    unread_total: unreadMessageCount,
+    my_listings: myListingsWithAnalytics,
     saved_listings: savedListings,
     saved_listing_ids: savedListingIds,
   });
