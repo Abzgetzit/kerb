@@ -131,3 +131,26 @@ export function createListingLiveEmail({ listing, siteUrl }) {
     buttonUrl: listingUrl,
   });
 }
+
+export function createListingRejectedEmail({ listing, siteUrl, reason, note }) {
+  const listingTitle = escapeHtml(getListingTitle(listing));
+  const accountUrl = `${siteUrl}/account?tab=listings`;
+  const cleanReason = escapeHtml(reason || "Needs changes");
+  const cleanNote = escapeHtml(note || "");
+
+  return emailShell({
+    title: "Your listing needs a quick update",
+    body: `
+      <p style="margin:0 0 14px;">Your listing for <strong>${listingTitle}</strong> was reviewed and needs changes before it can go live on Kerb.</p>
+      <p style="margin:0 0 10px;"><strong>Reason:</strong> ${cleanReason}</p>
+      ${
+        cleanNote
+          ? `<p style="margin:0 0 14px;"><strong>Admin note:</strong> ${cleanNote}</p>`
+          : ""
+      }
+      <p style="margin:0;">You can edit the listing from your Kerb account and resubmit it for review.</p>
+    `,
+    buttonText: "Open my listings",
+    buttonUrl: accountUrl,
+  });
+}
