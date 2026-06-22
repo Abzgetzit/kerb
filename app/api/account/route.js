@@ -38,6 +38,12 @@ function isUnreadForParticipant(enquiry, participantRole) {
   return new Date(latestAt).getTime() > new Date(readAt).getTime();
 }
 
+function getDaysAgoIso(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString();
+}
+
 export async function GET(request) {
   if (!supabase) {
     return NextResponse.json(
@@ -207,6 +213,7 @@ export async function GET(request) {
   ].filter(Boolean);
 
   let savedCountsByListingId = new Map();
+  let viewEventAnalyticsByListingId = new Map();
 
   if (myListingIds.length > 0) {
     const { data: listingSaveRows, error: listingSaveError } = await supabase
@@ -230,6 +237,45 @@ export async function GET(request) {
 
       return counts;
     }, new Map());
+
+    const sevenDaysAgo = getDaysAgoIso(7);
+    const thirtyDaysAgo = getDaysAgoIso(30);
+    const { data: viewEventRows, error: viewEventError } = await supabase
+      .from("kerb_listing_view_events")
+      .select("listing_id, created_at")
+      .in("listing_id", myListingIds)
+      .gte("created_at", thirtyDaysAgo);
+
+    if (viewEventError) {
+      console.warn("Kerb view events could not be loaded:", viewEventError);
+    } else {
+      viewEventAnalyticsByListingId = (viewEventRows || []).reduce(
+        (groups, row) => {
+          const listingId = String(row.listing_id || "");
+          const createdAt = row.created_at ? new Date(row.created_at) : null;
+
+          if (!listingId || !createdAt || Number.isNaN(createdAt.getTime())) {
+            return groups;
+          }
+
+          const current = groups.get(listingId) || {
+            views_last_7_days: 0,
+            views_last_30_days: 0,
+          };
+
+          current.views_last_30_days += 1;
+
+          if (row.created_at >= sevenDaysAgo) {
+            current.views_last_7_days += 1;
+          }
+
+          groups.set(listingId, current);
+
+          return groups;
+        },
+        new Map()
+      );
+    }
   }
 
   const receivedEnquiriesByListingId = receivedWithListings.reduce(
@@ -251,11 +297,15 @@ export async function GET(request) {
     const listingId = String(listing.id || "");
     const listingEnquiries = receivedEnquiriesByListingId.get(listingId) || [];
     const latestEnquiry = listingEnquiries[0] || null;
+    const viewEventAnalytics =
+      viewEventAnalyticsByListingId.get(listingId) || {};
 
     return {
       ...listing,
       analytics: {
         view_count: Number(listing.view_count || 0),
+        views_last_7_days: Number(viewEventAnalytics.views_last_7_days || 0),
+        views_last_30_days: Number(viewEventAnalytics.views_last_30_days || 0),
         save_count: savedCountsByListingId.get(listingId) || 0,
         enquiry_count: listingEnquiries.length,
         unread_enquiry_count: listingEnquiries.filter(
