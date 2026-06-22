@@ -213,6 +213,21 @@ async function getEnquiryId(params) {
   return cleanText(resolvedParams?.id);
 }
 
+function getReadColumn(participantRole) {
+  return participantRole === "seller" ? "seller_last_read_at" : "buyer_last_read_at";
+}
+
+async function markThreadRead({ enquiryId, participantRole, readAt }) {
+  const readColumn = getReadColumn(participantRole);
+
+  const { error } = await supabase
+    .from("kerb_enquiries")
+    .update({ [readColumn]: readAt })
+    .eq("id", enquiryId);
+
+  return error;
+}
+
 export async function GET(request, { params }) {
   const enquiryId = await getEnquiryId(params);
 
@@ -226,6 +241,17 @@ export async function GET(request, { params }) {
   const thread = await getThread(request, enquiryId);
 
   if (thread.error) return thread.error;
+
+  const readAt = new Date().toISOString();
+  const readError = await markThreadRead({
+    enquiryId,
+    participantRole: thread.participantRole,
+    readAt,
+  });
+
+  if (readError) {
+    return NextResponse.json({ error: readError.message }, { status: 500 });
+  }
 
   const { data: messages, error: messagesError } = await supabase
     .from("kerb_enquiry_messages")
@@ -254,7 +280,10 @@ export async function GET(request, { params }) {
 
   return NextResponse.json({
     success: true,
-    enquiry: thread.enquiry,
+    enquiry: {
+      ...thread.enquiry,
+      [getReadColumn(thread.participantRole)]: readAt,
+    },
     listing: thread.listing,
     messages: fallbackMessages,
     participant_role: thread.participantRole,
@@ -340,6 +369,7 @@ export async function POST(request, { params }) {
       last_message_at: now,
       last_message_preview: getMessagePreview(message),
       last_message_sender_role: thread.participantRole,
+      [getReadColumn(thread.participantRole)]: now,
     })
     .eq("id", enquiryId)
     .select("*")
