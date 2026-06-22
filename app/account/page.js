@@ -130,6 +130,64 @@ function getAnalyticsCount(car, key, fallbackKey) {
   return Number(analytics[key] ?? car?.[fallbackKey] ?? 0);
 }
 
+function getListingInsight(car) {
+  const analytics = getListingAnalytics(car);
+  const views = Number(analytics.view_count || car?.view_count || 0);
+  const viewsLast30 = Number(analytics.views_last_30_days || 0);
+  const saves = Number(analytics.save_count || 0);
+  const enquiries = Number(analytics.enquiry_count || 0);
+  const photoCount = getListingImages(car).length;
+  const status = normaliseStatus(car.status);
+
+  if (status === "rejected") {
+    return {
+      type: "warning",
+      title: car.moderation_reason || "Listing needs changes",
+      text:
+        car.moderation_note ||
+        "Review the listing details and photos, then resubmit it for approval.",
+    };
+  }
+
+  if (photoCount > 0 && photoCount < 6) {
+    return {
+      type: "tip",
+      title: "Add more photos",
+      text: "Listings with front, rear, interior and wheel photos usually feel more trustworthy.",
+    };
+  }
+
+  if (views >= 25 && enquiries === 0) {
+    return {
+      type: "warning",
+      title: "Getting views, but no messages yet",
+      text: "Try checking the price, description and first photo to make the listing more convincing.",
+    };
+  }
+
+  if (saves > 0 && enquiries === 0) {
+    return {
+      type: "tip",
+      title: "Buyers are saving this car",
+      text: "A small price adjustment or more detail in the description may help turn saves into messages.",
+    };
+  }
+
+  if (viewsLast30 > 0) {
+    return {
+      type: "good",
+      title: "Your listing is being seen",
+      text: `${formatCount(viewsLast30)} view${viewsLast30 === 1 ? "" : "s"} in the last 30 days.`,
+    };
+  }
+
+  return {
+    type: "tip",
+    title: "Keep the listing complete",
+    text: "Clear photos, honest condition notes and a realistic price help buyers trust the advert.",
+  };
+}
+
 function getConversationMode(enquiry) {
   return enquiry?.conversation_mode || enquiry?.activity_type || "sent";
 }
@@ -430,7 +488,11 @@ export default function AccountPage() {
           </button>
         </div>
 
-        <SiteMenu currentUser={accountData?.account || accountData} onLogout={logout} />
+        <SiteMenu
+          currentUser={accountData?.account || accountData}
+          onLogout={logout}
+          unreadCount={stats.unreadTotal}
+        />
       </header>
 
       <section className="hero">
@@ -759,6 +821,17 @@ export default function AccountPage() {
                         <span>{statusInfo.message}</span>
                       </div>
 
+                      {(car.moderation_reason || car.moderation_note) && (
+                        <div className="moderationNote">
+                          <strong>
+                            {car.moderation_reason || "Admin note"}
+                          </strong>
+                          {car.moderation_note && (
+                            <span>{car.moderation_note}</span>
+                          )}
+                        </div>
+                      )}
+
                       <div className="detailsGrid">
                         <div>
                           <span>Price</span>
@@ -779,6 +852,24 @@ export default function AccountPage() {
                               getAnalyticsCount(car, "view_count", "view_count")
                             )}{" "}
                             views
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Views this week</span>
+                          <strong>
+                            {formatCount(
+                              getAnalyticsCount(car, "views_last_7_days")
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Views 30 days</span>
+                          <strong>
+                            {formatCount(
+                              getAnalyticsCount(car, "views_last_30_days")
+                            )}
                           </strong>
                         </div>
 
@@ -823,6 +914,17 @@ export default function AccountPage() {
                           </div>
                         )}
                       </div>
+
+                      {(() => {
+                        const insight = getListingInsight(car);
+
+                        return (
+                          <div className={`listingInsight ${insight.type}`}>
+                            <strong>{insight.title}</strong>
+                            <span>{insight.text}</span>
+                          </div>
+                        );
+                      })()}
 
                       <div className="cardActions listingActions">
                         <Link href={`/listing/${car.id}`}>
@@ -1710,6 +1812,51 @@ const styles = `
   .listingStatusNote.sold {
     background: #f3f5f9;
     border-color: #e2e8f3;
+  }
+
+  .moderationNote,
+  .listingInsight {
+    border-radius: 16px;
+    padding: 13px 14px;
+    margin-top: 12px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #e5eaf4;
+    background: #f7f9fd;
+  }
+
+  .moderationNote {
+    background: #fffaf0;
+    border-color: #ffe0a8;
+  }
+
+  .moderationNote strong,
+  .listingInsight strong {
+    color: #071126;
+    font-size: 13px;
+  }
+
+  .moderationNote span,
+  .listingInsight span {
+    color: #59657a;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 750;
+  }
+
+  .listingInsight.good {
+    background: #eafaf0;
+    border-color: #c9efd6;
+  }
+
+  .listingInsight.tip {
+    background: #eef3ff;
+    border-color: #cfdcff;
+  }
+
+  .listingInsight.warning {
+    background: #fff7e8;
+    border-color: #ffe0a8;
   }
 
   .detailsGrid {
