@@ -344,6 +344,7 @@ export default function ListingPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [hasCheckedCurrentUser, setHasCheckedCurrentUser] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -364,6 +365,8 @@ export default function ListingPage() {
 
   useEffect(() => {
     function syncKerbUser() {
+      setHasCheckedCurrentUser(false);
+
       const savedUser = localStorage.getItem("kerbUser");
       const savedEmail = localStorage.getItem("kerbAccountEmail");
       const token = localStorage.getItem("kerbSessionToken");
@@ -371,6 +374,7 @@ export default function ListingPage() {
       if (savedUser) {
         try {
           setCurrentUser(JSON.parse(savedUser));
+          setHasCheckedCurrentUser(true);
           return;
         } catch {
           localStorage.removeItem("kerbUser");
@@ -379,10 +383,12 @@ export default function ListingPage() {
 
       if (token && savedEmail) {
         setCurrentUser({ email: savedEmail });
+        setHasCheckedCurrentUser(true);
         return;
       }
 
       setCurrentUser(null);
+      setHasCheckedCurrentUser(true);
     }
 
     syncKerbUser();
@@ -513,6 +519,53 @@ export default function ListingPage() {
 
   const isSellerOwner = Boolean(currentEmail && ownerEmails.includes(currentEmail));
 
+  useEffect(() => {
+    async function trackListingView() {
+      if (!id || !car?.id || !hasCheckedCurrentUser || isSellerOwner) return;
+
+      const storageKey = `kerb-listing-viewed:${id}`;
+      const lastViewedAt = Number(localStorage.getItem(storageKey) || 0);
+      const thirtyMinutes = 30 * 60 * 1000;
+
+      if (lastViewedAt && Date.now() - lastViewedAt < thirtyMinutes) return;
+
+      localStorage.setItem(storageKey, String(Date.now()));
+
+      try {
+        const response = await fetch("/api/listing-views", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ listing_id: String(id) }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Could not record listing view.");
+        }
+
+        if (!result.skipped && result.view_count) {
+          setCar((current) =>
+            current
+              ? {
+                  ...current,
+                  view_count: result.view_count,
+                  last_viewed_at: result.last_viewed_at || current.last_viewed_at,
+                }
+              : current
+          );
+        }
+      } catch (error) {
+        localStorage.removeItem(storageKey);
+        console.error("Listing view tracking error:", error);
+      }
+    }
+
+    trackListingView();
+  }, [id, car?.id, hasCheckedCurrentUser, isSellerOwner]);
+
   const specItems = [
     mileage
       ? {
@@ -586,7 +639,19 @@ export default function ListingPage() {
       label: "Listing ref",
       value: listingReference,
     },
-  ].filter((item) => item.value);
+    isSellerOwner
+      ? {
+          label: "Views",
+          value: `${formatNumber(car?.view_count || 0)} views`,
+        }
+      : null,
+    isSellerOwner && car?.last_viewed_at
+      ? {
+          label: "Last viewed",
+          value: formatDate(car.last_viewed_at),
+        }
+      : null,
+  ].filter((item) => item?.value);
 
   function nextPhoto() {
     if (photos.length <= 1) return;
@@ -1008,6 +1073,18 @@ export default function ListingPage() {
                   These controls are only shown because this listing belongs to
                   your signed-in account.
                 </p>
+
+                <div className="owner-stats">
+                  <div>
+                    <span>Views</span>
+                    <strong>{formatNumber(car.view_count || 0)}</strong>
+                  </div>
+
+                  <div>
+                    <span>Last viewed</span>
+                    <strong>{formatDate(car.last_viewed_at) || "Not yet"}</strong>
+                  </div>
+                </div>
 
                 {actionMessage && (
                   <div className="success-message">{actionMessage}</div>
@@ -1943,6 +2020,34 @@ const styles = `
     margin: 0 0 16px;
     color: #5b667d;
     line-height: 1.5;
+  }
+
+  .owner-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .owner-stats div {
+    border: 1px solid #e5eaf4;
+    background: #f7f9fd;
+    border-radius: 14px;
+    padding: 13px;
+  }
+
+  .owner-stats span {
+    display: block;
+    color: #647089;
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 5px;
+  }
+
+  .owner-stats strong {
+    color: #101832;
+    font-size: 15px;
+    font-weight: 950;
   }
 
   .owner-actions {
