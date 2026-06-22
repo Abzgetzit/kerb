@@ -35,6 +35,7 @@ export async function POST(request) {
   }
 
   const listingId = cleanText(body?.listing_id);
+  const viewerEmail = cleanText(body?.viewer_email).toLowerCase();
 
   if (!listingId) {
     return NextResponse.json(
@@ -69,12 +70,13 @@ export async function POST(request) {
   }
 
   const nextViewCount = Number(listing.view_count || 0) + 1;
+  const viewedAt = new Date().toISOString();
 
   const { data: updatedListing, error: updateError } = await supabase
     .from("kerb_listings")
     .update({
       view_count: nextViewCount,
-      last_viewed_at: new Date().toISOString(),
+      last_viewed_at: viewedAt,
     })
     .eq("id", listingId)
     .select("id, view_count, last_viewed_at")
@@ -82,6 +84,24 @@ export async function POST(request) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  try {
+    const { error: viewEventError } = await supabase
+      .from("kerb_listing_view_events")
+      .insert({
+        listing_id: listingId,
+        viewer_email: viewerEmail || null,
+        viewer_kind: viewerEmail ? "account" : "guest",
+        user_agent: cleanText(request.headers.get("user-agent")) || null,
+        created_at: viewedAt,
+      });
+
+    if (viewEventError) {
+      console.warn("Listing view event could not be stored:", viewEventError);
+    }
+  } catch (error) {
+    console.warn("Listing view event could not be stored:", error);
   }
 
   return NextResponse.json({
