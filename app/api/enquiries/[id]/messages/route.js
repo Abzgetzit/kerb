@@ -189,7 +189,7 @@ function createReplyEmailHtml({
     <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
       <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:18px; padding:28px; border:1px solid #e5eaf4;">
         <div style="font-size:28px; font-weight:900; color:#0048ff; letter-spacing:-1px; margin-bottom:24px;">Kerb</div>
-        <h1 style="margin:0 0 12px; color:#071126; font-size:26px; line-height:1.18;">New message about ${escapeHtml(listingTitle)}</h1>
+        <h1 style="margin:0 0 12px; color:#071126; font-size:26px; line-height:1.18;">You have a new message about ${escapeHtml(listingTitle)}</h1>
         <p style="margin:0 0 18px; color:#59657a; line-height:1.6;">
           ${escapeHtml(senderName)} replied to your Kerb conversation.
         </p>
@@ -394,7 +394,7 @@ export async function POST(request, { params }) {
   const email = await sendKerbEmail({
     to: recipientEmail,
     replyTo: thread.accountEmail,
-    subject: `New Kerb message about ${listingTitle}`,
+    subject: `You've got a new message about ${listingTitle}`,
     html: createReplyEmailHtml({
       senderName,
       listingTitle,
