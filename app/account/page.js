@@ -120,6 +120,36 @@ function getLatestSenderLabel(enquiry, mode) {
   return "Latest message";
 }
 
+function getListingAnalytics(car) {
+  return car?.analytics || {};
+}
+
+function getAnalyticsCount(car, key, fallbackKey) {
+  const analytics = getListingAnalytics(car);
+
+  return Number(analytics[key] ?? car?.[fallbackKey] ?? 0);
+}
+
+function getConversationMode(enquiry) {
+  return enquiry?.conversation_mode || enquiry?.activity_type || "sent";
+}
+
+function getConversationModeLabel(enquiry) {
+  return getConversationMode(enquiry) === "received"
+    ? "Buyer enquiry"
+    : "Seller chat";
+}
+
+function getOtherPartyName(enquiry) {
+  const mode = getConversationMode(enquiry);
+
+  if (mode === "received") {
+    return enquiry.buyer_name || enquiry.buyer_email || "Buyer";
+  }
+
+  return enquiry.listing?.seller_name || enquiry.seller_email || "Seller";
+}
+
 function normaliseImageUrl(value) {
   if (!value) return "";
 
@@ -260,9 +290,11 @@ export default function AccountPage() {
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab");
+    const nextTab =
+      tab === "sent" || tab === "received" ? "messages" : tab || "overview";
 
-    if (["overview", "listings", "saved", "sent", "received"].includes(tab)) {
-      setActiveTab(tab);
+    if (["overview", "messages", "listings", "saved"].includes(nextTab)) {
+      setActiveTab(nextTab);
     }
 
     loadAccount();
@@ -290,9 +322,11 @@ export default function AccountPage() {
     return {
       listings: myListings.length,
       views: myListings.reduce(
-        (total, listing) => total + Number(listing.view_count || 0),
+        (total, listing) =>
+          total + getAnalyticsCount(listing, "view_count", "view_count"),
         0
       ),
+      messages: accountData?.message_count || accountData?.messages?.length || 0,
       sent: accountData?.sent_enquiries?.length || 0,
       received: accountData?.received_enquiries?.length || 0,
       saved: accountData?.saved_listings?.length || 0,
@@ -332,16 +366,7 @@ export default function AccountPage() {
   );
 
   const recentActivity = useMemo(() => {
-    const sent = (accountData?.sent_enquiries || []).map((enquiry) => ({
-      ...enquiry,
-      activity_type: "sent",
-    }));
-    const received = (accountData?.received_enquiries || []).map((enquiry) => ({
-      ...enquiry,
-      activity_type: "received",
-    }));
-
-    return [...sent, ...received]
+    return [...(accountData?.messages || [])]
       .sort(
         (a, b) =>
           new Date(getEnquiryActivityDate(b)) -
@@ -436,6 +461,10 @@ export default function AccountPage() {
             <strong>{stats.unreadTotal}</strong>
           </div>
           <div>
+            <span>Messages</span>
+            <strong>{stats.messages}</strong>
+          </div>
+          <div>
             <span>Enquiries sent</span>
             <strong>{stats.sent}</strong>
           </div>
@@ -477,6 +506,17 @@ export default function AccountPage() {
         </button>
 
         <button
+          className={activeTab === "messages" ? "active" : ""}
+          onClick={() => setActiveTab("messages")}
+          type="button"
+        >
+          Messages
+          {stats.unreadTotal > 0 && (
+            <span className="tabBadge">{stats.unreadTotal}</span>
+          )}
+        </button>
+
+        <button
           className={activeTab === "listings" ? "active" : ""}
           onClick={() => setActiveTab("listings")}
           type="button"
@@ -490,28 +530,6 @@ export default function AccountPage() {
           type="button"
         >
           Saved cars
-        </button>
-
-        <button
-          className={activeTab === "sent" ? "active" : ""}
-          onClick={() => setActiveTab("sent")}
-          type="button"
-        >
-          Enquiries sent
-          {stats.unreadSent > 0 && (
-            <span className="tabBadge">{stats.unreadSent}</span>
-          )}
-        </button>
-
-        <button
-          className={activeTab === "received" ? "active" : ""}
-          onClick={() => setActiveTab("received")}
-          type="button"
-        >
-          Enquiries received
-          {stats.unreadReceived > 0 && (
-            <span className="tabBadge">{stats.unreadReceived}</span>
-          )}
         </button>
       </section>
 
@@ -538,8 +556,8 @@ export default function AccountPage() {
                 View my listings
               </button>
 
-              <button type="button" onClick={() => setActiveTab("received")}>
-                View received enquiries
+              <button type="button" onClick={() => setActiveTab("messages")}>
+                Open messages
               </button>
             </div>
           </div>
@@ -634,27 +652,53 @@ export default function AccountPage() {
             ) : (
               <div className="activityList">
                 {recentActivity.map((activity) => (
-                  <div
+                  <Link
+                    href={`/enquiries/${activity.id}`}
                     className={`activityItem ${
                       isEnquiryUnread(activity) ? "unread" : ""
                     }`}
-                    key={`${activity.activity_type}-${activity.id}`}
+                    key={`message-${activity.id}`}
                   >
                     <div className="activityMeta">
-                      <span>
-                        {activity.activity_type === "sent"
-                          ? "Enquiry sent"
-                          : "Enquiry received"}
-                      </span>
+                      <span>{getConversationModeLabel(activity)}</span>
                       {isEnquiryUnread(activity) && <b>Unread</b>}
                     </div>
                     <strong>{activity.listing_title || "Kerb listing"}</strong>
+                    <em>{getOtherPartyName(activity)}</em>
                     <small>{formatDate(getEnquiryActivityDate(activity))}</small>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
           </div>
+        </section>
+      )}
+
+      {activeTab === "messages" && (
+        <section className="contentSection">
+          <div className="sectionHeader">
+            <div>
+              <h2>Messages</h2>
+              <p>
+                All buyer and seller conversations, newest replies first.
+              </p>
+            </div>
+          </div>
+
+          {!accountData.messages || accountData.messages.length === 0 ? (
+            <EmptyBox
+              title="No messages yet"
+              text="When you contact a seller or a buyer messages your listing, the chat will appear here."
+              link="/browse"
+              linkText="Browse cars"
+            />
+          ) : (
+            <div className="inboxList">
+              {accountData.messages.map((enquiry) => (
+                <MessageThreadCard key={enquiry.id} enquiry={enquiry} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -730,13 +774,52 @@ export default function AccountPage() {
 
                         <div>
                           <span>Views</span>
-                          <strong>{formatCount(car.view_count)} views</strong>
+                          <strong>
+                            {formatCount(
+                              getAnalyticsCount(car, "view_count", "view_count")
+                            )}{" "}
+                            views
+                          </strong>
                         </div>
 
-                        {car.last_viewed_at && (
+                        <div>
+                          <span>Saves</span>
+                          <strong>
+                            {formatCount(getAnalyticsCount(car, "save_count"))}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Enquiries</span>
+                          <strong>
+                            {formatCount(
+                              getAnalyticsCount(car, "enquiry_count")
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Unread</span>
+                          <strong>
+                            {formatCount(
+                              getAnalyticsCount(car, "unread_enquiry_count")
+                            )}
+                          </strong>
+                        </div>
+
+                        {(car.analytics?.last_enquiry_at || car.last_viewed_at) && (
                           <div>
-                            <span>Last viewed</span>
-                            <strong>{formatDate(car.last_viewed_at)}</strong>
+                            <span>
+                              {car.analytics?.last_enquiry_at
+                                ? "Last enquiry"
+                                : "Last viewed"}
+                            </span>
+                            <strong>
+                              {formatDate(
+                                car.analytics?.last_enquiry_at ||
+                                  car.last_viewed_at
+                              )}
+                            </strong>
                           </div>
                         )}
                       </div>
@@ -808,52 +891,6 @@ export default function AccountPage() {
                     </Link>
                   </div>
                 </article>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === "sent" && (
-        <section className="contentSection">
-          <h2>Enquiries sent</h2>
-
-          {accountData.sent_enquiries.length === 0 ? (
-            <EmptyBox
-              title="No enquiries sent"
-              text="When you message a seller, your enquiry will appear here."
-              link="/browse"
-              linkText="Browse cars"
-            />
-          ) : (
-            <div className="cardsGrid">
-              {accountData.sent_enquiries.map((enquiry) => (
-                <EnquiryCard key={enquiry.id} enquiry={enquiry} mode="sent" />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {activeTab === "received" && (
-        <section className="contentSection">
-          <h2>Enquiries received</h2>
-
-          {accountData.received_enquiries.length === 0 ? (
-            <EmptyBox
-              title="No enquiries received"
-              text="When buyers message your listings, their enquiries will appear here."
-              buttonText="Post a car"
-              onButtonClick={goToPostCar}
-            />
-          ) : (
-            <div className="cardsGrid">
-              {accountData.received_enquiries.map((enquiry) => (
-                <EnquiryCard
-                  key={enquiry.id}
-                  enquiry={enquiry}
-                  mode="received"
-                />
               ))}
             </div>
           )}
@@ -932,7 +969,8 @@ function ListingMiniCard({ car, mode }) {
 
         {mode === "listing" && (
           <small className={`miniStatusText ${statusInfo.className}`}>
-            {statusInfo.short} · {formatCount(car.view_count)} views
+            {statusInfo.short} ·{" "}
+            {formatCount(getAnalyticsCount(car, "view_count", "view_count"))} views
           </small>
         )}
 
@@ -949,113 +987,54 @@ function ListingMiniCard({ car, mode }) {
   );
 }
 
-function EnquiryCard({ enquiry, mode }) {
-  const status = normaliseStatus(enquiry.status);
+function MessageThreadCard({ enquiry }) {
+  const mode = getConversationMode(enquiry);
   const unread = isEnquiryUnread(enquiry);
   const listing = enquiry.listing || {};
   const listingTitle = enquiry.listing_title || getTitle(listing);
-  const listingPrice = listing.price || listing.asking_price;
-  const listingLocation = listing.location || listing.city || "";
   const latestMessage = enquiry.last_message_preview || enquiry.message;
   const latestMessageDate = getEnquiryActivityDate(enquiry);
   const latestSenderLabel = getLatestSenderLabel(enquiry, mode);
+  const listingPrice = listing.price || listing.asking_price;
+  const listingLocation = listing.location || listing.city || "";
+  const otherPartyName = getOtherPartyName(enquiry);
 
   return (
-    <article className={`card enquiryCard ${unread ? "unread" : ""}`}>
-      <div className="enquiryHeader">
-        <Link href={`/listing/${enquiry.listing_id}`} className="enquiryImage">
-          <img
-            src={getImage(listing)}
-            alt={listingTitle}
-            onError={(event) => {
-              event.currentTarget.src = "/cars/hero-car.png";
-            }}
-          />
-        </Link>
+    <article className={`inboxThread ${unread ? "unread" : ""}`}>
+      <Link href={`/listing/${enquiry.listing_id}`} className="inboxImage">
+        <img
+          src={getImage(listing)}
+          alt={listingTitle}
+          onError={(event) => {
+            event.currentTarget.src = "/cars/hero-car.png";
+          }}
+        />
+      </Link>
 
-        <div>
-          <div className="enquiryStatusRow">
-            <span className={`status ${unread ? "unreadStatus" : status}`}>
-              {unread ? "Unread" : status}
-            </span>
-            <span className="latestSender">{latestSenderLabel}</span>
-          </div>
+      <div className="inboxBody">
+        <div className="inboxTopLine">
+          <span>{getConversationModeLabel(enquiry)}</span>
+          {unread && <b>Unread</b>}
+        </div>
 
-          <h3>{listingTitle}</h3>
-          <p>
-            {formatDate(latestMessageDate)}
-            {listingPrice ? ` · ${formatPrice(listingPrice)}` : ""}
-            {listingLocation ? ` · ${listingLocation}` : ""}
-          </p>
+        <h3>{listingTitle}</h3>
+
+        <p className="inboxMeta">
+          {otherPartyName}
+          {listingPrice ? ` · ${formatPrice(listingPrice)}` : ""}
+          {listingLocation ? ` · ${listingLocation}` : ""}
+        </p>
+
+        <div className="inboxMessage">
+          <span>{latestSenderLabel}</span>
+          <p>{latestMessage || "No message provided."}</p>
         </div>
       </div>
 
-      <div className={`messageBox ${unread ? "unread" : ""}`}>
-        <span>{latestSenderLabel}</span>
-        <p>{latestMessage || "No message provided."}</p>
-      </div>
-
-      <div className="detailsGrid">
-        {mode === "sent" ? (
-          <>
-            <div>
-              <span>Seller email</span>
-              <strong>{enquiry.seller_email || "Not provided"}</strong>
-            </div>
-
-            <div>
-              <span>Seller phone</span>
-              <strong>{enquiry.seller_phone || "Not provided"}</strong>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <span>Buyer name</span>
-              <strong>{enquiry.buyer_name || "Not provided"}</strong>
-            </div>
-
-            <div>
-              <span>Buyer email</span>
-              <strong>{enquiry.buyer_email || "Not provided"}</strong>
-            </div>
-
-            <div>
-              <span>Buyer phone</span>
-              <strong>{enquiry.buyer_phone || "Not provided"}</strong>
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="cardActions">
+      <div className="inboxActions">
+        <small>{formatDate(latestMessageDate)}</small>
         <Link href={`/enquiries/${enquiry.id}`}>Open chat</Link>
-
         <Link href={`/listing/${enquiry.listing_id}`}>View listing</Link>
-
-        {mode === "received" && enquiry.buyer_email && (
-          <a
-            href={`mailto:${enquiry.buyer_email}?subject=Kerb enquiry about ${encodeURIComponent(
-              enquiry.listing_title || "your car"
-            )}`}
-          >
-            Reply by email
-          </a>
-        )}
-
-        {mode === "received" && enquiry.buyer_phone && (
-          <a href={`tel:${enquiry.buyer_phone}`}>Call buyer</a>
-        )}
-
-        {mode === "sent" && enquiry.seller_email && (
-          <a
-            href={`mailto:${enquiry.seller_email}?subject=Kerb enquiry about ${encodeURIComponent(
-              listingTitle
-            )}`}
-          >
-            Email seller
-          </a>
-        )}
       </div>
     </article>
   );
@@ -1516,6 +1495,138 @@ const styles = `
     transform: scale(1.035);
   }
 
+  .inboxList {
+    display: grid;
+    gap: 14px;
+  }
+
+  .inboxThread {
+    border: 1px solid #e5eaf4;
+    border-radius: 20px;
+    background: #fbfcff;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) 180px;
+    gap: 16px;
+    align-items: center;
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .inboxThread:hover {
+    transform: translateY(-2px);
+    border-color: #cfdcff;
+    box-shadow: 0 16px 38px rgba(10, 20, 40, 0.08);
+  }
+
+  .inboxThread.unread {
+    background: #eef3ff;
+    border-color: #bdd0ff;
+  }
+
+  .inboxImage {
+    display: block;
+    height: 118px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #eef2f7;
+    border: 1px solid #e5eaf4;
+  }
+
+  .inboxImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .inboxBody {
+    min-width: 0;
+  }
+
+  .inboxTopLine {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 7px;
+  }
+
+  .inboxTopLine span,
+  .inboxMessage span {
+    color: #0048ff;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .inboxTopLine b {
+    border-radius: 999px;
+    background: #d7193f;
+    color: white;
+    padding: 5px 8px;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .inboxThread h3 {
+    margin-bottom: 4px;
+  }
+
+  .inboxMeta {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .inboxMessage {
+    margin-top: 12px;
+    border: 1px solid #e5eaf4;
+    border-radius: 14px;
+    background: white;
+    padding: 12px;
+  }
+
+  .inboxMessage p {
+    margin-top: 4px;
+    color: #172033;
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 800;
+  }
+
+  .inboxActions {
+    display: grid;
+    gap: 10px;
+    justify-items: stretch;
+  }
+
+  .inboxActions small {
+    color: #657189;
+    font-weight: 850;
+    text-align: right;
+  }
+
+  .inboxActions a {
+    min-height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  .inboxActions a:first-of-type {
+    background: #0048ff;
+    color: white;
+  }
+
+  .inboxActions a:last-of-type {
+    background: white;
+    color: #0048ff;
+    border: 1px solid #d8e2f4;
+  }
+
   .status {
     display: inline-flex;
     border-radius: 999px;
@@ -1797,6 +1908,13 @@ const styles = `
     color: #071126;
   }
 
+  .activityItem em {
+    color: #59657a;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 850;
+  }
+
   .activityItem small {
     color: #657189;
     font-weight: 750;
@@ -1888,6 +2006,18 @@ const styles = `
 
     .enquiryImage {
       width: 100%;
+    }
+
+    .inboxThread {
+      grid-template-columns: 1fr;
+    }
+
+    .inboxImage {
+      height: 190px;
+    }
+
+    .inboxActions small {
+      text-align: left;
     }
   }
 `;
