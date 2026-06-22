@@ -14,6 +14,30 @@ function getToken(request) {
   return String(headerToken || "").trim();
 }
 
+function normaliseRole(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getEnquiryActivityDate(enquiry) {
+  return enquiry?.last_message_at || enquiry?.created_at || "";
+}
+
+function isUnreadForParticipant(enquiry, participantRole) {
+  const role = normaliseRole(participantRole);
+  const lastSenderRole = normaliseRole(enquiry?.last_message_sender_role);
+
+  if (!role || !lastSenderRole || lastSenderRole === role) return false;
+
+  const readAt =
+    role === "seller" ? enquiry?.seller_last_read_at : enquiry?.buyer_last_read_at;
+  const latestAt = getEnquiryActivityDate(enquiry);
+
+  if (!latestAt) return false;
+  if (!readAt) return true;
+
+  return new Date(latestAt).getTime() > new Date(readAt).getTime();
+}
+
 export async function GET(request) {
   if (!supabase) {
     return NextResponse.json(
@@ -110,19 +134,30 @@ export async function GET(request) {
     );
   }
 
-  function attachListing(enquiries = []) {
+  function attachListing(enquiries = [], participantRole) {
     return enquiries
       .map((enquiry) => ({
         ...enquiry,
+        participant_role: participantRole,
+        is_unread: isUnreadForParticipant(enquiry, participantRole),
         listing:
           enquiryListingsById.get(String(enquiry.listing_id || "")) || null,
       }))
       .sort(
         (a, b) =>
-          new Date(b.last_message_at || b.created_at) -
-          new Date(a.last_message_at || a.created_at)
+          new Date(getEnquiryActivityDate(b)) -
+          new Date(getEnquiryActivityDate(a))
       );
   }
+
+  const sentWithListings = attachListing(sentEnquiries || [], "buyer");
+  const receivedWithListings = attachListing(receivedEnquiries || [], "seller");
+  const unreadSentCount = sentWithListings.filter(
+    (enquiry) => enquiry.is_unread
+  ).length;
+  const unreadReceivedCount = receivedWithListings.filter(
+    (enquiry) => enquiry.is_unread
+  ).length;
 
   const listingOwnerFilters = [
     `seller_email.ilike.${email}`,
@@ -193,8 +228,11 @@ export async function GET(request) {
   return NextResponse.json({
     account,
     email,
-    sent_enquiries: attachListing(sentEnquiries || []),
-    received_enquiries: attachListing(receivedEnquiries || []),
+    sent_enquiries: sentWithListings,
+    received_enquiries: receivedWithListings,
+    unread_sent_count: unreadSentCount,
+    unread_received_count: unreadReceivedCount,
+    unread_total: unreadSentCount + unreadReceivedCount,
     my_listings: myListings || [],
     saved_listings: savedListings,
     saved_listing_ids: savedListingIds,
