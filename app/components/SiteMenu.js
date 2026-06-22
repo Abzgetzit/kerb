@@ -3,9 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-export default function SiteMenu({ currentUser, onLogout }) {
+export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuUnreadCount, setMenuUnreadCount] = useState(0);
   const menuRef = useRef(null);
+  const suppliedUnreadCount = Number(unreadCount);
+  const hasSuppliedUnreadCount =
+    unreadCount !== null &&
+    unreadCount !== undefined &&
+    Number.isFinite(suppliedUnreadCount);
+  const displayUnreadCount = hasSuppliedUnreadCount
+    ? Math.max(0, suppliedUnreadCount)
+    : menuUnreadCount;
+  const unreadLabel = displayUnreadCount > 9 ? "9+" : String(displayUnreadCount);
 
   useEffect(() => {
     function handleClick(event) {
@@ -26,6 +36,56 @@ export default function SiteMenu({ currentUser, onLogout }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) {
+      setMenuUnreadCount(0);
+      return;
+    }
+
+    if (hasSuppliedUnreadCount) return;
+
+    let isMounted = true;
+
+    async function loadUnreadCount() {
+      const token = localStorage.getItem("kerbSessionToken");
+
+      if (!token) {
+        if (isMounted) setMenuUnreadCount(0);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/account", {
+          headers: {
+            "x-kerb-session-token": token,
+          },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Could not load unread messages.");
+        }
+
+        if (isMounted) {
+          setMenuUnreadCount(Number(result.unread_total || 0));
+        }
+      } catch (error) {
+        console.error("Kerb unread count error:", error);
+        if (isMounted) setMenuUnreadCount(0);
+      }
+    }
+
+    loadUnreadCount();
+
+    window.addEventListener("kerb-message-change", loadUnreadCount);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("kerb-message-change", loadUnreadCount);
+    };
+  }, [currentUser, hasSuppliedUnreadCount]);
+
   function closeMenu() {
     setIsOpen(false);
   }
@@ -41,13 +101,24 @@ export default function SiteMenu({ currentUser, onLogout }) {
       <button
         className={isOpen ? "menuButton open" : "menuButton"}
         type="button"
-        aria-label={isOpen ? "Close menu" : "Open menu"}
+        aria-label={
+          displayUnreadCount > 0
+            ? `${isOpen ? "Close" : "Open"} menu, ${displayUnreadCount} unread message${displayUnreadCount === 1 ? "" : "s"}`
+            : isOpen
+              ? "Close menu"
+              : "Open menu"
+        }
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
       >
-        <span />
-        <span />
-        <span />
+        <span className="menuLines">
+          <span />
+          <span />
+          <span />
+        </span>
+        {displayUnreadCount > 0 && (
+          <strong className="menuButtonBadge">{unreadLabel}</strong>
+        )}
       </button>
 
       {isOpen && (
@@ -81,8 +152,17 @@ export default function SiteMenu({ currentUser, onLogout }) {
 
           {currentUser ? (
             <>
+              <Link href="/account?tab=messages" onClick={closeMenu}>
+                <span>Messages</span>
+                {displayUnreadCount > 0 && (
+                  <strong className="menuBadge">{unreadLabel}</strong>
+                )}
+              </Link>
               <Link href="/account" onClick={closeMenu}>
-                My account
+                <span>My account</span>
+                {displayUnreadCount > 0 && (
+                  <strong className="menuBadge">{unreadLabel}</strong>
+                )}
               </Link>
               <button type="button" onClick={handleLogoutClick}>
                 Log out
@@ -108,6 +188,7 @@ export default function SiteMenu({ currentUser, onLogout }) {
         }
 
         .menuButton {
+          position: relative;
           width: 48px;
           height: 48px;
           border: 1px solid #dfe7f5;
@@ -115,10 +196,8 @@ export default function SiteMenu({ currentUser, onLogout }) {
           background: #ffffff;
           color: #101832;
           display: inline-flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 5px;
           cursor: pointer;
           box-shadow: 0 10px 24px rgba(14, 30, 70, 0.08);
           transition: transform 0.18s ease, box-shadow 0.18s ease,
@@ -131,7 +210,15 @@ export default function SiteMenu({ currentUser, onLogout }) {
           box-shadow: 0 14px 30px rgba(14, 30, 70, 0.12);
         }
 
-        .menuButton span {
+        .menuLines {
+          display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+        }
+
+        .menuLines span {
           width: 20px;
           height: 2px;
           border-radius: 999px;
@@ -139,16 +226,40 @@ export default function SiteMenu({ currentUser, onLogout }) {
           transition: transform 0.18s ease, opacity 0.18s ease;
         }
 
-        .menuButton.open span:nth-child(1) {
+        .menuButton.open .menuLines span:nth-child(1) {
           transform: translateY(7px) rotate(45deg);
         }
 
-        .menuButton.open span:nth-child(2) {
+        .menuButton.open .menuLines span:nth-child(2) {
           opacity: 0;
         }
 
-        .menuButton.open span:nth-child(3) {
+        .menuButton.open .menuLines span:nth-child(3) {
           transform: translateY(-7px) rotate(-45deg);
+        }
+
+        .menuButtonBadge,
+        .menuBadge {
+          min-width: 22px;
+          height: 22px;
+          border-radius: 999px;
+          background: #d7193f;
+          color: #ffffff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 7px;
+          font-size: 11px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
+        .menuButtonBadge {
+          position: absolute;
+          top: -7px;
+          right: -7px;
+          border: 2px solid #ffffff;
+          box-shadow: 0 8px 18px rgba(215, 25, 63, 0.22);
         }
 
         .menuPanel {
