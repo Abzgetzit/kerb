@@ -97,6 +97,19 @@ function getKerbUser() {
   return savedEmail ? { email: savedEmail } : null;
 }
 
+function getMessageSenderName({ message, isMine }) {
+  if (isMine) return "You";
+
+  return (
+    cleanText(message.sender_name) ||
+    (message.sender_role === "seller" ? "Seller" : "Buyer")
+  );
+}
+
+function getMessageRoleLabel(message) {
+  return message.sender_role === "seller" ? "Seller" : "Buyer";
+}
+
 export default function EnquiryConversationPage() {
   const params = useParams();
   const enquiryId = params?.id;
@@ -225,6 +238,8 @@ export default function EnquiryConversationPage() {
     : listing.seller_name || enquiry.seller_email || "Seller";
   const otherPartyEmail = isSeller ? enquiry.buyer_email : enquiry.seller_email;
   const otherPartyPhone = isSeller ? enquiry.buyer_phone : enquiry.seller_phone;
+  const latestMessage = messages[messages.length - 1];
+  const latestMessageAt = latestMessage?.created_at || enquiry.last_message_at;
 
   return (
     <main className="page">
@@ -276,6 +291,10 @@ export default function EnquiryConversationPage() {
                   {formatPrice(listing.price || listing.asking_price)}
                   {listing.location ? ` · ${listing.location}` : ""}
                 </p>
+                <div className="conversationTags">
+                  <b>{enquiry.status || "new"}</b>
+                  {latestMessageAt && <b>Updated {formatDate(latestMessageAt)}</b>}
+                </div>
               </div>
 
               <Link href={`/listing/${enquiry.listing_id}`} className="listingButton">
@@ -294,14 +313,22 @@ export default function EnquiryConversationPage() {
                 <a href={`tel:${otherPartyPhone}`}>{otherPartyPhone}</a>
               )}
 
+              <Link href={`/listing/${enquiry.listing_id}`} className="sideLink">
+                View car advert
+              </Link>
+
               <div className="threadMeta">
                 <div>
-                  <span>Status</span>
-                  <strong>{enquiry.status || "new"}</strong>
+                  <span>You are</span>
+                  <strong>{isSeller ? "Seller" : "Buyer"}</strong>
                 </div>
                 <div>
                   <span>Started</span>
                   <strong>{formatDate(enquiry.created_at)}</strong>
+                </div>
+                <div>
+                  <span>Last message</span>
+                  <strong>{formatDate(latestMessageAt)}</strong>
                 </div>
               </div>
             </aside>
@@ -317,15 +344,13 @@ export default function EnquiryConversationPage() {
                       className={`messageBubble ${isMine ? "mine" : "theirs"}`}
                       key={message.id}
                     >
-                      <div>
-                        <strong>
-                          {isMine
-                            ? "You"
-                            : message.sender_name ||
-                              (message.sender_role === "seller"
-                                ? "Seller"
-                                : "Buyer")}
-                        </strong>
+                      <div className="messageMeta">
+                        <span className="senderBlock">
+                          <strong>
+                            {getMessageSenderName({ message, isMine })}
+                          </strong>
+                          <em>{isMine ? "You" : getMessageRoleLabel(message)}</em>
+                        </span>
                         <span>{formatDate(message.created_at)}</span>
                       </div>
                       <p>{message.message}</p>
@@ -337,15 +362,19 @@ export default function EnquiryConversationPage() {
               </div>
 
               <form className="replyBox" onSubmit={sendReply}>
-                <label>
-                  Reply to {otherPartyName}
-                  <textarea
-                    value={reply}
-                    onChange={(event) => setReply(event.target.value)}
-                    placeholder="Write your reply..."
-                    maxLength={1200}
-                  />
-                </label>
+                <div className="replyTop">
+                  <div>
+                    <strong>Reply to {otherPartyName}</strong>
+                    <span>{reply.length}/1,200 characters</span>
+                  </div>
+                </div>
+
+                <textarea
+                  value={reply}
+                  onChange={(event) => setReply(event.target.value)}
+                  placeholder="Write your reply..."
+                  maxLength={1200}
+                />
 
                 {notice && <div className="noticeBox">{notice}</div>}
                 {errorMessage && <div className="errorBox">{errorMessage}</div>}
@@ -473,6 +502,12 @@ const styles = `
     margin-bottom: 16px;
   }
 
+  .chatHeader {
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+  }
+
   .listingPreview {
     display: grid;
     grid-template-columns: 170px minmax(0, 1fr) auto;
@@ -521,6 +556,24 @@ const styles = `
     font-weight: 850;
   }
 
+  .conversationTags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .conversationTags b {
+    border-radius: 999px;
+    background: #eef3ff;
+    color: #0048ff;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: capitalize;
+  }
+
   .chatGrid {
     display: grid;
     grid-template-columns: 320px minmax(0, 1fr);
@@ -558,6 +611,17 @@ const styles = `
   .sidePanel a {
     color: #0048ff;
     font-weight: 950;
+  }
+
+  .sideLink {
+    border: 1px solid #dbe5f5;
+    border-radius: 14px;
+    background: #eef3ff;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
   }
 
   .threadMeta {
@@ -610,14 +674,36 @@ const styles = `
     border-color: #0048ff;
   }
 
-  .messageBubble div {
+  .messageMeta {
     display: flex;
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 8px;
   }
 
-  .messageBubble span {
+  .senderBlock {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .senderBlock em {
+    border-radius: 999px;
+    background: #eef3ff;
+    color: #0048ff;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 950;
+  }
+
+  .messageBubble.mine .senderBlock em {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+  }
+
+  .messageBubble span:not(.senderBlock) {
     color: #7a8499;
     font-size: 12px;
     font-weight: 850;
@@ -643,9 +729,26 @@ const styles = `
     background: white;
   }
 
-  .replyBox label {
-    display: grid;
-    gap: 9px;
+  .replyTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .replyTop strong {
+    color: #071126;
+    display: block;
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .replyTop span {
+    color: #657189;
+    display: block;
+    font-size: 12px;
+    font-weight: 850;
+    margin-top: 3px;
   }
 
   .replyBox textarea {
@@ -743,7 +846,7 @@ const styles = `
       max-width: 100%;
     }
 
-    .messageBubble div {
+    .messageMeta {
       flex-direction: column;
       gap: 3px;
     }
