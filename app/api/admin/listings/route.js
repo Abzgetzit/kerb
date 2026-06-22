@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import {
   createListingLiveEmail,
+  createListingRejectedEmail,
   getListingTitle,
   getSiteUrl,
   sendKerbEmail,
@@ -38,6 +39,10 @@ function checkAdmin(request) {
 
 function cleanStatus(status) {
   return String(status || "pending").trim().toLowerCase();
+}
+
+function cleanText(value) {
+  return String(value || "").trim();
 }
 
 export async function GET(request) {
@@ -79,6 +84,8 @@ export async function PATCH(request) {
 
   const id = body?.id;
   const status = cleanStatus(body?.status);
+  const moderationReason = cleanText(body?.moderation_reason);
+  const moderationNote = cleanText(body?.moderation_note);
 
   if (!id) {
     return NextResponse.json(
@@ -110,6 +117,10 @@ export async function PATCH(request) {
   const updates = {
     status,
     sold_at: status === "sold" ? new Date().toISOString() : null,
+    moderation_reason: moderationReason || null,
+    moderation_note: moderationNote || null,
+    moderated_at: new Date().toISOString(),
+    moderated_by: "admin",
   };
 
   const { data, error } = await supabase
@@ -124,6 +135,7 @@ export async function PATCH(request) {
   }
 
   let liveEmail = null;
+  let rejectedEmail = null;
 
   if (status === "approved" && existingListing?.status !== "approved") {
     const siteUrl = getSiteUrl(request);
@@ -138,11 +150,27 @@ export async function PATCH(request) {
     });
   }
 
+  if (status === "rejected" && existingListing?.status !== "rejected") {
+    const siteUrl = getSiteUrl(request);
+
+    rejectedEmail = await sendKerbEmail({
+      to: data.seller_email || data.account_email,
+      subject: `Your ${getListingTitle(data)} listing needs changes`,
+      html: createListingRejectedEmail({
+        listing: data,
+        siteUrl,
+        reason: moderationReason || "Needs changes",
+        note: moderationNote,
+      }),
+    });
+  }
+
   return NextResponse.json({
     success: true,
     listing: data,
     emails: {
       listing_live: liveEmail,
+      listing_rejected: rejectedEmail,
     },
   });
 }
