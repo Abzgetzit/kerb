@@ -96,6 +96,30 @@ function formatMileage(value) {
   return `${new Intl.NumberFormat("en-GB").format(number)} miles`;
 }
 
+function formatCount(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) return "0";
+
+  return new Intl.NumberFormat("en-GB").format(number);
+}
+
+function isEnquiryUnread(enquiry) {
+  return enquiry?.is_unread === true;
+}
+
+function getLatestSenderLabel(enquiry, mode) {
+  const senderRole = normaliseStatus(enquiry?.last_message_sender_role);
+
+  if (!senderRole) return "Latest message";
+  if (mode === "received" && senderRole === "buyer") return "Latest from buyer";
+  if (mode === "received" && senderRole === "seller") return "Your latest reply";
+  if (mode === "sent" && senderRole === "seller") return "Latest from seller";
+  if (mode === "sent" && senderRole === "buyer") return "Your latest message";
+
+  return "Latest message";
+}
+
 function normaliseImageUrl(value) {
   if (!value) return "";
 
@@ -261,11 +285,20 @@ export default function AccountPage() {
   }
 
   const stats = useMemo(() => {
+    const myListings = accountData?.my_listings || [];
+
     return {
-      listings: accountData?.my_listings?.length || 0,
+      listings: myListings.length,
+      views: myListings.reduce(
+        (total, listing) => total + Number(listing.view_count || 0),
+        0
+      ),
       sent: accountData?.sent_enquiries?.length || 0,
       received: accountData?.received_enquiries?.length || 0,
       saved: accountData?.saved_listings?.length || 0,
+      unreadSent: accountData?.unread_sent_count || 0,
+      unreadReceived: accountData?.unread_received_count || 0,
+      unreadTotal: accountData?.unread_total || 0,
     };
   }, [accountData]);
 
@@ -391,8 +424,16 @@ export default function AccountPage() {
             <strong>{stats.listings}</strong>
           </div>
           <div>
+            <span>Listing views</span>
+            <strong>{formatCount(stats.views)}</strong>
+          </div>
+          <div>
             <span>Saved cars</span>
             <strong>{stats.saved}</strong>
+          </div>
+          <div>
+            <span>Unread chats</span>
+            <strong>{stats.unreadTotal}</strong>
           </div>
           <div>
             <span>Enquiries sent</span>
@@ -457,6 +498,9 @@ export default function AccountPage() {
           type="button"
         >
           Enquiries sent
+          {stats.unreadSent > 0 && (
+            <span className="tabBadge">{stats.unreadSent}</span>
+          )}
         </button>
 
         <button
@@ -465,6 +509,9 @@ export default function AccountPage() {
           type="button"
         >
           Enquiries received
+          {stats.unreadReceived > 0 && (
+            <span className="tabBadge">{stats.unreadReceived}</span>
+          )}
         </button>
       </section>
 
@@ -588,14 +635,19 @@ export default function AccountPage() {
               <div className="activityList">
                 {recentActivity.map((activity) => (
                   <div
-                    className="activityItem"
+                    className={`activityItem ${
+                      isEnquiryUnread(activity) ? "unread" : ""
+                    }`}
                     key={`${activity.activity_type}-${activity.id}`}
                   >
-                    <span>
-                      {activity.activity_type === "sent"
-                        ? "Enquiry sent"
-                        : "Enquiry received"}
-                    </span>
+                    <div className="activityMeta">
+                      <span>
+                        {activity.activity_type === "sent"
+                          ? "Enquiry sent"
+                          : "Enquiry received"}
+                      </span>
+                      {isEnquiryUnread(activity) && <b>Unread</b>}
+                    </div>
                     <strong>{activity.listing_title || "Kerb listing"}</strong>
                     <small>{formatDate(getEnquiryActivityDate(activity))}</small>
                   </div>
@@ -675,6 +727,18 @@ export default function AccountPage() {
                           <span>Mileage</span>
                           <strong>{formatMileage(car.mileage)}</strong>
                         </div>
+
+                        <div>
+                          <span>Views</span>
+                          <strong>{formatCount(car.view_count)} views</strong>
+                        </div>
+
+                        {car.last_viewed_at && (
+                          <div>
+                            <span>Last viewed</span>
+                            <strong>{formatDate(car.last_viewed_at)}</strong>
+                          </div>
+                        )}
                       </div>
 
                       <div className="cardActions listingActions">
@@ -868,7 +932,7 @@ function ListingMiniCard({ car, mode }) {
 
         {mode === "listing" && (
           <small className={`miniStatusText ${statusInfo.className}`}>
-            {statusInfo.short}
+            {statusInfo.short} · {formatCount(car.view_count)} views
           </small>
         )}
 
@@ -887,15 +951,17 @@ function ListingMiniCard({ car, mode }) {
 
 function EnquiryCard({ enquiry, mode }) {
   const status = normaliseStatus(enquiry.status);
+  const unread = isEnquiryUnread(enquiry);
   const listing = enquiry.listing || {};
   const listingTitle = enquiry.listing_title || getTitle(listing);
   const listingPrice = listing.price || listing.asking_price;
   const listingLocation = listing.location || listing.city || "";
   const latestMessage = enquiry.last_message_preview || enquiry.message;
   const latestMessageDate = getEnquiryActivityDate(enquiry);
+  const latestSenderLabel = getLatestSenderLabel(enquiry, mode);
 
   return (
-    <article className="card enquiryCard">
+    <article className={`card enquiryCard ${unread ? "unread" : ""}`}>
       <div className="enquiryHeader">
         <Link href={`/listing/${enquiry.listing_id}`} className="enquiryImage">
           <img
@@ -908,7 +974,13 @@ function EnquiryCard({ enquiry, mode }) {
         </Link>
 
         <div>
-          <span className={`status ${status}`}>{status}</span>
+          <div className="enquiryStatusRow">
+            <span className={`status ${unread ? "unreadStatus" : status}`}>
+              {unread ? "Unread" : status}
+            </span>
+            <span className="latestSender">{latestSenderLabel}</span>
+          </div>
+
           <h3>{listingTitle}</h3>
           <p>
             {formatDate(latestMessageDate)}
@@ -918,8 +990,8 @@ function EnquiryCard({ enquiry, mode }) {
         </div>
       </div>
 
-      <div className="messageBox">
-        <span>Latest message</span>
+      <div className={`messageBox ${unread ? "unread" : ""}`}>
+        <span>{latestSenderLabel}</span>
         <p>{latestMessage || "No message provided."}</p>
       </div>
 
@@ -1203,12 +1275,29 @@ const styles = `
     padding: 12px 18px;
     color: #43506a;
     font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .tabs button.active {
     background: #0048ff;
     border-color: #0048ff;
     color: white;
+  }
+
+  .tabBadge {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: #d7193f;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    font-size: 12px;
+    font-weight: 950;
   }
 
   .overviewGrid {
@@ -1352,6 +1441,11 @@ const styles = `
     gap: 16px;
   }
 
+  .enquiryCard.unread {
+    border-color: #b9caff;
+    box-shadow: 0 18px 44px rgba(0, 72, 255, 0.12);
+  }
+
   .enquiryHeader {
     display: grid;
     grid-template-columns: 150px minmax(0, 1fr);
@@ -1381,8 +1475,22 @@ const styles = `
     transform: scale(1.035);
   }
 
-  .enquiryHeader .status {
+  .enquiryStatusRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 8px;
+  }
+
+  .enquiryStatusRow .status {
+    margin-bottom: 0;
+  }
+
+  .latestSender {
+    color: #657189;
+    font-size: 12px;
+    font-weight: 950;
   }
 
   .enquiryHeader h3 {
@@ -1444,6 +1552,11 @@ const styles = `
   .status.saved {
     background: #fff1f1;
     color: #d7193f;
+  }
+
+  .status.unreadStatus {
+    background: #0048ff;
+    color: white;
   }
 
   .listingStatusNote {
@@ -1523,6 +1636,11 @@ const styles = `
 
   .messageBox {
     margin-top: 16px;
+  }
+
+  .messageBox.unread {
+    background: #eef3ff;
+    border-color: #cbd9ff;
   }
 
   .messageBox p {
@@ -1647,11 +1765,32 @@ const styles = `
     gap: 4px;
   }
 
+  .activityItem.unread {
+    background: #eef3ff;
+    border-color: #cbd9ff;
+  }
+
+  .activityMeta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
   .activityItem span {
     color: #0048ff;
     font-size: 12px;
     font-weight: 950;
     text-transform: uppercase;
+  }
+
+  .activityItem b {
+    border-radius: 999px;
+    background: #d7193f;
+    color: white;
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1;
   }
 
   .activityItem strong {
