@@ -600,8 +600,12 @@ export default function BrowsePage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [savedListingIds, setSavedListingIds] = useState([]);
   const [savingListingIds, setSavingListingIds] = useState([]);
+  const [savedSearches, setSavedSearches] = useState([]);
+  const [savedSearchMessage, setSavedSearchMessage] = useState("");
+  const [isSavingSearch, setIsSavingSearch] = useState(false);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
 
   useEffect(() => {
@@ -740,7 +744,60 @@ export default function BrowsePage() {
     };
   }, []);
 
-  function updateUrl(nextFilters = filters, nextSearch = search, nextSort = sort) {
+  useEffect(() => {
+    async function loadAccountExtras() {
+      const token = localStorage.getItem("kerbSessionToken");
+
+      if (!token || !currentUser) {
+        setUnreadCount(0);
+        setSavedSearches([]);
+        return;
+      }
+
+      try {
+        const [accountResponse, savedSearchesResponse] = await Promise.all([
+          fetch("/api/account", {
+            headers: {
+              "x-kerb-session-token": token,
+            },
+          }),
+          fetch("/api/saved-searches", {
+            headers: {
+              "x-kerb-session-token": token,
+            },
+          }),
+        ]);
+
+        const accountResult = await accountResponse.json();
+
+        if (accountResponse.ok) {
+          setUnreadCount(Number(accountResult.unread_total || 0));
+        }
+
+        const savedSearchesResult = await savedSearchesResponse.json();
+
+        if (savedSearchesResponse.ok) {
+          setSavedSearches(savedSearchesResult.saved_searches || []);
+        }
+      } catch (error) {
+        console.error("Browse account extras error:", error);
+      }
+    }
+
+    loadAccountExtras();
+
+    window.addEventListener("kerb-message-change", loadAccountExtras);
+
+    return () => {
+      window.removeEventListener("kerb-message-change", loadAccountExtras);
+    };
+  }, [currentUser]);
+
+  function getBrowseQueryString(
+    nextFilters = filters,
+    nextSearch = search,
+    nextSort = sort
+  ) {
     const params = new URLSearchParams();
 
     if (nextFilters.location) params.set("location", nextFilters.location);
@@ -758,7 +815,11 @@ export default function BrowsePage() {
     if (nextSearch.trim()) params.set("keyword", nextSearch.trim());
     if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
 
-    const query = params.toString();
+    return params.toString();
+  }
+
+  function updateUrl(nextFilters = filters, nextSearch = search, nextSort = sort) {
+    const query = getBrowseQueryString(nextFilters, nextSearch, nextSort);
     const nextUrl = query ? `/browse?${query}` : "/browse";
 
     window.history.pushState({}, "", nextUrl);
@@ -797,6 +858,133 @@ export default function BrowsePage() {
     setSearch("");
     setSort("newest");
     window.history.pushState({}, "", "/browse");
+  }
+
+  function clearFilterChip(key) {
+    if (key === "search") {
+      setSearch("");
+      updateUrl(filters, "", sort);
+      return;
+    }
+
+    if (key === "sort") {
+      setSort("newest");
+      updateUrl(filters, search, "newest");
+      return;
+    }
+
+    const nextFilters = { ...filters };
+
+    if (key === "price") {
+      nextFilters.priceMin = "";
+      nextFilters.priceMax = "";
+    } else if (key === "mileage") {
+      nextFilters.mileageMin = "";
+      nextFilters.mileageMax = "";
+    } else if (key === "make") {
+      nextFilters.make = "";
+      nextFilters.model = "";
+    } else {
+      nextFilters[key] = "";
+    }
+
+    setFilters(nextFilters);
+    updateUrl(nextFilters);
+  }
+
+  function getSavedSearchName() {
+    const parts = [
+      filters.make,
+      filters.model,
+      filters.location,
+      getCategoryLabel(filters.category),
+      search.trim(),
+    ].filter(Boolean);
+
+    return parts.slice(0, 3).join(" / ") || "Kerb search";
+  }
+
+  async function saveCurrentSearch() {
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token || !currentUser) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setIsSavingSearch(true);
+    setSavedSearchMessage("");
+
+    try {
+      const queryString = getBrowseQueryString();
+      const response = await fetch("/api/saved-searches", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({
+          name: getSavedSearchName(),
+          filters,
+          search_text: search,
+          sort,
+          query_string: queryString,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not save this search.");
+      }
+
+      setSavedSearches((current) => [
+        result.saved_search,
+        ...current.filter((item) => item.id !== result.saved_search.id),
+      ]);
+      setSavedSearchMessage("Search saved.");
+    } catch (error) {
+      setSavedSearchMessage(error.message || "Could not save this search.");
+    } finally {
+      setIsSavingSearch(false);
+    }
+  }
+
+  function applySavedSearch(savedSearch) {
+    const nextFilters = {
+      ...defaultFilters,
+      ...(savedSearch.filters || {}),
+    };
+    const nextSearch = savedSearch.search_text || "";
+    const nextSort = savedSearch.sort || "newest";
+
+    setFilters(nextFilters);
+    setSearch(nextSearch);
+    setSort(nextSort);
+    updateUrl(nextFilters, nextSearch, nextSort);
+  }
+
+  async function deleteSavedSearch(savedSearchId) {
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) return;
+
+    setSavedSearches((current) =>
+      current.filter((item) => item.id !== savedSearchId)
+    );
+
+    try {
+      await fetch("/api/saved-searches", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({ id: savedSearchId }),
+      });
+    } catch (error) {
+      console.error("Delete saved search error:", error);
+    }
   }
 
   function handleLogout() {
@@ -1044,6 +1232,76 @@ export default function BrowsePage() {
     sort !== "newest" ||
     Object.values(filters).some(Boolean);
 
+  const activeFilterChips = useMemo(() => {
+    const chips = [];
+
+    if (filters.location) {
+      chips.push({ key: "location", label: `Location: ${filters.location}` });
+    }
+
+    if (filters.make) {
+      chips.push({ key: "make", label: `Make: ${filters.make}` });
+    }
+
+    if (filters.model) {
+      chips.push({ key: "model", label: `Model: ${filters.model}` });
+    }
+
+    if (filters.priceMin || filters.priceMax) {
+      const from = filters.priceMin ? formatPrice(filters.priceMin) : "Any";
+      const to = filters.priceMax ? formatPrice(filters.priceMax) : "Any";
+
+      chips.push({ key: "price", label: `Price: ${from} to ${to}` });
+    }
+
+    if (filters.mileageMin || filters.mileageMax) {
+      const from = filters.mileageMin
+        ? formatMileageOption(filters.mileageMin)
+        : "Any";
+      const to = filters.mileageMax
+        ? formatMileageOption(filters.mileageMax)
+        : "Any";
+
+      chips.push({ key: "mileage", label: `Mileage: ${from} to ${to}` });
+    }
+
+    if (filters.bodyType) {
+      chips.push({ key: "bodyType", label: `Body: ${filters.bodyType}` });
+    }
+
+    if (filters.fuel) {
+      const fuelLabel =
+        filters.fuel === "electric-hybrid"
+          ? "Electric & hybrid"
+          : filters.fuel.charAt(0).toUpperCase() + filters.fuel.slice(1);
+
+      chips.push({ key: "fuel", label: `Fuel: ${fuelLabel}` });
+    }
+
+    if (filters.category) {
+      chips.push({
+        key: "category",
+        label: `Category: ${getCategoryLabel(filters.category)}`,
+      });
+    }
+
+    if (search.trim()) {
+      chips.push({ key: "search", label: `Keyword: ${search.trim()}` });
+    }
+
+    if (sort !== "newest") {
+      const sortLabels = {
+        "price-low": "Price: low to high",
+        "price-high": "Price: high to low",
+        "mileage-low": "Lowest mileage",
+      };
+
+      chips.push({ key: "sort", label: sortLabels[sort] || "Custom sort" });
+    }
+
+    return chips;
+  }, [filters, search, sort]);
+
   const activeFilterCount =
     Object.values(filters).filter(Boolean).length +
     (search.trim() ? 1 : 0) +
@@ -1140,6 +1398,11 @@ export default function BrowsePage() {
                 <Link href="/account" className="signin-button">
                   <SvgIcon name="user" />
                   My account
+                  {unreadCount > 0 && (
+                    <span className="top-badge">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
 
                 <button
@@ -1163,7 +1426,11 @@ export default function BrowsePage() {
             </Link>
           </div>
 
-          <SiteMenu currentUser={currentUser} onLogout={handleLogout} />
+          <SiteMenu
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            unreadCount={unreadCount}
+          />
         </header>
 
         <section
@@ -1446,6 +1713,65 @@ export default function BrowsePage() {
                 </button>
               )}
             </div>
+
+            {(activeFilterChips.length > 0 || currentUser) && (
+              <div className="filter-tools">
+                {activeFilterChips.length > 0 && (
+                  <div className="filter-chips" aria-label="Active filters">
+                    {activeFilterChips.map((chip) => (
+                      <button
+                        type="button"
+                        className="filter-chip"
+                        key={chip.key}
+                        onClick={() => clearFilterChip(chip.key)}
+                      >
+                        <span>{chip.label}</span>
+                        <strong>×</strong>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {currentUser && (
+                  <div className="saved-searches">
+                    <button
+                      type="button"
+                      className="save-search-button"
+                      onClick={saveCurrentSearch}
+                      disabled={isSavingSearch}
+                    >
+                      {isSavingSearch ? "Saving..." : "Save search"}
+                    </button>
+
+                    {savedSearchMessage && (
+                      <span className="saved-search-message">
+                        {savedSearchMessage}
+                      </span>
+                    )}
+
+                    {savedSearches.slice(0, 3).map((savedSearch) => (
+                      <span className="saved-search-item" key={savedSearch.id}>
+                        <button
+                          type="button"
+                          onClick={() => applySavedSearch(savedSearch)}
+                        >
+                          {savedSearch.name || "Saved search"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="saved-search-delete"
+                          onClick={() => deleteSavedSearch(savedSearch.id)}
+                          aria-label={`Delete ${savedSearch.name || "saved search"}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
@@ -1724,6 +2050,21 @@ export default function BrowsePage() {
           color: #c01818;
         }
 
+        .top-badge {
+          min-width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          background: #d7193f;
+          color: white;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 5px;
+          font-size: 10px;
+          font-weight: 950;
+          line-height: 1;
+        }
+
         .post-button {
           height: 58px;
           display: inline-flex;
@@ -1992,6 +2333,93 @@ export default function BrowsePage() {
           font-weight: 950;
           white-space: nowrap;
           cursor: pointer;
+        }
+
+        .filter-tools {
+          margin-top: 14px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .filter-chips,
+        .saved-searches {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .filter-chip,
+        .saved-search-item,
+        .save-search-button {
+          min-height: 34px;
+          border: 1px solid #dfe7f5;
+          border-radius: 999px;
+          background: white;
+          color: #1a2442;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 12px;
+          font-size: 12px;
+          font-weight: 900;
+          box-shadow: 0 6px 18px rgba(13, 23, 55, 0.04);
+        }
+
+        .filter-chip {
+          cursor: pointer;
+        }
+
+        .filter-chip strong,
+        .saved-search-delete {
+          width: 18px;
+          height: 18px;
+          border: none;
+          border-radius: 50%;
+          background: #eef3ff;
+          color: #0b45ff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          font-size: 13px;
+          font-weight: 950;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .save-search-button {
+          background: #0b45ff;
+          border-color: #0b45ff;
+          color: white;
+          cursor: pointer;
+        }
+
+        .save-search-button:disabled {
+          opacity: 0.72;
+          cursor: wait;
+        }
+
+        .saved-search-item {
+          padding-right: 8px;
+        }
+
+        .saved-search-item > button:first-child {
+          border: none;
+          background: transparent;
+          color: inherit;
+          padding: 0;
+          font: inherit;
+          cursor: pointer;
+        }
+
+        .saved-search-message {
+          color: #68728d;
+          font-size: 12px;
+          font-weight: 850;
         }
 
         .results-section {
@@ -2396,6 +2824,11 @@ export default function BrowsePage() {
             width: 100%;
           }
 
+          .filter-tools {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
           .cars-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
@@ -2517,6 +2950,24 @@ export default function BrowsePage() {
           .search-row {
             margin-top: 12px;
             gap: 10px;
+          }
+
+          .filter-tools {
+            margin-top: 12px;
+            gap: 10px;
+          }
+
+          .filter-chips,
+          .saved-searches {
+            gap: 7px;
+          }
+
+          .filter-chip,
+          .saved-search-item,
+          .save-search-button {
+            min-height: 32px;
+            font-size: 11px;
+            padding: 0 10px;
           }
 
           .results-section {
