@@ -158,6 +158,7 @@ export default function EnquiryConversationPage() {
 
       setThread(result);
       setMessages(result.messages || []);
+      window.dispatchEvent(new Event("kerb-message-change"));
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
@@ -209,6 +210,7 @@ export default function EnquiryConversationPage() {
       }));
       setReply("");
       setNotice("Reply sent.");
+      window.dispatchEvent(new Event("kerb-message-change"));
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
