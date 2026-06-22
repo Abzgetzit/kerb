@@ -185,6 +185,7 @@ export async function POST(request) {
 
   const sellerEmail = clean(listing.seller_email);
   const sellerPhone = clean(listing.seller_phone);
+  const now = new Date().toISOString();
 
   const { data: enquiry, error: enquiryError } = await supabase
     .from("kerb_enquiries")
@@ -198,9 +199,11 @@ export async function POST(request) {
       seller_phone: sellerPhone || null,
       listing_title: listingTitle,
       status: "new",
-      last_message_at: new Date().toISOString(),
+      last_message_at: now,
       last_message_preview: message.replace(/\s+/g, " ").slice(0, 220),
       last_message_sender_role: "buyer",
+      buyer_last_read_at: now,
+      seller_last_read_at: null,
     })
     .select("*")
     .single();
@@ -217,7 +220,7 @@ export async function POST(request) {
       sender_email: buyerEmail,
       sender_name: buyerName,
       message,
-      created_at: enquiry.created_at || new Date().toISOString(),
+      created_at: enquiry.created_at || now,
     });
 
   if (messageError) {
