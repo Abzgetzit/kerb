@@ -161,6 +161,38 @@ function getFeatures(car) {
   return [];
 }
 
+function getOwnerInsight(car, analytics, photoCount) {
+  const views = Number(analytics?.views_last_30_days || car?.view_count || 0);
+  const enquiries = Number(analytics?.enquiries || 0);
+  const saves = Number(analytics?.saves || 0);
+
+  if (photoCount < 6) {
+    return {
+      title: "Add more photos",
+      body: "Listings with front, rear, interior and wheel photos usually feel more trustworthy.",
+    };
+  }
+
+  if (views >= 25 && enquiries === 0) {
+    return {
+      title: "Getting views, no messages yet",
+      body: "Try sharpening the description, checking the price, or adding a clearer first photo.",
+    };
+  }
+
+  if (saves > 0 && enquiries === 0) {
+    return {
+      title: "Buyers are saving this car",
+      body: "That is interest. A small price change or more detail may turn saves into enquiries.",
+    };
+  }
+
+  return {
+    title: "Listing looks active",
+    body: "Keep the price, mileage and seller notes fresh so buyers know the advert is current.",
+  };
+}
+
 function SvgIcon({ name }) {
   const icons = {
     car: (
@@ -344,6 +376,8 @@ export default function ListingPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [ownerAnalytics, setOwnerAnalytics] = useState(null);
   const [hasCheckedCurrentUser, setHasCheckedCurrentUser] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
@@ -361,6 +395,15 @@ export default function ListingPage() {
     buyer_email: "",
     buyer_phone: "",
     message: "Hi, is this car still available?",
+  });
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isSendingReport, setIsSendingReport] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState("");
+  const [reportError, setReportError] = useState("");
+  const [reportForm, setReportForm] = useState({
+    reason: "Misleading information",
+    reporter_email: "",
+    details: "",
   });
 
   useEffect(() => {
@@ -414,6 +457,11 @@ export default function ListingPage() {
         currentUser.fullName ||
         "",
       buyer_email: current.buyer_email || currentUser.email || "",
+    }));
+
+    setReportForm((current) => ({
+      ...current,
+      reporter_email: current.reporter_email || currentUser.email || "",
     }));
   }, [currentUser]);
 
@@ -518,6 +566,51 @@ export default function ListingPage() {
     .map((email) => String(email).toLowerCase());
 
   const isSellerOwner = Boolean(currentEmail && ownerEmails.includes(currentEmail));
+  const ownerInsight = isSellerOwner
+    ? getOwnerInsight(car, ownerAnalytics, photos.length)
+    : null;
+
+  useEffect(() => {
+    async function loadAccountDetails() {
+      const token = localStorage.getItem("kerbSessionToken");
+
+      if (!token || !currentUser) {
+        setUnreadCount(0);
+        setOwnerAnalytics(null);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/account", {
+          headers: {
+            "x-kerb-session-token": token,
+          },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) return;
+
+        setUnreadCount(Number(result.unread_total || 0));
+
+        const matchingListing = (result.my_listings || []).find(
+          (listing) => String(listing.id) === String(id)
+        );
+
+        setOwnerAnalytics(matchingListing?.analytics || null);
+      } catch (error) {
+        console.error("Listing account details error:", error);
+      }
+    }
+
+    loadAccountDetails();
+
+    window.addEventListener("kerb-message-change", loadAccountDetails);
+
+    return () => {
+      window.removeEventListener("kerb-message-change", loadAccountDetails);
+    };
+  }, [currentUser, id]);
 
   useEffect(() => {
     async function trackListingView() {
@@ -537,7 +630,10 @@ export default function ListingPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ listing_id: String(id) }),
+          body: JSON.stringify({
+            listing_id: String(id),
+            viewer_email: currentEmail,
+          }),
         });
 
         const result = await response.json();
@@ -564,7 +660,7 @@ export default function ListingPage() {
     }
 
     trackListingView();
-  }, [id, car?.id, hasCheckedCurrentUser, isSellerOwner]);
+  }, [id, car?.id, hasCheckedCurrentUser, isSellerOwner, currentEmail]);
 
   const specItems = [
     mileage
@@ -838,10 +934,55 @@ export default function ListingPage() {
     }
   }
 
+  async function submitReport(event) {
+    event.preventDefault();
+
+    setIsSendingReport(true);
+    setReportSuccess("");
+    setReportError("");
+
+    try {
+      const token = localStorage.getItem("kerbSessionToken");
+      const response = await fetch("/api/listing-reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "x-kerb-session-token": token } : {}),
+        },
+        body: JSON.stringify({
+          listing_id: id,
+          reason: reportForm.reason,
+          reporter_email: reportForm.reporter_email,
+          details: reportForm.details,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not send this report.");
+      }
+
+      setReportSuccess("Thanks. Kerb will review this listing.");
+      setReportForm((current) => ({
+        ...current,
+        details: "",
+      }));
+    } catch (error) {
+      setReportError(error.message || "Something went wrong.");
+    } finally {
+      setIsSendingReport(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="listing-page">
-        <Header currentUser={currentUser} onLogout={handleLogout} />
+        <Header
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          unreadCount={unreadCount}
+        />
         <section className="loading-box">Loading listing...</section>
         <style jsx global>{styles}</style>
       </main>
@@ -851,7 +992,11 @@ export default function ListingPage() {
   if (errorMessage || !car) {
     return (
       <main className="listing-page">
-        <Header currentUser={currentUser} onLogout={handleLogout} />
+        <Header
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          unreadCount={unreadCount}
+        />
         <section className="empty-box">
           <h1>Listing not found</h1>
           <p>{errorMessage || "This listing is no longer available."}</p>
@@ -865,7 +1010,11 @@ export default function ListingPage() {
   return (
     <>
       <main className="listing-page">
-        <Header currentUser={currentUser} onLogout={handleLogout} />
+        <Header
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          unreadCount={unreadCount}
+        />
 
         <section className="breadcrumb-row">
           <Link href="/browse" className="back-link">
@@ -1080,11 +1229,48 @@ export default function ListingPage() {
                     <strong>{formatNumber(car.view_count || 0)}</strong>
                   </div>
 
+                  {ownerAnalytics && (
+                    <>
+                      <div>
+                        <span>7 days</span>
+                        <strong>
+                          {formatNumber(ownerAnalytics.views_last_7_days || 0)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>30 days</span>
+                        <strong>
+                          {formatNumber(ownerAnalytics.views_last_30_days || 0)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Saves</span>
+                        <strong>{formatNumber(ownerAnalytics.saves || 0)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Enquiries</span>
+                        <strong>
+                          {formatNumber(ownerAnalytics.enquiries || 0)}
+                        </strong>
+                      </div>
+                    </>
+                  )}
+
                   <div>
                     <span>Last viewed</span>
                     <strong>{formatDate(car.last_viewed_at) || "Not yet"}</strong>
                   </div>
                 </div>
+
+                {ownerInsight && (
+                  <div className="owner-insight">
+                    <strong>{ownerInsight.title}</strong>
+                    <span>{ownerInsight.body}</span>
+                  </div>
+                )}
 
                 {actionMessage && (
                   <div className="success-message">{actionMessage}</div>
@@ -1195,6 +1381,39 @@ export default function ListingPage() {
                   <span>Message the seller instead</span>
                 </div>
               )}
+
+              <button
+                type="button"
+                className="report-link"
+                onClick={() => {
+                  setIsReportOpen(true);
+                  setReportSuccess("");
+                  setReportError("");
+                }}
+              >
+                Report this listing
+              </button>
+            </section>
+
+            <section className="trust-card">
+              <h2>Buyer safety</h2>
+
+              <ul>
+                <li>View the car in daylight and check the V5C before paying.</li>
+                <li>Never send a deposit if you have not seen the car or seller.</li>
+                <li>Use secure payment and be careful with pressure to act fast.</li>
+              </ul>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReportOpen(true);
+                  setReportSuccess("");
+                  setReportError("");
+                }}
+              >
+                Report a concern
+              </button>
             </section>
           </aside>
         </section>
@@ -1332,6 +1551,108 @@ export default function ListingPage() {
             </div>
           </div>
         )}
+
+        {isReportOpen && (
+          <div className="modal-backdrop">
+            <div className="enquiry-modal report-modal">
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setIsReportOpen(false)}
+              >
+                ×
+              </button>
+
+              <h2>Report this listing</h2>
+              <p>
+                Tell Kerb what looks wrong with <strong>{title}</strong>. This
+                does not message the seller.
+              </p>
+
+              {reportSuccess ? (
+                <div className="enquiry-complete">
+                  <div className="success-message">{reportSuccess}</div>
+
+                  <div className="enquiry-complete-actions">
+                    <button
+                      type="button"
+                      onClick={() => setIsReportOpen(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={submitReport} className="enquiry-form">
+                  <label>
+                    Reason
+                    <select
+                      value={reportForm.reason}
+                      onChange={(event) =>
+                        setReportForm((current) => ({
+                          ...current,
+                          reason: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="Misleading information">
+                        Misleading information
+                      </option>
+                      <option value="Suspicious price">Suspicious price</option>
+                      <option value="Poor or fake photos">
+                        Poor or fake photos
+                      </option>
+                      <option value="Seller behaviour">Seller behaviour</option>
+                      <option value="Already sold">Already sold</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Your email
+                    <input
+                      type="email"
+                      value={reportForm.reporter_email}
+                      onChange={(event) =>
+                        setReportForm((current) => ({
+                          ...current,
+                          reporter_email: event.target.value,
+                        }))
+                      }
+                      placeholder="Optional"
+                    />
+                  </label>
+
+                  <label>
+                    Details
+                    <textarea
+                      value={reportForm.details}
+                      onChange={(event) =>
+                        setReportForm((current) => ({
+                          ...current,
+                          details: event.target.value,
+                        }))
+                      }
+                      placeholder="Add anything useful for moderation"
+                    />
+                  </label>
+
+                  {reportError && (
+                    <div className="error-message">{reportError}</div>
+                  )}
+
+                  <button
+                    className="send-enquiry-button"
+                    type="submit"
+                    disabled={isSendingReport}
+                  >
+                    {isSendingReport ? "Sending..." : "Send report"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       <style jsx global>{styles}</style>
@@ -1339,7 +1660,7 @@ export default function ListingPage() {
   );
 }
 
-function Header({ currentUser, onLogout }) {
+function Header({ currentUser, onLogout, unreadCount = 0 }) {
   return (
     <header className="topbar">
       <Link href="/" className="logo">
@@ -1392,6 +1713,11 @@ function Header({ currentUser, onLogout }) {
             <Link href="/account" className="signin-link">
               <SvgIcon name="user" />
               My account
+              {unreadCount > 0 && (
+                <span className="top-badge">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Link>
 
             <button type="button" className="logout-link" onClick={onLogout}>
@@ -1411,7 +1737,11 @@ function Header({ currentUser, onLogout }) {
         </Link>
       </div>
 
-      <SiteMenu currentUser={currentUser} onLogout={onLogout} />
+      <SiteMenu
+        currentUser={currentUser}
+        onLogout={onLogout}
+        unreadCount={unreadCount}
+      />
     </header>
   );
 }
@@ -1436,7 +1766,8 @@ const styles = `
 
   button,
   input,
-  textarea {
+  textarea,
+  select {
     font-family: inherit;
   }
 
@@ -1526,6 +1857,21 @@ const styles = `
 
   .logout-link {
     color: #c01818;
+  }
+
+  .top-badge {
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #d7193f;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    font-size: 10px;
+    font-weight: 950;
+    line-height: 1;
   }
 
   .post-button {
@@ -1633,7 +1979,8 @@ const styles = `
   .title-section,
   .details-card,
   .contact-card,
-  .owner-card {
+  .owner-card,
+  .trust-card {
     background: white;
     border: 1px solid #e4eaf4;
     border-radius: 20px;
@@ -1646,7 +1993,8 @@ const styles = `
   .title-section:hover,
   .details-card:hover,
   .contact-card:hover,
-  .owner-card:hover {
+  .owner-card:hover,
+  .trust-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 18px 46px rgba(18, 32, 70, 0.1);
   }
@@ -2005,12 +2353,14 @@ const styles = `
   }
 
   .contact-card,
-  .owner-card {
+  .owner-card,
+  .trust-card {
     padding: 24px;
   }
 
   .contact-card h2,
-  .owner-card h2 {
+  .owner-card h2,
+  .trust-card h2 {
     margin: 0 0 16px;
     font-size: 24px;
     letter-spacing: -0.6px;
@@ -2048,6 +2398,28 @@ const styles = `
     color: #101832;
     font-size: 15px;
     font-weight: 950;
+  }
+
+  .owner-insight {
+    display: grid;
+    gap: 6px;
+    border: 1px solid #dbe7ff;
+    border-radius: 16px;
+    background: #f3f7ff;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .owner-insight strong {
+    color: #0b45ff;
+    font-weight: 950;
+  }
+
+  .owner-insight span {
+    color: #59667f;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.45;
   }
 
   .owner-actions {
@@ -2219,6 +2591,43 @@ const styles = `
     font-weight: 650;
   }
 
+  .report-link,
+  .trust-card button {
+    border: none;
+    background: transparent;
+    color: #0b45ff;
+    font-size: 14px;
+    font-weight: 950;
+    cursor: pointer;
+    padding: 0;
+    width: fit-content;
+  }
+
+  .report-link {
+    margin-top: 8px;
+  }
+
+  .trust-card {
+    background: white;
+    border: 1px solid #e4eaf4;
+    border-radius: 20px;
+    box-shadow: 0 12px 34px rgba(18, 32, 70, 0.06);
+    display: grid;
+    gap: 4px;
+    animation: listingFadeUp 0.42s ease both;
+  }
+
+  .trust-card ul {
+    margin: 0 0 4px;
+    padding-left: 18px;
+    display: grid;
+    gap: 9px;
+    color: #59667f;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.45;
+  }
+
   .loading-box,
   .empty-box {
     max-width: 720px;
@@ -2352,6 +2761,7 @@ const styles = `
   }
 
   .enquiry-form input,
+  .enquiry-form select,
   .enquiry-form textarea {
     width: 100%;
     border: 1px solid #dfe6f1;
@@ -2363,12 +2773,18 @@ const styles = `
     outline: none;
   }
 
+  .enquiry-form select {
+    height: 48px;
+    background: white;
+  }
+
   .enquiry-form textarea {
     min-height: 120px;
     resize: vertical;
   }
 
   .enquiry-form input:focus,
+  .enquiry-form select:focus,
   .enquiry-form textarea:focus {
     border-color: #0b45ff;
     box-shadow: 0 0 0 4px rgba(11, 69, 255, 0.1);
@@ -2549,7 +2965,8 @@ const styles = `
     .title-section,
     .details-card,
     .contact-card,
-    .owner-card {
+    .owner-card,
+    .trust-card {
       padding: 20px;
     }
 
