@@ -410,3 +410,112 @@ export async function POST(request, { params }) {
     email,
   });
 }
+
+export async function DELETE(request, { params }) {
+  const enquiryId = await getEnquiryId(params);
+
+  if (!enquiryId) {
+    return NextResponse.json(
+      { error: "Conversation id is required." },
+      { status: 400 }
+    );
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body." },
+      { status: 400 }
+    );
+  }
+
+  const messageId = cleanText(body?.message_id);
+
+  if (!messageId) {
+    return NextResponse.json(
+      { error: "Message id is required." },
+      { status: 400 }
+    );
+  }
+
+  const thread = await getThread(request, enquiryId);
+
+  if (thread.error) return thread.error;
+
+  const { data: message, error: messageError } = await supabase
+    .from("kerb_enquiry_messages")
+    .select("*")
+    .eq("id", messageId)
+    .eq("enquiry_id", enquiryId)
+    .maybeSingle();
+
+  if (messageError) {
+    return NextResponse.json({ error: messageError.message }, { status: 500 });
+  }
+
+  if (!message) {
+    return NextResponse.json(
+      { error: "Message could not be found." },
+      { status: 404 }
+    );
+  }
+
+  if (normaliseEmail(message.sender_email) !== thread.accountEmail) {
+    return NextResponse.json(
+      { error: "You can only delete your own messages." },
+      { status: 403 }
+    );
+  }
+
+  const { error: deleteError } = await supabase
+    .from("kerb_enquiry_messages")
+    .delete()
+    .eq("id", messageId)
+    .eq("enquiry_id", enquiryId);
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
+
+  const { data: latestMessage, error: latestError } = await supabase
+    .from("kerb_enquiry_messages")
+    .select("*")
+    .eq("enquiry_id", enquiryId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestError) {
+    return NextResponse.json({ error: latestError.message }, { status: 500 });
+  }
+
+  const fallbackPreview = cleanText(thread.enquiry.message);
+  const fallbackAt = thread.enquiry.created_at;
+
+  const { data: updatedEnquiry, error: updateError } = await supabase
+    .from("kerb_enquiries")
+    .update({
+      last_message_at: latestMessage?.created_at || fallbackAt,
+      last_message_preview: latestMessage
+        ? getMessagePreview(latestMessage.message)
+        : getMessagePreview(fallbackPreview),
+      last_message_sender_role: latestMessage?.sender_role || "buyer",
+      [getReadColumn(thread.participantRole)]: new Date().toISOString(),
+    })
+    .eq("id", enquiryId)
+    .select("*")
+    .single();
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    enquiry: updatedEnquiry,
+    deleted_message_id: messageId,
+  });
+}
