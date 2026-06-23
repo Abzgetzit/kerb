@@ -141,6 +141,9 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
           <Link href="/#guides" onClick={closeMenu}>
             Guides
           </Link>
+          <Link href="/safety" onClick={closeMenu}>
+            Safety
+          </Link>
           <Link
             href={currentUser ? "/account?tab=saved" : "/login"}
             onClick={closeMenu}
@@ -173,6 +176,21 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
               Sign in
             </Link>
           )}
+
+          <div className="menuDivider" />
+
+          <Link href="/legal" onClick={closeMenu}>
+            Legal hub
+          </Link>
+          <Link href="/terms" onClick={closeMenu}>
+            Terms
+          </Link>
+          <Link href="/privacy" onClick={closeMenu}>
+            Privacy
+          </Link>
+          <Link href="/cookies" onClick={closeMenu}>
+            Cookies
+          </Link>
 
           <Link href="/post-car" className="primaryMenuLink" onClick={closeMenu}>
             Post your car
