@@ -114,6 +114,8 @@ export default function EnquiryConversationPage() {
   const params = useParams();
   const enquiryId = params?.id;
   const messagesEndRef = useRef(null);
+  const replyInputRef = useRef(null);
+  const longPressTimerRef = useRef(null);
 
   const [currentUser, setCurrentUser] = useState(null);
   const [thread, setThread] = useState(null);
@@ -123,6 +125,9 @@ export default function EnquiryConversationPage() {
   const [isSending, setIsSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [notice, setNotice] = useState("");
+  const [activeMessageMenuId, setActiveMessageMenuId] = useState("");
+  const [copiedMessageId, setCopiedMessageId] = useState("");
+  const [deletingMessageId, setDeletingMessageId] = useState("");
 
   function handleLogout() {
     localStorage.removeItem("kerbSessionToken");
@@ -216,6 +221,107 @@ export default function EnquiryConversationPage() {
     } finally {
       setIsSending(false);
     }
+  }
+
+  function replyToMessage(message) {
+    const senderName = getMessageSenderName({
+      message,
+      isMine: normaliseEmail(message.sender_email) === accountEmail,
+    });
+    const quotedText = cleanText(message.message)
+      .split("\n")
+      .map((line) => `> ${line}`)
+      .join("\n");
+
+    setReply((currentReply) =>
+      currentReply.trim()
+        ? `${currentReply}\n\n${quotedText}\n`
+        : `${quotedText}\n\n`
+    );
+    setNotice(`Replying to ${senderName}.`);
+    setActiveMessageMenuId("");
+
+    requestAnimationFrame(() => {
+      replyInputRef.current?.focus();
+    });
+  }
+
+  async function copyMessage(message) {
+    try {
+      await navigator.clipboard.writeText(cleanText(message.message));
+      setCopiedMessageId(message.id);
+      setNotice("Message copied.");
+      setActiveMessageMenuId("");
+
+      window.setTimeout(() => {
+        setCopiedMessageId((currentId) =>
+          currentId === message.id ? "" : currentId
+        );
+      }, 1600);
+    } catch {
+      setErrorMessage("Could not copy that message.");
+    }
+  }
+
+  async function deleteMessage(message) {
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!message.id || String(message.id).includes("-initial")) {
+      setErrorMessage("The original enquiry message cannot be deleted.");
+      return;
+    }
+
+    setDeletingMessageId(message.id);
+    setNotice("");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(`/api/enquiries/${enquiryId}/messages`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify({ message_id: message.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not delete that message.");
+      }
+
+      setMessages((currentMessages) =>
+        currentMessages.filter((currentMessage) => currentMessage.id !== message.id)
+      );
+      setThread((currentThread) => ({
+        ...(currentThread || {}),
+        enquiry: result.enquiry || currentThread?.enquiry,
+      }));
+      setNotice("Message deleted.");
+      setActiveMessageMenuId("");
+      window.dispatchEvent(new Event("kerb-message-change"));
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong.");
+    } finally {
+      setDeletingMessageId("");
+    }
+  }
+
+  function startLongPress(messageId) {
+    window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = window.setTimeout(() => {
+      setActiveMessageMenuId(messageId);
+    }, 480);
+  }
+
+  function stopLongPress() {
+    window.clearTimeout(longPressTimerRef.current);
   }
 
   useEffect(() => {
@@ -340,12 +446,67 @@ export default function EnquiryConversationPage() {
                 {messages.map((message) => {
                   const isMine =
                     normaliseEmail(message.sender_email) === accountEmail;
+                  const isMenuOpen = activeMessageMenuId === message.id;
+                  const canDelete =
+                    isMine && !String(message.id || "").includes("-initial");
 
                   return (
                     <article
-                      className={`messageBubble ${isMine ? "mine" : "theirs"}`}
+                      className={`messageBubble ${isMine ? "mine" : "theirs"} ${
+                        isMenuOpen ? "messageMenuOpen" : ""
+                      }`}
                       key={message.id}
+                      onMouseEnter={() => setActiveMessageMenuId(message.id)}
+                      onMouseLeave={() => setActiveMessageMenuId("")}
+                      onTouchStart={() => startLongPress(message.id)}
+                      onTouchEnd={stopLongPress}
+                      onTouchCancel={stopLongPress}
                     >
+                      <button
+                        type="button"
+                        className="messageMenuButton"
+                        aria-label="Message options"
+                        aria-expanded={isMenuOpen}
+                        onClick={() =>
+                          setActiveMessageMenuId((currentId) =>
+                            currentId === message.id ? "" : message.id
+                          )
+                        }
+                      >
+                        <span />
+                        <span />
+                        <span />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div className="messageMenu">
+                          <button
+                            type="button"
+                            onClick={() => replyToMessage(message)}
+                          >
+                            Reply
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => copyMessage(message)}
+                          >
+                            {copiedMessageId === message.id ? "Copied" : "Copy"}
+                          </button>
+                          {canDelete && (
+                            <button
+                              type="button"
+                              className="deleteMessageButton"
+                              onClick={() => deleteMessage(message)}
+                              disabled={deletingMessageId === message.id}
+                            >
+                              {deletingMessageId === message.id
+                                ? "Deleting"
+                                : "Delete"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       <div className="messageMeta">
                         <span className="senderBlock">
                           <strong>
@@ -372,6 +533,7 @@ export default function EnquiryConversationPage() {
                 </div>
 
                 <textarea
+                  ref={replyInputRef}
                   value={reply}
                   onChange={(event) => setReply(event.target.value)}
                   placeholder="Write your reply..."
@@ -661,12 +823,103 @@ const styles = `
   }
 
   .messageBubble {
+    position: relative;
     max-width: min(72%, 620px);
     border: 1px solid #e5eaf4;
     border-radius: 20px;
     padding: 15px 16px;
     background: white;
     box-shadow: 0 10px 26px rgba(10, 20, 40, 0.06);
+  }
+
+  .messageMenuButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 999px;
+    background: #eef3ff;
+    color: #172033;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease;
+  }
+
+  .messageMenuButton span {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: currentColor;
+    display: block;
+  }
+
+  .messageBubble:hover .messageMenuButton,
+  .messageBubble.messageMenuOpen .messageMenuButton {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .messageMenuButton:hover {
+    transform: translateY(-1px);
+    background: #dfe8ff;
+  }
+
+  .messageBubble.mine .messageMenuButton {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+  }
+
+  .messageBubble.mine .messageMenuButton:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .messageMenu {
+    position: absolute;
+    top: 46px;
+    right: 10px;
+    z-index: 5;
+    min-width: 132px;
+    border: 1px solid #dfe7f5;
+    border-radius: 14px;
+    background: white;
+    color: #172033;
+    box-shadow: 0 18px 42px rgba(10, 20, 40, 0.16);
+    padding: 6px;
+    display: grid;
+    gap: 3px;
+  }
+
+  .messageMenu button {
+    width: 100%;
+    min-height: 34px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .messageMenu button:hover {
+    background: #f2f5ff;
+    color: #0048ff;
+  }
+
+  .messageMenu .deleteMessageButton {
+    color: #c01818;
+  }
+
+  .messageMenu .deleteMessageButton:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
 
   .messageBubble.mine {
@@ -826,6 +1079,11 @@ const styles = `
 
     .messageBubble {
       max-width: 92%;
+    }
+
+    .messageMenuButton {
+      opacity: 1;
+      pointer-events: auto;
     }
   }
 
