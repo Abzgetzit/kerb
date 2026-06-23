@@ -1433,21 +1433,44 @@ export default function BrowsePage() {
           />
         </header>
 
+        <button
+          className="floating-filter-button"
+          type="button"
+          onClick={() => setIsFilterPanelOpen(true)}
+          aria-expanded={isFilterPanelOpen}
+          aria-controls="browse-filter-drawer"
+        >
+          <SvgIcon name="sliders" />
+          <span>Filters</span>
+          {activeFilterCount > 0 && <strong>{activeFilterCount}</strong>}
+        </button>
+
+        {isFilterPanelOpen && (
+          <button
+            className="filter-backdrop"
+            type="button"
+            aria-label="Close filters"
+            onClick={() => setIsFilterPanelOpen(false)}
+          />
+        )}
+
         <section
+          id="browse-filter-drawer"
           className={
             isFilterPanelOpen
               ? "filters-section filters-open"
               : "filters-section"
           }
+          aria-hidden={!isFilterPanelOpen}
         >
           <div className="mobile-filter-bar">
             <button
               className="mobile-filter-toggle"
               type="button"
-              onClick={() => setIsFilterPanelOpen((current) => !current)}
+              onClick={() => setIsFilterPanelOpen(false)}
             >
               <SvgIcon name="sliders" />
-              {isFilterPanelOpen ? "Hide filters" : "Filter cars"}
+              Close filters
             </button>
 
             <span>
@@ -2088,22 +2111,128 @@ export default function BrowsePage() {
         }
 
         .filters-section {
-          padding: 26px 32px 0;
+          position: fixed;
+          top: 0;
+          right: 0;
+          z-index: 80;
+          width: min(450px, 100vw);
+          height: 100vh;
+          padding: 18px;
+          background: #f8faff;
+          border-left: 1px solid #dfe7f5;
+          box-shadow: -24px 0 70px rgba(10, 20, 40, 0.16);
+          overflow: auto;
+          transform: translateX(calc(100% + 28px));
+          transition: transform 0.24s ease;
+          pointer-events: none;
+        }
+
+        .filters-section.filters-open {
+          transform: translateX(0);
+          pointer-events: auto;
+        }
+
+        .filter-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 70;
+          border: none;
+          background: rgba(7, 17, 38, 0.34);
+          backdrop-filter: blur(3px);
+          cursor: pointer;
+        }
+
+        .floating-filter-button {
+          position: fixed;
+          top: 118px;
+          right: 28px;
+          z-index: 60;
+          min-height: 52px;
+          border: none;
+          border-radius: 999px;
+          background: #083cff;
+          color: white;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 0 18px;
+          font-size: 14px;
+          font-weight: 950;
+          box-shadow: 0 18px 42px rgba(8, 60, 255, 0.26);
+          transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .floating-filter-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 22px 50px rgba(8, 60, 255, 0.32);
+        }
+
+        .floating-filter-button strong {
+          min-width: 22px;
+          height: 22px;
+          border-radius: 999px;
+          background: white;
+          color: #083cff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 7px;
+          font-size: 11px;
+          line-height: 1;
         }
 
         .filters-panel {
           max-width: 100%;
-          overflow: hidden;
+          overflow: visible;
         }
 
         .mobile-filter-bar {
-          display: none;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: white;
+          border: 1px solid #e5ebf5;
+          border-radius: 16px;
+          padding: 10px;
+          box-shadow: 0 8px 20px rgba(13, 23, 55, 0.04);
+          margin-bottom: 14px;
+        }
+
+        .mobile-filter-toggle {
+          height: 42px;
+          border-radius: 12px;
+          padding: 0 14px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: #083cff;
+          color: white;
+          font-size: 14px;
+          font-weight: 950;
+        }
+
+        .mobile-filter-bar span {
+          color: #68728d;
+          font-size: 12px;
+          font-weight: 850;
+          margin-right: auto;
+        }
+
+        .mobile-clear-button {
+          height: 36px;
+          border-radius: 10px;
+          padding: 0 12px;
+          background: #eef3ff;
+          color: #0b45ff;
+          font-size: 12px;
+          font-weight: 950;
         }
 
         .filters-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
-          gap: 14px;
+          grid-template-columns: 1fr;
+          gap: 12px;
           align-items: center;
         }
 
@@ -2236,6 +2365,7 @@ export default function BrowsePage() {
 
         .filter-button {
           height: 64px;
+          width: 100%;
           border: none;
           border-radius: 16px;
           background: #083cff;
@@ -2269,14 +2399,13 @@ export default function BrowsePage() {
 
         .search-row {
           margin-top: 18px;
-          display: flex;
-          justify-content: space-between;
-          gap: 20px;
-          align-items: center;
+          display: grid;
+          gap: 12px;
+          align-items: stretch;
         }
 
         .search-input {
-          width: min(560px, 100%);
+          width: 100%;
           height: 46px;
           border: 1px solid #e5ebf5;
           border-radius: 14px;
@@ -2295,7 +2424,8 @@ export default function BrowsePage() {
 
         .sort-box {
           height: 46px;
-          min-width: 250px;
+          width: 100%;
+          min-width: 0;
           background: white;
           border: 1px solid #e5ebf5;
           border-radius: 16px;
@@ -2333,14 +2463,13 @@ export default function BrowsePage() {
           font-weight: 950;
           white-space: nowrap;
           cursor: pointer;
+          width: 100%;
         }
 
         .filter-tools {
           margin-top: 14px;
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 16px;
+          display: grid;
+          gap: 12px;
         }
 
         .filter-chips,
@@ -2423,7 +2552,7 @@ export default function BrowsePage() {
         }
 
         .results-section {
-          padding: 20px 32px 50px;
+          padding: 34px 32px 50px;
         }
 
         .results-heading {
@@ -2765,10 +2894,6 @@ export default function BrowsePage() {
             display: none;
           }
 
-          .filters-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-
           .cars-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
@@ -2798,35 +2923,9 @@ export default function BrowsePage() {
             display: none;
           }
 
-          .filters-section,
           .results-section {
             padding-left: 18px;
             padding-right: 18px;
-          }
-
-          .filters-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-          }
-
-          .filter-button {
-            grid-column: span 2;
-          }
-
-          .search-row {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .search-input,
-          .sort-box,
-          .clear-button {
-            width: 100%;
-          }
-
-          .filter-tools {
-            flex-direction: column;
-            align-items: stretch;
           }
 
           .cars-grid {
@@ -2869,62 +2968,13 @@ export default function BrowsePage() {
           }
 
           .filters-section {
-            padding: 14px 14px 0;
-          }
-
-          .mobile-filter-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: white;
-            border: 1px solid #e5ebf5;
-            border-radius: 16px;
-            padding: 10px;
-            box-shadow: 0 8px 20px rgba(13, 23, 55, 0.04);
-          }
-
-          .mobile-filter-toggle {
-            height: 42px;
-            border-radius: 12px;
-            padding: 0 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #083cff;
-            color: white;
-            font-size: 14px;
-            font-weight: 950;
-          }
-
-          .mobile-filter-bar span {
-            color: #68728d;
-            font-size: 12px;
-            font-weight: 850;
-            margin-right: auto;
-          }
-
-          .mobile-clear-button {
-            height: 36px;
-            border-radius: 10px;
-            padding: 0 12px;
-            background: #eef3ff;
-            color: #0b45ff;
-            font-size: 12px;
-            font-weight: 950;
+            width: min(390px, 100vw);
+            padding: 14px;
           }
 
           .filters-panel {
             display: block;
-            margin-top: 12px;
             animation: panelIn 0.24s ease both;
-          }
-
-          .filters-grid {
-            display: none;
-          }
-
-          .filters-section.filters-open .filters-grid {
-            display: grid;
           }
 
           .filters-grid {
@@ -2972,6 +3022,13 @@ export default function BrowsePage() {
 
           .results-section {
             padding: 16px 14px 44px;
+          }
+
+          .floating-filter-button {
+            top: auto;
+            right: 16px;
+            bottom: 18px;
+            min-height: 50px;
           }
 
           .cars-grid {
