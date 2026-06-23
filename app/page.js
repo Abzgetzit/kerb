@@ -755,6 +755,16 @@ export default function HomePage() {
         </form>
       </section>
 
+      <footer className="siteFooter">
+        <span>Kerb is a marketplace, not a direct car seller.</span>
+        <div>
+          <Link href="/terms">Terms</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/cookies">Cookies</Link>
+          <Link href="/safety">Safety</Link>
+        </div>
+      </footer>
+
       <style>{`
         * {
           box-sizing: border-box;
@@ -1537,6 +1547,30 @@ export default function HomePage() {
           color: white;
           padding: 0 20px;
           font-weight: 850;
+        }
+
+        .siteFooter {
+          margin-top: 18px;
+          color: #6b7891;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .siteFooter div {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .siteFooter a {
+          color: #0048ff;
+          text-decoration: none;
         }
 
         .loadingListings {
