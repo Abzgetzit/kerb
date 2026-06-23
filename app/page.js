@@ -234,8 +234,6 @@ export default function HomePage() {
   const [approvedListings, setApprovedListings] = useState([]);
   const [isLoadingListings, setIsLoadingListings] = useState(true);
   const [listingError, setListingError] = useState("");
-  const [email, setEmail] = useState("");
-  const [newsletterMessage, setNewsletterMessage] = useState("");
 
   const categories = [
     {
@@ -361,21 +359,6 @@ export default function HomePage() {
     localStorage.removeItem("kerbUser");
     window.dispatchEvent(new Event("kerb-auth-change"));
     window.location.href = "/";
-  }
-
-  function handleNewsletterSubmit(event) {
-    event.preventDefault();
-
-    const cleanEmail = email.trim();
-
-    if (!cleanEmail) {
-      setNewsletterMessage("Enter your email first.");
-      return;
-    }
-
-    localStorage.setItem("kerbLaunchEmail", cleanEmail);
-    setNewsletterMessage("Nice — you are on the Kerb early access list.");
-    setEmail("");
   }
 
   return (
@@ -735,28 +718,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="newsletter" id="early-access">
-        <div>
-          <h3>Get early access to Kerb</h3>
-          <p>Be notified when the first cars go live.</p>
-          {newsletterMessage && (
-            <span className="newsletterMessage">{newsletterMessage}</span>
-          )}
-        </div>
-
-        <form className="emailBox" onSubmit={handleNewsletterSubmit}>
-          <input
-            placeholder="Enter your email address"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            type="email"
-          />
-          <button type="submit">Notify me</button>
-        </form>
-      </section>
-
       <footer className="siteFooter">
-        <span>Kerb is a marketplace, not a direct car seller.</span>
         <div>
           <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
@@ -1496,65 +1458,12 @@ export default function HomePage() {
           line-height: 1.5;
         }
 
-        .newsletter {
-          margin-top: 14px;
-          background: white;
-          border: 1px solid #e6ebf4;
-          border-radius: 18px;
-          padding: 18px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 20px;
-        }
-
-        .newsletter h3 {
-          margin: 0 0 4px;
-        }
-
-        .newsletter p {
-          margin: 0;
-          color: #657189;
-          font-size: 13px;
-        }
-
-        .newsletterMessage {
-          display: block;
-          color: #0048ff;
-          font-weight: 900;
-          font-size: 13px;
-          margin-top: 8px;
-        }
-
-        .emailBox {
-          display: flex;
-          gap: 10px;
-          min-width: 440px;
-        }
-
-        .emailBox input {
-          flex: 1;
-          border: 1px solid #e0e6f0;
-          border-radius: 12px;
-          padding: 14px 16px;
-          font-size: 14px;
-          outline: none;
-        }
-
-        .emailBox button {
-          border-radius: 12px;
-          background: #0048ff;
-          color: white;
-          padding: 0 20px;
-          font-weight: 850;
-        }
-
         .siteFooter {
           margin-top: 18px;
           color: #6b7891;
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: flex-end;
           gap: 14px;
           flex-wrap: wrap;
           font-size: 13px;
@@ -1749,20 +1658,6 @@ export default function HomePage() {
             flex-direction: column;
           }
 
-          .newsletter {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .emailBox {
-            min-width: 0;
-            width: 100%;
-            flex-direction: column;
-          }
-
-          .emailBox button {
-            padding: 14px;
-          }
         }
       `}</style>
     </main>
