@@ -201,6 +201,38 @@ function getCarMileage(car) {
   return Number(car.mileage || car.miles || 0);
 }
 
+function isListingFeatured(car) {
+  const rawFeatured = String(car?.is_featured ?? "").toLowerCase();
+  const isMarkedFeatured =
+    car?.is_featured === true ||
+    rawFeatured === "true" ||
+    Number(car?.featured_rank || 0) > 0 ||
+    Boolean(car?.boosted_at);
+
+  if (!isMarkedFeatured) return false;
+
+  if (!car?.featured_until) return true;
+
+  const featuredUntil = new Date(car.featured_until).getTime();
+
+  return Number.isFinite(featuredUntil) && featuredUntil > Date.now();
+}
+
+function getDateScore(value) {
+  const time = new Date(value || 0).getTime();
+
+  return Number.isFinite(time) ? time : 0;
+}
+
+function getFeaturedScore(car) {
+  if (!isListingFeatured(car)) return 0;
+
+  const rank = Number(car?.featured_rank || 0);
+  const boostedAt = getDateScore(car?.boosted_at);
+
+  return rank * 10000000000000 + boostedAt;
+}
+
 function includesText(value, query) {
   return String(value || "").toLowerCase().includes(String(query || "").toLowerCase());
 }
@@ -595,7 +627,7 @@ function SvgIcon({ name }) {
 export default function BrowsePage() {
   const [cars, setCars] = useState([]);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("newest");
+  const [sort, setSort] = useState("featured");
   const [filters, setFilters] = useState(defaultFilters);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -629,7 +661,7 @@ export default function BrowsePage() {
 
       setFilters(urlFilters);
       setSearch(params.get("keyword") || params.get("q") || "");
-      setSort(params.get("sort") || "newest");
+      setSort(params.get("sort") || "featured");
     }
 
     applyUrlFilters();
@@ -813,7 +845,7 @@ export default function BrowsePage() {
     if (nextFilters.finance) params.set("finance", nextFilters.finance);
     if (nextFilters.category) params.set("category", nextFilters.category);
     if (nextSearch.trim()) params.set("keyword", nextSearch.trim());
-    if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
+    if (nextSort && nextSort !== "featured") params.set("sort", nextSort);
 
     return params.toString();
   }
@@ -849,14 +881,14 @@ export default function BrowsePage() {
 
     setFilters(nextFilters);
     setSearch(nextSearch);
-    setSort("newest");
-    updateUrl(nextFilters, nextSearch, "newest");
+    setSort("featured");
+    updateUrl(nextFilters, nextSearch, "featured");
   }
 
   function clearFilters() {
     setFilters(defaultFilters);
     setSearch("");
-    setSort("newest");
+    setSort("featured");
     window.history.pushState({}, "", "/browse");
   }
 
@@ -868,8 +900,8 @@ export default function BrowsePage() {
     }
 
     if (key === "sort") {
-      setSort("newest");
-      updateUrl(filters, search, "newest");
+      setSort("featured");
+      updateUrl(filters, search, "featured");
       return;
     }
 
@@ -1202,6 +1234,20 @@ export default function BrowsePage() {
       return true;
     });
 
+    if (sort === "featured") {
+      list.sort((a, b) => {
+        const featuredDifference = getFeaturedScore(b) - getFeaturedScore(a);
+
+        if (featuredDifference !== 0) return featuredDifference;
+
+        return getDateScore(b.created_at) - getDateScore(a.created_at);
+      });
+    }
+
+    if (sort === "newest") {
+      list.sort((a, b) => getDateScore(b.created_at) - getDateScore(a.created_at));
+    }
+
     if (sort === "price-low") {
       list.sort((a, b) => {
         const aPrice = getCarPrice(a) || Number.MAX_SAFE_INTEGER;
@@ -1229,7 +1275,7 @@ export default function BrowsePage() {
 
   const hasActiveFilters =
     search.trim() ||
-    sort !== "newest" ||
+    sort !== "featured" ||
     Object.values(filters).some(Boolean);
 
   const activeFilterChips = useMemo(() => {
@@ -1289,8 +1335,9 @@ export default function BrowsePage() {
       chips.push({ key: "search", label: `Keyword: ${search.trim()}` });
     }
 
-    if (sort !== "newest") {
+    if (sort !== "featured") {
       const sortLabels = {
+        newest: "Newest first",
         "price-low": "Price: low to high",
         "price-high": "Price: high to low",
         "mileage-low": "Lowest mileage",
@@ -1305,7 +1352,7 @@ export default function BrowsePage() {
   const activeFilterCount =
     Object.values(filters).filter(Boolean).length +
     (search.trim() ? 1 : 0) +
-    (sort !== "newest" ? 1 : 0);
+    (sort !== "featured" ? 1 : 0);
 
   const selectedCategoryLabel = getCategoryLabel(filters.category);
 
@@ -1432,6 +1479,317 @@ export default function BrowsePage() {
             unreadCount={unreadCount}
           />
         </header>
+
+        <section className="top-filters-section" aria-label="Browse filters">
+          <div className="filters-panel">
+            <div className="filters-grid">
+              <label className="filter-card location-card">
+                <SvgIcon name="location" />
+                <div className="location-content">
+                  <p>Town or city</p>
+                  <input
+                    value={filters.location}
+                    onChange={(event) =>
+                      setFilter("location", event.target.value)
+                    }
+                    placeholder="Any location"
+                  />
+                </div>
+              </label>
+
+              <label className="filter-card">
+                <SvgIcon name="car" />
+                <div>
+                  <p>Make</p>
+                  <select
+                    value={filters.make}
+                    onChange={(event) => setFilter("make", event.target.value)}
+                  >
+                    <option value="">Any make</option>
+                    {availableMakes.map((make) => (
+                      <option key={make} value={make}>
+                        {make}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+
+              {filters.make && availableModels.length > 0 && (
+                <label className="filter-card">
+                  <SvgIcon name="car" />
+                  <div>
+                    <p>Model</p>
+                    <select
+                      value={filters.model}
+                      onChange={(event) =>
+                        setFilter("model", event.target.value)
+                      }
+                    >
+                      <option value="">Any model</option>
+                      {availableModels.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              )}
+
+              <div className="filter-card range-card">
+                <SvgIcon name="price" />
+                <div className="range-content">
+                  <p>Price</p>
+                  <div className="range-controls price-controls">
+                    <div className="price-input-wrap">
+                      <span>£</span>
+                      <input
+                        value={filters.priceMin}
+                        onChange={(event) =>
+                          setFilter(
+                            "priceMin",
+                            cleanMoneyInput(event.target.value)
+                          )
+                        }
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="From"
+                        aria-label="Minimum price"
+                      />
+                    </div>
+
+                    <div className="price-input-wrap">
+                      <span>£</span>
+                      <input
+                        value={filters.priceMax}
+                        onChange={(event) =>
+                          setFilter(
+                            "priceMax",
+                            cleanMoneyInput(event.target.value)
+                          )
+                        }
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="To"
+                        aria-label="Maximum price"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <label className="filter-card range-card">
+                <SvgIcon name="mileage" />
+                <div className="range-content">
+                  <p>Mileage</p>
+                  <div className="range-controls">
+                    <select
+                      value={filters.mileageMin}
+                      onChange={(event) =>
+                        setFilter("mileageMin", event.target.value)
+                      }
+                      aria-label="Minimum mileage"
+                    >
+                      <option value="">From</option>
+                      {mileageOptions.map((mileage) => (
+                        <option key={`mileage-min-${mileage}`} value={mileage}>
+                          {formatMileageOption(mileage)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={filters.mileageMax}
+                      onChange={(event) =>
+                        setFilter("mileageMax", event.target.value)
+                      }
+                      aria-label="Maximum mileage"
+                    >
+                      <option value="">To</option>
+                      {mileageOptions
+                        .filter((mileage) => mileage > 0)
+                        .map((mileage) => (
+                          <option key={`mileage-max-${mileage}`} value={mileage}>
+                            {formatMileageOption(mileage)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+              </label>
+
+              <label className="filter-card">
+                <SvgIcon name="body" />
+                <div>
+                  <p>Body type</p>
+                  <select
+                    value={filters.bodyType}
+                    onChange={(event) =>
+                      setFilter("bodyType", event.target.value)
+                    }
+                  >
+                    <option value="">Any body</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Hatchback">Hatchback</option>
+                    <option value="Saloon">Saloon</option>
+                    <option value="Estate">Estate</option>
+                    <option value="Coupe">Coupe</option>
+                    <option value="Convertible">Convertible</option>
+                  </select>
+                </div>
+              </label>
+
+              <label className="filter-card">
+                <SvgIcon name="fuel" />
+                <div>
+                  <p>Fuel type</p>
+                  <select
+                    value={filters.fuel}
+                    onChange={(event) => setFilter("fuel", event.target.value)}
+                  >
+                    <option value="">Any fuel</option>
+                    <option value="petrol">Petrol</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="electric">Electric</option>
+                    <option value="electric-hybrid">Electric & hybrid</option>
+                  </select>
+                </div>
+              </label>
+
+              <label className="filter-card">
+                <SvgIcon name="sliders" />
+                <div>
+                  <p>Category</p>
+                  <select
+                    value={filters.category}
+                    onChange={(event) =>
+                      setFilter("category", event.target.value)
+                    }
+                  >
+                    {categoryOptions.map((category) => (
+                      <option key={category.value || "all"} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+
+              <button
+                className="filter-button"
+                type="button"
+                onClick={() => {
+                  updateUrl();
+                  setIsFilterPanelOpen(false);
+                }}
+              >
+                <SvgIcon name="sliders" />
+                Filter
+              </button>
+            </div>
+
+            <div className="search-row">
+              <input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  updateUrl(filters, event.target.value, sort);
+                }}
+                placeholder="Search make, model, fuel, location..."
+                className="search-input"
+              />
+
+              <div className="sort-box">
+                <span>Sort by</span>
+                <select
+                  value={sort}
+                  onChange={(event) => {
+                    setSort(event.target.value);
+                    updateUrl(filters, search, event.target.value);
+                  }}
+                >
+                  <option value="featured">Featured first</option>
+                  <option value="newest">Newest first</option>
+                  <option value="price-low">Price: low to high</option>
+                  <option value="price-high">Price: high to low</option>
+                  <option value="mileage-low">Lowest mileage</option>
+                </select>
+              </div>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  className="clear-button"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            {(activeFilterChips.length > 0 || currentUser) && (
+              <div className="filter-tools">
+                {activeFilterChips.length > 0 && (
+                  <div className="filter-chips" aria-label="Active filters">
+                    {activeFilterChips.map((chip) => (
+                      <button
+                        type="button"
+                        className="filter-chip"
+                        key={chip.key}
+                        onClick={() => clearFilterChip(chip.key)}
+                      >
+                        <span>{chip.label}</span>
+                        <strong>×</strong>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {currentUser && (
+                  <div className="saved-searches">
+                    <button
+                      type="button"
+                      className="save-search-button"
+                      onClick={saveCurrentSearch}
+                      disabled={isSavingSearch}
+                    >
+                      {isSavingSearch ? "Saving..." : "Save search"}
+                    </button>
+
+                    {savedSearchMessage && (
+                      <span className="saved-search-message">
+                        {savedSearchMessage}
+                      </span>
+                    )}
+
+                    {savedSearches.slice(0, 3).map((savedSearch) => (
+                      <span className="saved-search-item" key={savedSearch.id}>
+                        <button
+                          type="button"
+                          onClick={() => applySavedSearch(savedSearch)}
+                        >
+                          {savedSearch.name || "Saved search"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="saved-search-delete"
+                          onClick={() => deleteSavedSearch(savedSearch.id)}
+                          aria-label={`Delete ${savedSearch.name || "saved search"}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+        </section>
 
         <button
           className="floating-filter-button"
@@ -1719,6 +2077,7 @@ export default function BrowsePage() {
                     updateUrl(filters, search, event.target.value);
                   }}
                 >
+                  <option value="featured">Featured first</option>
                   <option value="newest">Newest first</option>
                   <option value="price-low">Price: low to high</option>
                   <option value="price-high">Price: high to low</option>
@@ -1849,9 +2208,17 @@ export default function BrowsePage() {
                 const location = car.location || car.city || car.postcode || "";
                 const price =
                   car.price || car.asking_price || car.listing_price;
-                const sellerType =
-                  car.seller_type ||
-                  (index % 2 === 0 ? "Approved dealer" : "Private seller");
+                const rawSellerType = String(car.seller_type || "").toLowerCase();
+                const sellerTypeLabel = rawSellerType.includes("private")
+                  ? "Private seller"
+                  : rawSellerType.includes("dealer")
+                    ? "Dealer"
+                    : "Seller";
+                const sellerBadgeClass = rawSellerType.includes("private")
+                  ? "private"
+                  : rawSellerType.includes("dealer")
+                    ? "dealer"
+                    : "seller";
                 const listingId = String(car.id || "");
                 const isSaved = savedListingIds.includes(listingId);
                 const isSaving = savingListingIds.includes(listingId);
@@ -1871,18 +2238,14 @@ export default function BrowsePage() {
                         }}
                       />
 
-                      <div
-                        className={
-                          String(sellerType).toLowerCase().includes("private")
-                            ? "seller-badge private"
-                            : "seller-badge dealer"
-                        }
-                      >
+                      <div className={`seller-badge ${sellerBadgeClass}`}>
                         <SvgIcon name="shield" />
-                        {String(sellerType).toLowerCase().includes("private")
-                          ? "Private seller"
-                          : "Approved dealer"}
+                        {sellerTypeLabel}
                       </div>
+
+                      {isListingFeatured(car) && (
+                        <div className="featured-badge">Featured</div>
+                      )}
 
                       <button
                         type="button"
@@ -2109,6 +2472,56 @@ export default function BrowsePage() {
           width: 20px;
           height: 20px;
         }
+
+        .top-filters-section {
+          padding: 32px 34px 0;
+        }
+
+        .top-filters-section .filters-panel {
+          max-width: 100%;
+        }
+
+        .top-filters-section .filters-grid {
+          display: grid;
+          grid-template-columns:
+            minmax(210px, 1.05fr)
+            minmax(210px, 1fr)
+            minmax(230px, 1.05fr)
+            minmax(230px, 1.05fr)
+            minmax(210px, 1fr)
+            minmax(210px, 1fr);
+          gap: 14px;
+          align-items: stretch;
+        }
+
+        .top-filters-section .filter-card,
+        .top-filters-section .filter-button {
+          min-height: 72px;
+          border-radius: 18px;
+        }
+
+        .top-filters-section .search-row {
+          margin-top: 20px;
+          display: grid;
+          grid-template-columns: minmax(280px, 520px) 240px auto;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+        }
+
+        .top-filters-section .sort-box {
+          justify-self: end;
+        }
+
+        .top-filters-section .clear-button {
+          width: auto;
+          justify-self: start;
+        }
+
+        .top-filters-section .filter-tools {
+          margin-top: 16px;
+        }
+
 
         .filters-section {
           position: fixed;
@@ -2640,6 +3053,28 @@ export default function BrowsePage() {
           background: #eafff3;
         }
 
+        .seller-badge.seller {
+          color: #4b5575;
+          background: #f2f5fb;
+        }
+
+
+        .featured-badge {
+          position: absolute;
+          left: 12px;
+          top: 48px;
+          height: 30px;
+          display: inline-flex;
+          align-items: center;
+          padding: 0 12px;
+          border-radius: 8px;
+          background: #083cff;
+          color: white;
+          font-size: 12px;
+          font-weight: 950;
+          box-shadow: 0 8px 20px rgba(8, 60, 255, 0.2);
+        }
+
         .heart-button {
           position: absolute;
           right: 12px;
@@ -2920,6 +3355,10 @@ export default function BrowsePage() {
           .saved-button,
           .signin-button,
           .logout-button {
+            display: none;
+          }
+
+          .top-filters-section {
             display: none;
           }
 
