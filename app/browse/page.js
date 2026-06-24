@@ -224,13 +224,79 @@ function getDateScore(value) {
   return Number.isFinite(time) ? time : 0;
 }
 
-function getFeaturedScore(car) {
-  if (!isListingFeatured(car)) return 0;
+function hashString(value) {
+  const text = String(value || "");
+  let hash = 0;
 
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
+function getRotationSeed() {
+  return Math.floor(Date.now() / (1000 * 60 * 20));
+}
+
+function getFeaturedRotationScore(car, seed) {
   const rank = Number(car?.featured_rank || 0);
-  const boostedAt = getDateScore(car?.boosted_at);
+  const listingKey = car?.id || car?.created_at || car?.title || "";
 
-  return rank * 10000000000000 + boostedAt;
+  return rank * 1000000000 + hashString(`${listingKey}-${seed}`);
+}
+
+function sortNewestFirst(listings) {
+  return [...listings].sort(
+    (a, b) => getDateScore(b.created_at) - getDateScore(a.created_at)
+  );
+}
+
+function sortListingsForFeatured(listings) {
+  const seed = getRotationSeed();
+  const featuredListings = listings
+    .filter(isListingFeatured)
+    .sort((a, b) => {
+      const rotationDifference =
+        getFeaturedRotationScore(b, seed) - getFeaturedRotationScore(a, seed);
+
+      if (rotationDifference !== 0) return rotationDifference;
+
+      return getDateScore(b.boosted_at) - getDateScore(a.boosted_at);
+    });
+  const normalListings = sortNewestFirst(
+    listings.filter((listing) => !isListingFeatured(listing))
+  );
+  const rotatedListings = [];
+  const firstFeaturedSlot = featuredListings.length ? seed % 3 : 0;
+
+  let featuredIndex = 0;
+  let normalIndex = 0;
+  let slotIndex = 0;
+
+  while (rotatedListings.length < listings.length) {
+    const shouldUseFeaturedSlot =
+      featuredIndex < featuredListings.length &&
+      slotIndex >= firstFeaturedSlot &&
+      (slotIndex - firstFeaturedSlot) % 3 === 0;
+
+    if (shouldUseFeaturedSlot) {
+      rotatedListings.push(featuredListings[featuredIndex]);
+      featuredIndex += 1;
+    } else if (normalIndex < normalListings.length) {
+      rotatedListings.push(normalListings[normalIndex]);
+      normalIndex += 1;
+    } else if (featuredIndex < featuredListings.length) {
+      rotatedListings.push(featuredListings[featuredIndex]);
+      featuredIndex += 1;
+    } else {
+      break;
+    }
+
+    slotIndex += 1;
+  }
+
+  return rotatedListings;
 }
 
 function includesText(value, query) {
@@ -1235,13 +1301,7 @@ export default function BrowsePage() {
     });
 
     if (sort === "featured") {
-      list.sort((a, b) => {
-        const featuredDifference = getFeaturedScore(b) - getFeaturedScore(a);
-
-        if (featuredDifference !== 0) return featuredDifference;
-
-        return getDateScore(b.created_at) - getDateScore(a.created_at);
-      });
+      list = sortListingsForFeatured(list);
     }
 
     if (sort === "newest") {
@@ -2243,10 +2303,6 @@ export default function BrowsePage() {
                         {sellerTypeLabel}
                       </div>
 
-                      {isListingFeatured(car) && (
-                        <div className="featured-badge">Featured</div>
-                      )}
-
                       <button
                         type="button"
                         className={
@@ -3056,23 +3112,6 @@ export default function BrowsePage() {
         .seller-badge.seller {
           color: #4b5575;
           background: #f2f5fb;
-        }
-
-
-        .featured-badge {
-          position: absolute;
-          left: 12px;
-          top: 48px;
-          height: 30px;
-          display: inline-flex;
-          align-items: center;
-          padding: 0 12px;
-          border-radius: 8px;
-          background: #083cff;
-          color: white;
-          font-size: 12px;
-          font-weight: 950;
-          box-shadow: 0 8px 20px rgba(8, 60, 255, 0.2);
         }
 
         .heart-button {
