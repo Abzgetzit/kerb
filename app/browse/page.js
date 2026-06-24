@@ -267,37 +267,33 @@ function sortListingsForFeatured(listings) {
   const normalListings = sortNewestFirst(
     listings.filter((listing) => !isListingFeatured(listing))
   );
-  const rotatedListings = [];
-  const firstFeaturedSlot = featuredListings.length ? seed % 3 : 0;
 
+  if (featuredListings.length === 0) return normalListings;
+
+  const prioritySlots = [0, 1, 2, 4, 6, 8, 10, 12];
+  const result = [];
   let featuredIndex = 0;
   let normalIndex = 0;
-  let slotIndex = 0;
 
-  while (rotatedListings.length < listings.length) {
-    const shouldUseFeaturedSlot =
-      featuredIndex < featuredListings.length &&
-      slotIndex >= firstFeaturedSlot &&
-      (slotIndex - firstFeaturedSlot) % 3 === 0;
+  for (let slotIndex = 0; slotIndex < listings.length; slotIndex += 1) {
+    const shouldUsePrioritySlot =
+      prioritySlots.includes(slotIndex) && featuredIndex < featuredListings.length;
 
-    if (shouldUseFeaturedSlot) {
-      rotatedListings.push(featuredListings[featuredIndex]);
+    if (shouldUsePrioritySlot) {
+      result.push(featuredListings[featuredIndex]);
       featuredIndex += 1;
     } else if (normalIndex < normalListings.length) {
-      rotatedListings.push(normalListings[normalIndex]);
+      result.push(normalListings[normalIndex]);
       normalIndex += 1;
     } else if (featuredIndex < featuredListings.length) {
-      rotatedListings.push(featuredListings[featuredIndex]);
+      result.push(featuredListings[featuredIndex]);
       featuredIndex += 1;
-    } else {
-      break;
     }
-
-    slotIndex += 1;
   }
 
-  return rotatedListings;
+  return result;
 }
+
 
 function includesText(value, query) {
   return String(value || "").toLowerCase().includes(String(query || "").toLowerCase());
