@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SiteMenu from "../components/SiteMenu";
+import BoostListingButton from "../components/BoostListingButton";
 
 function formatDate(value) {
   if (!value) return "Unknown";
@@ -273,6 +274,22 @@ function getListingImages(car) {
 
 function getImage(car) {
   return getListingImages(car)[0] || "/cars/hero-car.png";
+}
+
+function isListingFeatured(car) {
+  const rawFeatured = String(car?.is_featured ?? "").toLowerCase();
+  const markedFeatured =
+    car?.is_featured === true ||
+    rawFeatured === "true" ||
+    Number(car?.featured_rank || 0) > 0 ||
+    Boolean(car?.boosted_at);
+
+  if (!markedFeatured) return false;
+  if (!car?.featured_until) return true;
+
+  const until = new Date(car.featured_until).getTime();
+
+  return Number.isFinite(until) && until > Date.now();
 }
 
 function createKerbUserFromAccount(result) {
@@ -846,6 +863,15 @@ export default function AccountPage() {
                         </div>
 
                         <div>
+                          <span>Featured</span>
+                          <strong>
+                            {isListingFeatured(car)
+                              ? `Until ${formatDate(car.featured_until)}`
+                              : "Not boosted"}
+                          </strong>
+                        </div>
+
+                        <div>
                           <span>Views</span>
                           <strong>
                             {formatCount(
@@ -936,6 +962,19 @@ export default function AccountPage() {
                             ? "Edit and resubmit"
                             : "Edit listing"}
                         </Link>
+
+                        {status !== "sold" && (
+                          <BoostListingButton
+                            listingId={car.id}
+                            label={
+                              isListingFeatured(car)
+                                ? "Extend boost"
+                                : "Boost listing"
+                            }
+                            source="account-listings"
+                            small
+                          />
+                        )}
                       </div>
                     </div>
                   </article>
