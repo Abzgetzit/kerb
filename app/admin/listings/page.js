@@ -3,14 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 const VALID_STATUSES = ["pending", "approved", "sold", "rejected"];
-const MODERATION_REASONS = [
-  "Needs better photos",
-  "Price looks suspicious",
-  "Missing key details",
-  "Possible duplicate",
-  "Needs clearer description",
-  "Looks good",
-];
 
 function normaliseStatus(status) {
   const cleaned = String(status || "pending").trim().toLowerCase();
@@ -20,7 +12,7 @@ function normaliseStatus(status) {
 function formatMoney(value) {
   const number = Number(value);
 
-  if (!Number.isFinite(number)) return "Not set";
+  if (!Number.isFinite(number) || number <= 0) return "Not set";
 
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -29,186 +21,107 @@ function formatMoney(value) {
   }).format(number);
 }
 
-function roundToNearestHundred(value) {
-  return Math.round(value / 100) * 100;
-}
-
-function getGuidePriceRange(listing) {
-  const low = Number(listing.valuation_low);
-  const high = Number(listing.valuation_high);
-
-  if (!Number.isFinite(low) || !Number.isFinite(high) || low <= 0 || high <= 0) {
-    return "Not generated";
-  }
-
-  const askingPrice = Number(
-    listing.asking_price || listing.price || listing.listing_price || 0
-  );
-
-  if (askingPrice > 0 && high > askingPrice * 1.35) {
-    const adjustedLow = roundToNearestHundred(askingPrice * 0.9);
-    const adjustedHigh = roundToNearestHundred(askingPrice * 1.08);
-
-    return `${formatMoney(adjustedLow)} - ${formatMoney(adjustedHigh)}`;
-  }
-
-  return `${formatMoney(low)} - ${formatMoney(high)}`;
-}
-
 function formatMileage(value) {
   const number = Number(value);
 
-  if (!Number.isFinite(number)) return "Not set";
+  if (!Number.isFinite(number) || number <= 0) return "Not set";
 
   return `${new Intl.NumberFormat("en-GB").format(number)} miles`;
 }
 
 function formatDate(value) {
-  if (!value) return "Unknown";
+  if (!value) return "Not set";
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return "Unknown";
-
-  return date.toLocaleDateString("en-GB");
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-function getPhotos(listing) {
-  const possiblePhotoFields = [
-    listing.photo_urls,
-    listing.photos,
-    listing.image_urls,
-    listing.images,
-  ];
+function parseImageField(value) {
+  if (!value) return [];
 
-  for (const field of possiblePhotoFields) {
-    if (Array.isArray(field) && field.length > 0) {
-      return field.filter(Boolean);
-    }
+  if (Array.isArray(value)) return value.filter(Boolean);
 
-    if (typeof field === "string" && field.trim()) {
-      try {
-        const parsed = JSON.parse(field);
-
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.filter(Boolean);
-        }
-      } catch {
-        return [field];
-      }
-    }
-  }
-
-  const singlePhoto =
-    listing.image_url ||
-    listing.photo_url ||
-    listing.main_photo_url ||
-    listing.cover_image_url;
-
-  return singlePhoto ? [singlePhoto] : [];
-}
-
-function getListingTitle(listing) {
-  const title = [listing.year, listing.make, listing.model, listing.variant]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
-  return title || listing.title || "Untitled listing";
-}
-
-function getFeatures(listing) {
-  if (Array.isArray(listing.features)) {
-    return listing.features.filter(Boolean);
-  }
-
-  if (typeof listing.features === "string" && listing.features.trim()) {
+  if (typeof value === "string" && value.trim()) {
     try {
-      const parsed = JSON.parse(listing.features);
-
-      if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean);
-      }
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [value];
     } catch {
-      return listing.features
-        .split(",")
-        .map((feature) => feature.trim())
-        .filter(Boolean);
+      return [value];
     }
   }
 
   return [];
 }
 
-function getStatusNotice(status, result) {
-  if (status === "approved") {
-    const liveEmail = result?.emails?.listing_live;
+function getPhotos(listing) {
+  const images = [
+    ...parseImageField(listing.image_url),
+    ...parseImageField(listing.photo_url),
+    ...parseImageField(listing.main_photo_url),
+    ...parseImageField(listing.cover_image_url),
+    ...parseImageField(listing.photos),
+    ...parseImageField(listing.photo_urls),
+    ...parseImageField(listing.images),
+    ...parseImageField(listing.image_urls),
+  ];
 
-    if (liveEmail?.sent) {
-      return {
-        type: "success",
-        message: "Listing approved and the seller live email was sent.",
-      };
-    }
+  return [...new Set(images)].filter(Boolean);
+}
 
-    if (liveEmail?.skipped || liveEmail?.error) {
-      return {
-        type: "warning",
-        message: `Listing approved, but the seller live email was not sent${
-          liveEmail?.error ? `: ${liveEmail.error}` : "."
-        }`,
-      };
-    }
+function getListingTitle(listing) {
+  if (listing.title) return listing.title;
 
-    return {
-      type: "success",
-      message: "Listing approved.",
-    };
-  }
+  return (
+    [listing.year, listing.make, listing.model, listing.model_detail]
+      .filter(Boolean)
+      .join(" ") || "Untitled listing"
+  );
+}
 
-  if (status === "pending") {
-    return {
-      type: "success",
-      message: "Listing moved back to pending.",
-    };
-  }
+function isListingFeatured(listing) {
+  const rawFeatured = String(listing?.is_featured ?? "").toLowerCase();
+  const markedFeatured =
+    listing?.is_featured === true ||
+    rawFeatured === "true" ||
+    Number(listing?.featured_rank || 0) > 0 ||
+    Boolean(listing?.boosted_at);
 
-  if (status === "sold") {
-    return {
-      type: "success",
-      message: "Listing marked as sold and removed from public browse results.",
-    };
-  }
+  if (!markedFeatured) return false;
 
-  if (status === "rejected") {
-    const rejectedEmail = result?.emails?.listing_rejected;
+  if (!listing?.featured_until) return true;
 
-    if (rejectedEmail?.sent) {
-      return {
-        type: "success",
-        message: "Listing rejected and the seller was emailed what to fix.",
-      };
-    }
+  const until = new Date(listing.featured_until).getTime();
 
-    if (rejectedEmail?.skipped || rejectedEmail?.error) {
-      return {
-        type: "warning",
-        message: `Listing rejected, but the seller email was not sent${
-          rejectedEmail?.error ? `: ${rejectedEmail.error}` : "."
-        }`,
-      };
-    }
+  return Number.isFinite(until) && until > Date.now();
+}
 
-    return {
-      type: "success",
-      message: "Listing rejected and kept out of public browse results.",
-    };
-  }
-
-  return {
-    type: "success",
-    message: "Listing updated.",
-  };
+function getSearchText(listing) {
+  return [
+    listing.id,
+    listing.title,
+    listing.make,
+    listing.model,
+    listing.model_detail,
+    listing.year,
+    listing.location,
+    listing.body_type,
+    listing.fuel_type,
+    listing.gearbox,
+    listing.seller_name,
+    listing.seller_email,
+    listing.account_email,
+    listing.seller_phone,
+    listing.status,
+    listing.price,
+    listing.asking_price,
+    listing.description,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 export default function AdminListingsPage() {
@@ -218,9 +131,9 @@ export default function AdminListingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingId, setIsUpdatingId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [notice, setNotice] = useState(null);
   const [filter, setFilter] = useState("pending");
-  const [moderationDrafts, setModerationDrafts] = useState({});
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const storedPassword = localStorage.getItem("kerbAdminPassword");
@@ -231,7 +144,9 @@ export default function AdminListingsPage() {
     }
   }, []);
 
-  async function fetchListings(adminPassword) {
+  async function fetchListings(adminPassword = savedPassword) {
+    if (!adminPassword) return;
+
     setIsLoading(true);
     setErrorMessage("");
 
@@ -263,8 +178,8 @@ export default function AdminListingsPage() {
     }
   }
 
-  function handleLogin(e) {
-    e.preventDefault();
+  function handleLogin(event) {
+    event.preventDefault();
 
     if (!password.trim()) return;
 
@@ -280,29 +195,9 @@ export default function AdminListingsPage() {
     setListings([]);
   }
 
-  function getModerationDraft(id) {
-    return moderationDrafts[id] || { reason: "", note: "" };
-  }
-
-  function updateModerationDraft(id, field, value) {
-    setModerationDrafts((current) => ({
-      ...current,
-      [id]: {
-        ...(current[id] || { reason: "", note: "" }),
-        [field]: value,
-      },
-    }));
-  }
-
-  async function updateStatus(id, status) {
-    const cleanStatus = normaliseStatus(status);
-    const draft = getModerationDraft(id);
-    const moderationReason =
-      draft.reason || (cleanStatus === "rejected" ? "Needs changes" : "");
-
+  async function updateListing(id, payload, fallbackError = "Could not update listing.") {
     setIsUpdatingId(id);
     setErrorMessage("");
-    setNotice(null);
 
     try {
       const response = await fetch("/api/admin/listings", {
@@ -311,18 +206,13 @@ export default function AdminListingsPage() {
           "Content-Type": "application/json",
           "x-admin-password": savedPassword,
         },
-        body: JSON.stringify({
-          id,
-          status: cleanStatus,
-          moderation_reason: moderationReason,
-          moderation_note: draft.note || "",
-        }),
+        body: JSON.stringify({ id, ...payload }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Could not update listing.");
+        throw new Error(result.error || fallbackError);
       }
 
       const updatedListing = {
@@ -335,19 +225,57 @@ export default function AdminListingsPage() {
           listing.id === id ? updatedListing : listing
         )
       );
-
-      await fetchListings(savedPassword);
-      setModerationDrafts((current) => {
-        const nextDrafts = { ...current };
-        delete nextDrafts[id];
-        return nextDrafts;
-      });
-      setNotice(getStatusNotice(cleanStatus, result));
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
       setIsUpdatingId("");
     }
+  }
+
+  async function updateStatus(id, status) {
+    const cleanStatus = normaliseStatus(status);
+    const payload = { status: cleanStatus };
+
+    if (cleanStatus === "rejected") {
+      payload.moderation_reason =
+        window.prompt("Reason shown to seller:", "Listing needs changes") ||
+        "Listing needs changes";
+      payload.moderation_note =
+        window.prompt("Optional internal note:", "") || "";
+    }
+
+    await updateListing(id, payload);
+  }
+
+  async function boostListing(id) {
+    const days = window.prompt("Boost for how many days?", "14");
+
+    if (days === null) return;
+
+    const rank = window.prompt(
+      "Featured rank? Higher ranks appear first. Use 100 for normal boosts.",
+      "100"
+    );
+
+    if (rank === null) return;
+
+    await updateListing(
+      id,
+      {
+        action: "boost",
+        days,
+        rank,
+      },
+      "Could not boost listing."
+    );
+  }
+
+  async function unboostListing(id) {
+    const confirmed = window.confirm("Remove this listing from featured results?");
+
+    if (!confirmed) return;
+
+    await updateListing(id, { action: "unboost" }, "Could not remove boost.");
   }
 
   async function deleteListing(id) {
@@ -359,7 +287,6 @@ export default function AdminListingsPage() {
 
     setIsUpdatingId(id);
     setErrorMessage("");
-    setNotice(null);
 
     try {
       const response = await fetch("/api/admin/listings", {
@@ -380,10 +307,6 @@ export default function AdminListingsPage() {
       setListings((currentListings) =>
         currentListings.filter((listing) => listing.id !== id)
       );
-      setNotice({
-        type: "success",
-        message: "Listing deleted permanently.",
-      });
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
@@ -391,13 +314,15 @@ export default function AdminListingsPage() {
     }
   }
 
-  const filteredListings = useMemo(() => {
-    if (filter === "all") return listings;
+  function submitSearch(event) {
+    event.preventDefault();
+    setSearchTerm(searchDraft.trim().toLowerCase());
+  }
 
-    return listings.filter(
-      (listing) => normaliseStatus(listing.status) === filter
-    );
-  }, [listings, filter]);
+  function clearSearch() {
+    setSearchDraft("");
+    setSearchTerm("");
+  }
 
   const counts = useMemo(() => {
     return {
@@ -414,8 +339,26 @@ export default function AdminListingsPage() {
       rejected: listings.filter(
         (listing) => normaliseStatus(listing.status) === "rejected"
       ).length,
+      featured: listings.filter(isListingFeatured).length,
     };
   }, [listings]);
+
+  const filteredListings = useMemo(() => {
+    return listings.filter((listing) => {
+      const status = normaliseStatus(listing.status);
+
+      if (filter === "featured" && !isListingFeatured(listing)) return false;
+      if (filter !== "all" && filter !== "featured" && status !== filter) {
+        return false;
+      }
+
+      if (searchTerm && !getSearchText(listing).includes(searchTerm)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [listings, filter, searchTerm]);
 
   if (!savedPassword) {
     return (
@@ -427,7 +370,7 @@ export default function AdminListingsPage() {
         <section className="loginCard">
           <div className="pill">Admin access</div>
           <h1>Kerb listings admin</h1>
-          <p>Enter your admin password to review submitted car listings.</p>
+          <p>Enter your admin password to review, search and boost car listings.</p>
 
           <form onSubmit={handleLogin}>
             <label>
@@ -436,7 +379,7 @@ export default function AdminListingsPage() {
                 type="password"
                 placeholder="Enter admin password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
               />
             </label>
 
@@ -448,48 +391,40 @@ export default function AdminListingsPage() {
           </form>
         </section>
 
-        <style>{styles}</style>
+        <style jsx global>{styles}</style>
       </main>
     );
   }
 
   return (
-  <main className="page">
-    <header className="navbar">
-      <a href="/" className="logo">
-        Kerb
-      </a>
-
-      <div className="navActions">
-        <a className="secondaryLink" href="/admin/enquiries">
-          View enquiries
+    <main className="page">
+      <header className="navbar">
+        <a href="/" className="logo">
+          Kerb
         </a>
 
-        <a className="secondaryLink" href="/browse" target="_blank">
-          View browse page
-        </a>
+        <div className="navActions">
+          <a className="secondaryLink" href="/browse" target="_blank">
+            View browse page
+          </a>
 
-        <button
-          className="secondaryBtn"
-          onClick={() => fetchListings(savedPassword)}
-        >
-          Refresh
-        </button>
+          <button className="secondaryBtn" onClick={() => fetchListings()}>
+            Refresh
+          </button>
 
-        <button className="ghostBtn" onClick={handleLogout}>
-          Log out
-        </button>
-      </div>
-    </header>
+          <button className="ghostBtn" onClick={handleLogout}>
+            Log out
+          </button>
+        </div>
+      </header>
 
       <section className="hero">
         <div>
           <div className="pill">Admin dashboard</div>
-          <h1>Review car listings</h1>
+          <h1>Manage Kerb listings</h1>
           <p>
-            New submissions stay pending until you approve them. Approved cars
-            appear publicly on the browse page. Bad listings can be rejected or
-            deleted.
+            Search listings, approve submissions, mark cars as sold and manually
+            boost cars into the featured positions.
           </p>
         </div>
 
@@ -503,12 +438,8 @@ export default function AdminListingsPage() {
             <strong>{counts.approved}</strong>
           </div>
           <div>
-            <span>Sold</span>
-            <strong>{counts.sold}</strong>
-          </div>
-          <div>
-            <span>Rejected</span>
-            <strong>{counts.rejected}</strong>
+            <span>Featured</span>
+            <strong>{counts.featured}</strong>
           </div>
           <div>
             <span>Total</span>
@@ -517,54 +448,57 @@ export default function AdminListingsPage() {
         </div>
       </section>
 
-      <section className="filters">
-        <button
-          className={filter === "pending" ? "active" : ""}
-          onClick={() => setFilter("pending")}
-        >
-          Pending ({counts.pending})
-        </button>
+      <section className="toolbar">
+        <div className="filters">
+          {[
+            ["pending", `Pending (${counts.pending})`],
+            ["approved", `Approved (${counts.approved})`],
+            ["featured", `Featured (${counts.featured})`],
+            ["sold", `Sold (${counts.sold})`],
+            ["rejected", `Rejected (${counts.rejected})`],
+            ["all", `All (${counts.all})`],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              className={filter === value ? "active" : ""}
+              onClick={() => setFilter(value)}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        <button
-          className={filter === "approved" ? "active" : ""}
-          onClick={() => setFilter("approved")}
-        >
-          Approved ({counts.approved})
-        </button>
-
-        <button
-          className={filter === "sold" ? "active" : ""}
-          onClick={() => setFilter("sold")}
-        >
-          Sold ({counts.sold})
-        </button>
-
-        <button
-          className={filter === "rejected" ? "active" : ""}
-          onClick={() => setFilter("rejected")}
-        >
-          Rejected ({counts.rejected})
-        </button>
-
-        <button
-          className={filter === "all" ? "active" : ""}
-          onClick={() => setFilter("all")}
-        >
-          All ({counts.all})
-        </button>
+        <form className="adminSearch" onSubmit={submitSearch}>
+          <input
+            value={searchDraft}
+            onChange={(event) => setSearchDraft(event.target.value)}
+            placeholder="Search by make, model, email, location, phone, ID..."
+          />
+          <button type="submit">Search</button>
+          {(searchDraft || searchTerm) && (
+            <button type="button" className="clearSearch" onClick={clearSearch}>
+              Clear
+            </button>
+          )}
+        </form>
       </section>
 
-      {errorMessage && <div className="errorBox">{errorMessage}</div>}
-      {notice?.message && (
-        <div className={`noticeBox ${notice.type}`}>{notice.message}</div>
+      {searchTerm && (
+        <div className="searchNote">
+          Showing {filteredListings.length} result
+          {filteredListings.length === 1 ? "" : "s"} for “{searchTerm}”.
+        </div>
       )}
+
+      {errorMessage && <div className="errorBox">{errorMessage}</div>}
 
       {isLoading ? (
         <div className="emptyBox">Loading listings...</div>
       ) : filteredListings.length === 0 ? (
         <div className="emptyBox">
           <h2>No listings found</h2>
-          <p>There are no listings in this section yet.</p>
+          <p>Try a different status filter or search term.</p>
         </div>
       ) : (
         <section className="listingsGrid">
@@ -572,17 +506,14 @@ export default function AdminListingsPage() {
             const photos = getPhotos(listing);
             const status = normaliseStatus(listing.status);
             const isBusy = isUpdatingId === listing.id;
-            const features = getFeatures(listing);
-            const submittedDate = formatDate(listing.created_at);
-            const soldDate = listing.sold_at ? formatDate(listing.sold_at) : "";
-            const moderationDraft = getModerationDraft(listing.id);
+            const featured = isListingFeatured(listing);
 
             return (
               <article className="listingCard" key={listing.id}>
                 <div className="imageStrip">
                   {photos.length > 0 ? (
                     photos.slice(0, 4).map((url, index) => (
-                      <img key={`${url}-${index}`} src={url} alt="Car photo" />
+                      <img key={`${url}-${index}`} src={url} alt="Car" />
                     ))
                   ) : (
                     <div className="noImage">No photos</div>
@@ -592,10 +523,12 @@ export default function AdminListingsPage() {
                 <div className="listingContent">
                   <div className="listingTop">
                     <div>
-                      <span className={`status ${status}`}>{status}</span>
+                      <div className="badgeRow">
+                        <span className={`status ${status}`}>{status}</span>
+                        {featured && <span className="featuredBadge">Featured</span>}
+                      </div>
 
                       <h2>{getListingTitle(listing)}</h2>
-
                       <p>{listing.description || "No description added."}</p>
                     </div>
 
@@ -614,192 +547,110 @@ export default function AdminListingsPage() {
                   <div className="detailsGrid">
                     <div>
                       <span>Mileage</span>
-                      <strong>
-                        {formatMileage(listing.mileage || listing.miles)}
-                      </strong>
+                      <strong>{formatMileage(listing.mileage || listing.miles)}</strong>
                     </div>
-
                     <div>
                       <span>Fuel</span>
-                      <strong>
-                        {listing.fuel_type || listing.fuel || "Not set"}
-                      </strong>
+                      <strong>{listing.fuel_type || listing.fuel || "Not set"}</strong>
                     </div>
-
                     <div>
                       <span>Gearbox</span>
                       <strong>
                         {listing.gearbox || listing.transmission || "Not set"}
                       </strong>
                     </div>
-
                     <div>
                       <span>Location</span>
-                      <strong>{listing.location || "Not set"}</strong>
+                      <strong>{listing.location || listing.city || "Not set"}</strong>
                     </div>
-
                     <div>
-                      <span>Rough guide</span>
-                      <strong>{getGuidePriceRange(listing)}</strong>
+                      <span>Seller</span>
+                      <strong>
+                        {listing.seller_name ||
+                          listing.account_name ||
+                          listing.seller_email ||
+                          listing.account_email ||
+                          "Not set"}
+                      </strong>
                     </div>
-
                     <div>
-                      <span>Submitted</span>
-                      <strong>{submittedDate}</strong>
+                      <span>Featured until</span>
+                      <strong>{featured ? formatDate(listing.featured_until) : "Not boosted"}</strong>
                     </div>
-
-                    {soldDate && (
-                      <div>
-                        <span>Sold</span>
-                        <strong>{soldDate}</strong>
-                      </div>
-                    )}
                   </div>
 
-                  {features.length > 0 && (
-                    <div className="featuresBox">
-                      <h3>Selected features</h3>
-
-                      <div className="featureTags">
-                        {features.map((feature) => (
-                          <span key={feature}>{feature}</span>
-                        ))}
-                      </div>
+                  {status === "rejected" && listing.moderation_reason && (
+                    <div className="moderationBox">
+                      <strong>{listing.moderation_reason}</strong>
+                      {listing.moderation_note && <p>{listing.moderation_note}</p>}
                     </div>
                   )}
 
-                  <div className="sellerBox">
-                    <h3>Seller details</h3>
-
-                    <div className="sellerGrid">
-                      <div>
-                        <span>Name</span>
-                        <strong>{listing.seller_name || "Not set"}</strong>
-                      </div>
-
-                      <div>
-                        <span>Email</span>
-                        <strong>{listing.seller_email || "Not set"}</strong>
-                      </div>
-
-                      <div>
-                        <span>Phone</span>
-                        <strong>{listing.seller_phone || "Not set"}</strong>
-                      </div>
-
-                      <div>
-                        <span>Seller type</span>
-                        <strong>{listing.seller_type || "Private seller"}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="moderationBox">
-                    <div className="moderationHeader">
-                      <div>
-                        <h3>Moderation reason</h3>
-                        <p>
-                          Add a quick note before approving or rejecting. Sellers
-                          will see this if the listing needs changes.
-                        </p>
-                      </div>
-                    </div>
-
-                    {(listing.moderation_reason || listing.moderation_note) && (
-                      <div className="existingModeration">
-                        <span>Previous note</span>
-                        <strong>
-                          {listing.moderation_reason || "Moderation note"}
-                        </strong>
-                        {listing.moderation_note && (
-                          <p>{listing.moderation_note}</p>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="reasonButtons">
-                      {MODERATION_REASONS.map((reason) => (
-                        <button
-                          type="button"
-                          key={reason}
-                          className={
-                            moderationDraft.reason === reason ? "active" : ""
-                          }
-                          onClick={() =>
-                            updateModerationDraft(
-                              listing.id,
-                              "reason",
-                              moderationDraft.reason === reason ? "" : reason
-                            )
-                          }
-                        >
-                          {reason}
-                        </button>
-                      ))}
-                    </div>
-
-                    <textarea
-                      value={moderationDraft.note}
-                      onChange={(event) =>
-                        updateModerationDraft(
-                          listing.id,
-                          "note",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Optional admin note, for example: please upload clearer exterior photos and check the asking price."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="actionRow">
-                    <button
-                      className="approveBtn"
-                      disabled={isBusy}
-                      onClick={() => updateStatus(listing.id, "approved")}
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      className="rejectBtn"
-                      disabled={isBusy}
-                      onClick={() => updateStatus(listing.id, "rejected")}
-                    >
-                      Reject
-                    </button>
-
-                    <button
-                      className="pendingBtn"
-                      disabled={isBusy}
-                      onClick={() => updateStatus(listing.id, "pending")}
-                    >
-                      Move to pending
-                    </button>
-
-                    <button
-                      className="soldBtn"
-                      disabled={isBusy}
-                      onClick={() => updateStatus(listing.id, "sold")}
-                    >
-                      Mark sold
-                    </button>
-
-                    <a
-                      className="viewBtn"
-                      href={`/listing/${listing.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View listing
+                  <div className="actions">
+                    <a href={`/listing/${listing.id}`} target="_blank">
+                      View
+                    </a>
+                    <a href={`/listing/${listing.id}/edit`} target="_blank">
+                      Edit
                     </a>
 
+                    {status !== "approved" && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(listing.id, "approved")}
+                        disabled={isBusy}
+                      >
+                        Approve
+                      </button>
+                    )}
+
+                    {status !== "rejected" && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(listing.id, "rejected")}
+                        disabled={isBusy}
+                      >
+                        Reject
+                      </button>
+                    )}
+
+                    {status !== "sold" && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(listing.id, "sold")}
+                        disabled={isBusy}
+                      >
+                        Mark sold
+                      </button>
+                    )}
+
+                    {featured ? (
+                      <button
+                        type="button"
+                        className="unboostBtn"
+                        onClick={() => unboostListing(listing.id)}
+                        disabled={isBusy}
+                      >
+                        Remove boost
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="boostBtn"
+                        onClick={() => boostListing(listing.id)}
+                        disabled={isBusy || status === "sold"}
+                      >
+                        Boost
+                      </button>
+                    )}
+
                     <button
-                      className="deleteBtn"
-                      disabled={isBusy}
+                      type="button"
+                      className="dangerBtn"
                       onClick={() => deleteListing(listing.id)}
+                      disabled={isBusy}
                     >
-                      Delete listing
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -809,43 +660,46 @@ export default function AdminListingsPage() {
         </section>
       )}
 
-      <style>{styles}</style>
+      <style jsx global>{styles}</style>
     </main>
   );
 }
 
 const styles = `
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     margin: 0;
     background: #f7f9fd;
-    color: #071126;
-    font-family: Inter, Arial, sans-serif;
+    color: #10162f;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
+
+  a { color: inherit; text-decoration: none; }
+
+  button, input { font-family: inherit; }
 
   .page {
     min-height: 100vh;
-    padding: 24px 36px 50px;
-  }
-
-  .navbar {
-    height: 58px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 22px;
-    gap: 18px;
+    padding: 26px 40px 50px;
+    background:
+      radial-gradient(circle at top left, rgba(0, 72, 255, 0.07), transparent 31%),
+      #f7f9fd;
   }
 
   .logo {
-    font-size: 36px;
-    font-weight: 900;
-    color: #0048ff;
-    letter-spacing: -1.8px;
-    text-decoration: none;
+    color: #0b4bff;
+    font-size: 42px;
+    font-weight: 1000;
+    letter-spacing: -0.08em;
+  }
+
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
   }
 
   .navActions {
@@ -853,550 +707,382 @@ const styles = `
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    justify-content: flex-end;
   }
 
-  button {
-    font-family: inherit;
+  .secondaryLink, .secondaryBtn, .ghostBtn, .primaryBtn {
+    border: 0;
+    border-radius: 16px;
+    padding: 13px 16px;
+    font-weight: 950;
     cursor: pointer;
-    border: none;
+  }
+
+  .secondaryLink, .secondaryBtn {
+    background: white;
+    border: 1px solid #dfe7f7;
+    color: #142044;
   }
 
   .ghostBtn {
     background: transparent;
-    color: #172033;
-    font-weight: 900;
-    font-size: 14px;
-  }
-
-  .primaryBtn,
-  .secondaryBtn,
-  .secondaryLink {
-    border-radius: 14px;
-    padding: 14px 22px;
-    font-weight: 900;
-    text-decoration: none;
-    font-size: 14px;
+    color: #dc2626;
   }
 
   .primaryBtn {
-    background: #0048ff;
+    background: #0b4bff;
     color: white;
-    box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
-  }
-
-  .secondaryBtn,
-  .secondaryLink {
-    background: #eef3ff;
-    color: #0048ff;
-  }
-
-  .hero {
-    display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 24px;
-    align-items: stretch;
-    background:
-      linear-gradient(90deg, rgba(246,249,255,0.98), rgba(235,242,255,0.92)),
-      radial-gradient(circle at 80% 40%, rgba(0,72,255,0.15), transparent 35%);
-    border: 1px solid #e4eaf5;
-    border-radius: 30px;
-    padding: 42px;
-    box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
+    width: 100%;
   }
 
   .pill {
     display: inline-flex;
-    background: #eaf1ff;
-    color: #0048ff;
-    border: 1px solid #d7e4ff;
+    width: fit-content;
     border-radius: 999px;
-    padding: 9px 14px;
+    background: #eaf1ff;
+    color: #0b4bff;
+    padding: 8px 12px;
+    font-weight: 950;
     font-size: 13px;
+  }
+
+  .loginCard, .hero, .toolbar, .emptyBox, .listingCard, .errorBox, .searchNote {
+    border: 1px solid #dfe7f7;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 26px;
+    box-shadow: 0 18px 45px rgba(19, 34, 79, 0.07);
+  }
+
+  .loginCard {
+    max-width: 520px;
+    margin: 70px auto;
+    padding: 32px;
+  }
+
+  .loginCard h1, .hero h1 {
+    margin: 14px 0 10px;
+    letter-spacing: -0.05em;
+  }
+
+  .loginCard p, .hero p, .emptyBox p, .listingTop p {
+    color: #66708d;
+    line-height: 1.6;
+  }
+
+  form label {
+    display: grid;
+    gap: 8px;
+    color: #64708f;
     font-weight: 900;
+    margin: 20px 0;
+  }
+
+  input {
+    border: 1px solid #dce5f7;
+    border-radius: 16px;
+    min-height: 48px;
+    padding: 0 15px;
+    color: #10162f;
+    font-weight: 850;
+    outline: none;
+    background: white;
+  }
+
+  input:focus {
+    border-color: #0b4bff;
+    box-shadow: 0 0 0 4px rgba(11, 75, 255, 0.1);
+  }
+
+  .hero {
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    align-items: center;
     margin-bottom: 18px;
   }
 
-  h1 {
-    font-size: 54px;
-    line-height: 0.98;
-    margin: 0 0 16px;
-    letter-spacing: -2.4px;
-  }
-
-  p {
-    color: #59657a;
-    font-size: 16px;
-    line-height: 1.6;
-    margin: 0;
+  .hero h1 {
+    font-size: clamp(34px, 5vw, 62px);
   }
 
   .statsGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .statsGrid div {
-    background: white;
-    border: 1px solid #e5eaf4;
-    border-radius: 18px;
-    padding: 18px;
+    border-radius: 20px;
+    background: #f4f7ff;
+    border: 1px solid #e2eaf9;
+    padding: 16px;
   }
 
   .statsGrid span {
-    display: block;
-    color: #657189;
-    font-weight: 800;
+    color: #64708f;
+    font-weight: 900;
     font-size: 13px;
-    margin-bottom: 6px;
   }
 
   .statsGrid strong {
-    font-size: 34px;
-    color: #0048ff;
+    display: block;
+    font-size: 28px;
+    margin-top: 6px;
+    letter-spacing: -0.04em;
+  }
+
+  .toolbar {
+    padding: 16px;
+    display: grid;
+    gap: 14px;
+    margin-bottom: 16px;
   }
 
   .filters {
     display: flex;
-    flex-wrap: wrap;
     gap: 10px;
-    margin: 24px 0;
+    flex-wrap: wrap;
   }
 
   .filters button {
+    border: 1px solid #dfe7f7;
     background: white;
-    border: 1px solid #e2e8f3;
+    color: #142044;
     border-radius: 999px;
-    padding: 12px 18px;
-    color: #43506a;
-    font-weight: 900;
+    padding: 11px 14px;
+    font-weight: 950;
+    cursor: pointer;
   }
 
   .filters button.active {
-    background: #0048ff;
-    border-color: #0048ff;
+    background: #0b4bff;
     color: white;
+    border-color: #0b4bff;
   }
 
-  .loginCard,
-  .emptyBox {
-    max-width: 620px;
-    margin: 120px auto 0;
-    background: white;
-    border: 1px solid #e5eaf4;
-    border-radius: 28px;
-    padding: 40px;
-    box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
-  }
-
-  .loginCard h1,
-  .emptyBox h2 {
-    margin: 0 0 12px;
-  }
-
-  .loginCard form {
+  .adminSearch {
     display: grid;
-    gap: 16px;
-    margin-top: 24px;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
   }
 
-  label {
-    display: grid;
-    gap: 8px;
-    font-weight: 900;
-    font-size: 14px;
+  .adminSearch button {
+    border: 0;
+    border-radius: 15px;
+    background: #0b4bff;
+    color: white;
+    font-weight: 950;
+    padding: 14px 17px;
+    cursor: pointer;
   }
 
-  input {
-    border: 1px solid #dfe6f1;
-    border-radius: 14px;
-    padding: 15px 16px;
-    font-size: 15px;
-    outline: none;
-    background: #fbfcff;
+  .adminSearch .clearSearch {
+    background: #eff4ff;
+    color: #0b4bff;
   }
 
-  input:focus {
-    border-color: #0048ff;
-    box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
+  .searchNote, .errorBox, .emptyBox {
+    padding: 18px;
+    margin-bottom: 16px;
+    font-weight: 850;
   }
 
   .errorBox {
-    background: #fff1f1;
-    color: #b42318;
-    border: 1px solid #ffd1d1;
-    border-radius: 14px;
-    padding: 14px 16px;
-    font-weight: 800;
-    margin-bottom: 18px;
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #b91c1c;
   }
 
-  .noticeBox {
-    border-radius: 16px;
-    padding: 15px 18px;
-    font-weight: 900;
-    margin: -8px 0 20px;
-    line-height: 1.45;
-  }
-
-  .noticeBox.success {
-    background: #eafaf0;
-    color: #137333;
-    border: 1px solid #c9efd6;
-  }
-
-  .noticeBox.warning {
-    background: #fff7e8;
-    color: #a15c00;
-    border: 1px solid #ffe0a8;
+  .emptyBox {
+    text-align: center;
+    padding: 38px;
   }
 
   .listingsGrid {
     display: grid;
-    gap: 22px;
+    gap: 18px;
   }
 
   .listingCard {
-    background: white;
-    border: 1px solid #e5eaf4;
-    border-radius: 26px;
     overflow: hidden;
-    box-shadow: 0 12px 34px rgba(10, 20, 40, 0.06);
   }
 
   .imageStrip {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    background: #eef2f8;
-    min-height: 190px;
+    min-height: 140px;
+    background: #dfe7f7;
   }
 
   .imageStrip img {
     width: 100%;
-    height: 220px;
+    height: 160px;
     object-fit: cover;
   }
 
   .noImage {
     grid-column: 1 / -1;
+    min-height: 140px;
     display: grid;
     place-items: center;
-    color: #657189;
-    font-weight: 900;
-    min-height: 190px;
+    color: #64708f;
+    font-weight: 950;
   }
 
   .listingContent {
-    padding: 26px;
+    padding: 22px;
   }
 
   .listingTop {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 20px;
+    gap: 18px;
     align-items: start;
-    margin-bottom: 20px;
   }
 
-  .status {
-    display: inline-flex;
-    border-radius: 999px;
-    padding: 7px 12px;
-    font-size: 12px;
-    font-weight: 900;
-    text-transform: capitalize;
+  .badgeRow {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
     margin-bottom: 10px;
   }
 
-  .status.pending {
-    background: #fff7e8;
-    color: #a15c00;
+  .status, .featuredBadge {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 1000;
+    text-transform: capitalize;
   }
 
-  .status.approved {
-    background: #eafaf0;
-    color: #137333;
-  }
+  .status.pending { background: #fff7ed; color: #c2410c; }
+  .status.approved { background: #ecfdf5; color: #047857; }
+  .status.sold { background: #eef2ff; color: #4338ca; }
+  .status.rejected { background: #fff1f2; color: #be123c; }
 
-  .status.rejected {
-    background: #fff1f1;
-    color: #b42318;
-  }
-
-  .status.sold {
-    background: #eef3ff;
-    color: #0048ff;
+  .featuredBadge {
+    background: #eaf1ff;
+    color: #0b4bff;
   }
 
   .listingTop h2 {
     margin: 0 0 8px;
-    font-size: 30px;
-    letter-spacing: -1px;
+    font-size: 26px;
+    letter-spacing: -0.04em;
   }
 
   .priceBox {
-    background: #f7f9fd;
-    border: 1px solid #e5eaf4;
-    border-radius: 18px;
+    border-radius: 20px;
+    border: 1px solid #e2eaf9;
+    background: #f7faff;
     padding: 16px;
     min-width: 180px;
   }
 
-  .priceBox span,
-  .detailsGrid span,
-  .sellerGrid span {
-    display: block;
-    color: #657189;
+  .priceBox span, .detailsGrid span {
+    color: #64708f;
     font-size: 12px;
-    font-weight: 900;
-    margin-bottom: 4px;
+    font-weight: 950;
   }
 
   .priceBox strong {
+    display: block;
+    margin-top: 5px;
     font-size: 24px;
-    color: #0048ff;
   }
 
-  .detailsGrid,
-  .sellerGrid {
+  .detailsGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
   }
 
-  .detailsGrid div,
-  .sellerGrid div {
-    background: #f7f9fd;
-    border: 1px solid #e5eaf4;
-    border-radius: 14px;
-    padding: 14px;
+  .detailsGrid div {
+    border-radius: 16px;
+    background: #f4f7ff;
+    border: 1px solid #e2eaf9;
+    padding: 12px;
   }
 
-  .detailsGrid strong,
-  .sellerGrid strong {
-    font-size: 14px;
-    color: #172033;
+  .detailsGrid strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
     word-break: break-word;
   }
 
-  .sellerBox {
-    border-top: 1px solid #edf1f7;
-    margin-top: 22px;
-    padding-top: 22px;
-  }
-
-  .featuresBox {
-    border-top: 1px solid #edf1f7;
-    margin-top: 22px;
-    padding-top: 22px;
-  }
-
-  .featuresBox h3 {
-    margin: 0 0 14px;
-    font-size: 20px;
-  }
-
-  .featureTags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .featureTags span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 32px;
-    border-radius: 999px;
-    background: #eef3ff;
-    color: #0048ff;
-    padding: 0 12px;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  .sellerBox h3 {
-    margin: 0 0 14px;
-    font-size: 20px;
-  }
-
   .moderationBox {
-    border-top: 1px solid #edf1f7;
-    margin-top: 22px;
-    padding-top: 22px;
-    display: grid;
-    gap: 12px;
-  }
-
-  .moderationHeader h3 {
-    margin: 0 0 6px;
-    font-size: 20px;
-  }
-
-  .moderationHeader p {
-    font-size: 14px;
-  }
-
-  .existingModeration {
-    border: 1px solid #ffe0a8;
-    border-radius: 14px;
-    background: #fffaf0;
+    margin-top: 16px;
+    border-radius: 18px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
     padding: 14px;
-    display: grid;
-    gap: 4px;
   }
 
-  .existingModeration span {
-    color: #a15c00;
-    font-size: 12px;
-    font-weight: 900;
-    text-transform: uppercase;
+  .moderationBox p {
+    margin: 6px 0 0;
   }
 
-  .existingModeration strong {
-    color: #071126;
-    font-size: 14px;
-  }
-
-  .existingModeration p {
-    font-size: 14px;
-  }
-
-  .reasonButtons {
+  .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 9px;
+    margin-top: 20px;
   }
 
-  .reasonButtons button {
-    border: 1px solid #dce5f4;
-    border-radius: 999px;
-    background: #f7f9fd;
-    color: #43506a;
-    padding: 10px 13px;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  .reasonButtons button.active {
-    border-color: #0048ff;
-    background: #eef3ff;
-    color: #0048ff;
-  }
-
-  textarea {
-    width: 100%;
-    resize: vertical;
-    border: 1px solid #dfe6f1;
+  .actions a, .actions button {
+    border: 1px solid #dfe7f7;
+    background: white;
+    color: #142044;
     border-radius: 14px;
-    padding: 14px 16px;
-    font-size: 14px;
-    line-height: 1.5;
-    outline: none;
-    background: #fbfcff;
+    padding: 11px 13px;
+    font-weight: 950;
+    cursor: pointer;
   }
 
-  textarea:focus {
-    border-color: #0048ff;
-    box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
+  .actions .boostBtn {
+    background: #0b4bff;
+    color: white;
+    border-color: #0b4bff;
   }
 
-  .actionRow {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    border-top: 1px solid #edf1f7;
-    margin-top: 22px;
-    padding-top: 22px;
+  .actions .unboostBtn {
+    background: #eff4ff;
+    color: #0b4bff;
+    border-color: #bfdbfe;
   }
 
-  .actionRow button {
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-weight: 900;
+  .actions .dangerBtn {
+    color: #dc2626;
+    border-color: #fecaca;
   }
 
-  .actionRow a {
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-weight: 900;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .actionRow button:disabled {
-    opacity: 0.6;
+  .actions button:disabled {
+    opacity: 0.55;
     cursor: not-allowed;
   }
 
-  .approveBtn {
-    background: #13a538;
-    color: white;
+  @media (max-width: 980px) {
+    .page { padding: 18px; }
+    .hero { grid-template-columns: 1fr; }
+    .statsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .detailsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .listingTop { grid-template-columns: 1fr; }
+    .adminSearch { grid-template-columns: 1fr; }
+    .imageStrip { grid-template-columns: repeat(2, 1fr); }
   }
 
-  .rejectBtn {
-    background: #fff1f1;
-    color: #b42318;
-  }
-
-  .pendingBtn {
-    background: #fff3da;
-    color: #a15c00;
-  }
-
-  .soldBtn {
-    background: #0048ff;
-    color: white;
-  }
-
-  .deleteBtn {
-    background: #ffe9e9;
-    color: #b42318;
-  }
-
-  .viewBtn {
-    background: #eef3ff;
-    color: #0048ff;
-  }
-
-  @media (max-width: 900px) {
-    .page {
-      padding: 18px;
-    }
-
-    .navbar {
-      height: auto;
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .navActions {
-      justify-content: flex-start;
-    }
-
-    .hero,
-    .listingTop {
-      grid-template-columns: 1fr;
-    }
-
-    h1 {
-      font-size: 42px;
-    }
-
-    .statsGrid,
-    .detailsGrid,
-    .sellerGrid {
-      grid-template-columns: 1fr;
-    }
-
-    .imageStrip {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .imageStrip img {
-      height: 170px;
-    }
+  @media (max-width: 620px) {
+    .navbar { align-items: flex-start; flex-direction: column; }
+    .navActions { width: 100%; }
+    .secondaryLink, .secondaryBtn, .ghostBtn { width: 100%; text-align: center; }
+    .statsGrid { grid-template-columns: 1fr; }
+    .detailsGrid { grid-template-columns: 1fr; }
+    .actions a, .actions button { width: 100%; text-align: center; }
   }
 `;
