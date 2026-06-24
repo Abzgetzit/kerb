@@ -40,7 +40,11 @@ const supabase =
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 function getSiteUrl(request) {
-  const configuredUrl = String(process.env.NEXT_PUBLIC_KERB_SITE_URL || "").trim();
+  const configuredUrl = String(
+    process.env.NEXT_PUBLIC_KERB_SITE_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      ""
+  ).trim();
 
   if (configuredUrl) return configuredUrl.replace(/\/$/, "");
 
