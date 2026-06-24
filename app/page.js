@@ -229,6 +229,45 @@ function carTitle(car) {
   );
 }
 
+function isListingFeatured(car) {
+  const rawFeatured = String(car?.is_featured ?? "").toLowerCase();
+  const isMarkedFeatured =
+    car?.is_featured === true ||
+    rawFeatured === "true" ||
+    Number(car?.featured_rank || 0) > 0 ||
+    Boolean(car?.boosted_at);
+
+  if (!isMarkedFeatured) return false;
+
+  if (!car?.featured_until) return true;
+
+  const featuredUntil = new Date(car.featured_until).getTime();
+
+  return Number.isFinite(featuredUntil) && featuredUntil > Date.now();
+}
+
+function getDateScore(value) {
+  const time = new Date(value || 0).getTime();
+
+  return Number.isFinite(time) ? time : 0;
+}
+
+function getFeaturedScore(car) {
+  if (!isListingFeatured(car)) return 0;
+
+  return Number(car?.featured_rank || 0) * 10000000000000 + getDateScore(car?.boosted_at);
+}
+
+function sortListingsForFeatured(listings) {
+  return [...listings].sort((a, b) => {
+    const featuredDifference = getFeaturedScore(b) - getFeaturedScore(a);
+
+    if (featuredDifference !== 0) return featuredDifference;
+
+    return getDateScore(b.created_at) - getDateScore(a.created_at);
+  });
+}
+
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [approvedListings, setApprovedListings] = useState([]);
@@ -337,14 +376,14 @@ export default function HomePage() {
         .select("*")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(24);
 
       if (error) {
         console.error("Homepage listings error:", error);
         setApprovedListings([]);
         setListingError(error.message);
       } else {
-        setApprovedListings(data || []);
+        setApprovedListings(sortListingsForFeatured(data || []).slice(0, 6));
       }
 
       setIsLoadingListings(false);
@@ -524,12 +563,12 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="launchGrid" id="latest-cars">
+      <section className="launchGrid" id="featured-cars">
         <div className="listingsPanel">
           <div className="sectionTitleRow">
             <div>
-              <span className="sectionKicker">Recently listed</span>
-              <h2>Latest cars on Kerb</h2>
+              <span className="sectionKicker">Featured listings</span>
+              <h2>Featured cars on Kerb</h2>
             </div>
 
             <Link href="/browse" className="browseAllLink">
@@ -553,6 +592,10 @@ export default function HomePage() {
               {approvedListings.map((car) => (
                 <article className="listingCard" key={car.id}>
                   <div className="listingImageWrap">
+                    {isListingFeatured(car) && (
+                      <span className="homeFeaturedBadge">Featured</span>
+                    )}
+
                     <img
                       src={getListingImage(car)}
                       alt={carTitle(car)}
@@ -1213,6 +1256,24 @@ export default function HomePage() {
           height: 170px;
           background: #edf3ff;
           overflow: hidden;
+          position: relative;
+        }
+
+        .homeFeaturedBadge {
+          position: absolute;
+          left: 12px;
+          top: 12px;
+          z-index: 2;
+          height: 30px;
+          display: inline-flex;
+          align-items: center;
+          padding: 0 12px;
+          border-radius: 9px;
+          background: #083cff;
+          color: white;
+          font-size: 12px;
+          font-weight: 950;
+          box-shadow: 0 10px 24px rgba(8, 60, 255, 0.22);
         }
 
         .listingImage {
