@@ -1,12 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import {
-  createListingLiveEmail,
-  createListingRejectedEmail,
-  getListingTitle,
-  getSiteUrl,
-  sendKerbEmail,
-} from "../../../lib/kerb-email";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -26,12 +19,12 @@ function checkAdmin(request) {
     return "ADMIN_PASSWORD is missing in Vercel environment variables.";
   }
 
-  if (!suppliedPassword || suppliedPassword !== adminPassword) {
-    return "Unauthorised.";
-  }
-
   if (!supabase) {
     return "Supabase admin client is not configured.";
+  }
+
+  if (!suppliedPassword || suppliedPassword !== adminPassword) {
+    return "Unauthorised.";
   }
 
   return "";
@@ -41,8 +34,14 @@ function cleanStatus(status) {
   return String(status || "pending").trim().toLowerCase();
 }
 
-function cleanText(value) {
-  return String(value || "").trim();
+function cleanAction(action) {
+  return String(action || "status").trim().toLowerCase();
+}
+
+function cleanNumber(value, fallback) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : fallback;
 }
 
 export async function GET(request) {
@@ -55,6 +54,9 @@ export async function GET(request) {
   const { data, error } = await supabase
     .from("kerb_listings")
     .select("*")
+    .order("is_featured", { ascending: false })
+    .order("featured_rank", { ascending: false })
+    .order("boosted_at", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -76,56 +78,66 @@ export async function PATCH(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid request body." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
   const id = body?.id;
-  const status = cleanStatus(body?.status);
-  const moderationReason = cleanText(body?.moderation_reason);
-  const moderationNote = cleanText(body?.moderation_note);
+  const action = cleanAction(body?.action);
 
   if (!id) {
-    return NextResponse.json(
-      { error: "Listing id is required." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Listing id is required." }, { status: 400 });
   }
 
-  if (!VALID_STATUSES.includes(status)) {
-    return NextResponse.json(
-      { error: "Invalid listing status." },
-      { status: 400 }
-    );
+  let updatePayload = {};
+
+  if (action === "boost") {
+    const days = Math.min(Math.max(cleanNumber(body?.days, 14), 1), 90);
+    const rank = Math.min(Math.max(cleanNumber(body?.rank, 100), 1), 9999);
+
+    updatePayload = {
+      is_featured: true,
+      featured_until: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
+      featured_rank: rank,
+      boosted_at: new Date().toISOString(),
+    };
+  } else if (action === "unboost") {
+    updatePayload = {
+      is_featured: false,
+      featured_until: null,
+      featured_rank: 0,
+      boosted_at: null,
+    };
+  } else {
+    const status = cleanStatus(body?.status);
+
+    if (!VALID_STATUSES.includes(status)) {
+      return NextResponse.json({ error: "Invalid listing status." }, { status: 400 });
+    }
+
+    updatePayload = {
+      status,
+      sold_at: status === "sold" ? new Date().toISOString() : null,
+    };
+
+    if (status === "rejected") {
+      updatePayload.moderation_reason = String(
+        body?.moderation_reason || "Not approved"
+      ).slice(0, 160);
+      updatePayload.moderation_note = String(body?.moderation_note || "").slice(
+        0,
+        800
+      );
+    }
+
+    if (status === "approved") {
+      updatePayload.moderation_reason = null;
+      updatePayload.moderation_note = null;
+    }
   }
-
-  const { data: existingListing, error: existingListingError } = await supabase
-    .from("kerb_listings")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (existingListingError) {
-    return NextResponse.json(
-      { error: existingListingError.message },
-      { status: 500 }
-    );
-  }
-
-  const updates = {
-    status,
-    sold_at: status === "sold" ? new Date().toISOString() : null,
-    moderation_reason: moderationReason || null,
-    moderation_note: moderationNote || null,
-    moderated_at: new Date().toISOString(),
-    moderated_by: "admin",
-  };
 
   const { data, error } = await supabase
     .from("kerb_listings")
-    .update(updates)
+    .update(updatePayload)
     .eq("id", id)
     .select("*")
     .single();
@@ -134,45 +146,7 @@ export async function PATCH(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  let liveEmail = null;
-  let rejectedEmail = null;
-
-  if (status === "approved" && existingListing?.status !== "approved") {
-    const siteUrl = getSiteUrl(request);
-
-    liveEmail = await sendKerbEmail({
-      to: data.seller_email || data.account_email,
-      subject: `Your ${getListingTitle(data)} listing is now live`,
-      html: createListingLiveEmail({
-        listing: data,
-        siteUrl,
-      }),
-    });
-  }
-
-  if (status === "rejected" && existingListing?.status !== "rejected") {
-    const siteUrl = getSiteUrl(request);
-
-    rejectedEmail = await sendKerbEmail({
-      to: data.seller_email || data.account_email,
-      subject: `Your ${getListingTitle(data)} listing needs changes`,
-      html: createListingRejectedEmail({
-        listing: data,
-        siteUrl,
-        reason: moderationReason || "Needs changes",
-        note: moderationNote,
-      }),
-    });
-  }
-
-  return NextResponse.json({
-    success: true,
-    listing: data,
-    emails: {
-      listing_live: liveEmail,
-      listing_rejected: rejectedEmail,
-    },
-  });
+  return NextResponse.json({ listing: data });
 }
 
 export async function DELETE(request) {
@@ -187,19 +161,13 @@ export async function DELETE(request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid request body." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
   const id = body?.id;
 
   if (!id) {
-    return NextResponse.json(
-      { error: "Listing id is required." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Listing id is required." }, { status: 400 });
   }
 
   const { data, error } = await supabase
