@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import SiteMenu from "../components/SiteMenu";
+import BoostListingButton from "../components/BoostListingButton";
 
 const carMakes = {
   Abarth: ["595", "695", "124 Spider"],
@@ -575,6 +576,26 @@ export default function PostCarPage() {
             </div>
           )}
 
+          {submittedListing?.id && (
+            <div className="successBoostBox">
+              <div>
+                <span className="boostKicker">Optional featured boost</span>
+                <h2>Want your listing to get more attention?</h2>
+                <p>
+                  Choose a paid featured boost. Boosted cars get priority
+                  placement in featured areas, but Kerb still rotates boosted
+                  listings fairly so the same car is not fixed first every time.
+                </p>
+              </div>
+
+              <BoostListingButton
+                listingId={submittedListing.id}
+                label="Boost this listing"
+                source="post-car-success"
+              />
+            </div>
+          )}
+
           <div className="successActions">
             <a href="/account" className="secondaryBtn">My account</a>
             <a href="/browse" className="primaryBtn">Browse cars</a>
@@ -985,6 +1006,33 @@ export default function PostCarPage() {
               </select>
             </label>
           </div>
+
+          <section className="boostPreviewSection">
+            <div>
+              <span className="boostKicker">Optional paid boost</span>
+              <h2>Boost after posting</h2>
+              <p>
+                After your listing is created, you can pay to feature it from
+                the success screen or from My account. You are not charged just
+                for submitting the listing.
+              </p>
+            </div>
+
+            <div className="boostPreviewPlans">
+              <div>
+                <strong>1 week</strong>
+                <span>£7.99</span>
+              </div>
+              <div>
+                <strong>2 weeks</strong>
+                <span>£13.99</span>
+              </div>
+              <div>
+                <strong>1 month</strong>
+                <span>£19.99</span>
+              </div>
+            </div>
+          </section>
 
           {errorMessage && <div className="errorBox">{errorMessage}</div>}
 
@@ -1402,6 +1450,74 @@ const styles = `
     background: #d7193f;
   }
 
+  .boostPreviewSection,
+  .successBoostBox {
+    margin: 0 0 24px;
+    background: linear-gradient(135deg, #f7faff, #ffffff);
+    border: 1px solid #dce8ff;
+    border-radius: 24px;
+    padding: 22px;
+    display: grid;
+    gap: 18px;
+  }
+
+  .successBoostBox {
+    text-align: left;
+    margin: 24px 0;
+  }
+
+  .boostKicker {
+    display: inline-flex;
+    width: fit-content;
+    background: #eaf1ff;
+    color: #0048ff;
+    border: 1px solid #d7e4ff;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    margin-bottom: 10px;
+  }
+
+  .boostPreviewSection h2,
+  .successBoostBox h2 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    letter-spacing: -0.7px;
+  }
+
+  .successBoostBox p {
+    margin: 0;
+  }
+
+  .boostPreviewPlans {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .boostPreviewPlans div {
+    background: white;
+    border: 1px solid #dfe7f6;
+    border-radius: 18px;
+    padding: 15px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .boostPreviewPlans strong {
+    font-size: 13px;
+    font-weight: 950;
+    color: #172033;
+  }
+
+  .boostPreviewPlans span {
+    font-size: 22px;
+    font-weight: 950;
+    color: #0048ff;
+    letter-spacing: -0.6px;
+  }
+
   .errorBox {
     background: #fff1f1;
     color: #b42318;
@@ -1549,6 +1665,10 @@ const styles = `
 
     .photoGrid {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .boostPreviewPlans {
+      grid-template-columns: 1fr;
     }
 
     .removePhotoButton {
