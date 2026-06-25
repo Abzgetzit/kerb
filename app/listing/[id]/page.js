@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import SiteMenu from "../../components/SiteMenu";
+import BoostListingButton from "../../components/BoostListingButton";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -191,6 +192,22 @@ function getOwnerInsight(car, analytics, photoCount) {
     title: "Listing looks active",
     body: "Keep the price, mileage and seller notes fresh so buyers know the advert is current.",
   };
+}
+
+function isListingFeatured(car) {
+  const rawFeatured = String(car?.is_featured ?? "").toLowerCase();
+  const markedFeatured =
+    car?.is_featured === true ||
+    rawFeatured === "true" ||
+    Number(car?.featured_rank || 0) > 0 ||
+    Boolean(car?.boosted_at);
+
+  if (!markedFeatured) return false;
+  if (!car?.featured_until) return true;
+
+  const until = new Date(car.featured_until).getTime();
+
+  return Number.isFinite(until) && until > Date.now();
 }
 
 function SvgIcon({ name }) {
@@ -1269,6 +1286,71 @@ export default function ListingPage() {
                   <div className="owner-insight">
                     <strong>{ownerInsight.title}</strong>
                     <span>{ownerInsight.body}</span>
+                  </div>
+                )}
+
+                {status !== "sold" && (
+                  <div className="boost-panel">
+                    <div className="boost-panel-heading">
+                      <span>Optional paid boost</span>
+                      <strong>
+                        {isListingFeatured(car)
+                          ? `Boost active${car.featured_until ? ` until ${formatDate(car.featured_until)}` : ""}`
+                          : "Boost this listing"}
+                      </strong>
+                    </div>
+
+                    <p>
+                      Move this car into Kerb’s priority listing positions so it
+                      has a better chance of being seen near the top of Browse
+                      Cars and Featured Cars. Buyers will not see a public
+                      boosted badge.
+                    </p>
+
+                    <div className="boost-benefits">
+                      <span>Higher placement</span>
+                      <span>Rotates fairly</span>
+                      <span>No sale guarantee</span>
+                    </div>
+
+                    <div className="boost-prices">
+                      <div>
+                        <span>1 week</span>
+                        <strong>£7.99</strong>
+                      </div>
+                      <div>
+                        <span>2 weeks</span>
+                        <strong>£13.99</strong>
+                      </div>
+                      <div>
+                        <span>1 month</span>
+                        <strong>£19.99</strong>
+                      </div>
+                    </div>
+
+                    <div className="boost-action-grid">
+                      <BoostListingButton
+                        listingId={id}
+                        planId="7-days"
+                        label="1 week · £7.99"
+                        source="listing-owner-card"
+                        small
+                      />
+                      <BoostListingButton
+                        listingId={id}
+                        planId="14-days"
+                        label="2 weeks · £13.99"
+                        source="listing-owner-card"
+                        small
+                      />
+                      <BoostListingButton
+                        listingId={id}
+                        planId="30-days"
+                        label="1 month · £19.99"
+                        source="listing-owner-card"
+                        small
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -2420,6 +2502,105 @@ const styles = `
     font-size: 13px;
     font-weight: 750;
     line-height: 1.45;
+  }
+
+  .boost-panel {
+    display: grid;
+    gap: 13px;
+    border: 1px solid #dbe7ff;
+    border-radius: 18px;
+    background:
+      linear-gradient(135deg, #f7faff, #ffffff);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .boost-panel-heading {
+    display: grid;
+    gap: 4px;
+  }
+
+  .boost-panel-heading span {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    background: #eaf1ff;
+    color: #0b45ff;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .boost-panel-heading strong {
+    color: #101832;
+    font-size: 19px;
+    font-weight: 950;
+    letter-spacing: -0.4px;
+  }
+
+  .boost-panel p {
+    color: #59667f;
+    font-size: 13px;
+    font-weight: 760;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .boost-benefits {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+
+  .boost-benefits span {
+    border: 1px solid #dfe7f7;
+    background: white;
+    color: #25304a;
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 950;
+  }
+
+  .boost-prices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .boost-prices div {
+    border: 1px solid #dfe7f7;
+    background: white;
+    border-radius: 14px;
+    padding: 11px;
+    display: grid;
+    gap: 3px;
+  }
+
+  .boost-prices span {
+    color: #657089;
+    font-size: 11px;
+    font-weight: 950;
+  }
+
+  .boost-prices strong {
+    color: #0b45ff;
+    font-size: 17px;
+    font-weight: 950;
+  }
+
+  .boost-action-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .boost-action-grid .boostButtonWrap {
+    width: 100%;
+  }
+
+  .boost-action-grid button {
+    width: 100%;
   }
 
   .owner-actions {
