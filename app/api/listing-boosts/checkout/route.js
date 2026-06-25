@@ -168,23 +168,36 @@ export async function POST(request) {
     return NextResponse.json({ error: "Listing id is required." }, { status: 400 });
   }
 
-  const accountResponse = await fetch(new URL("/api/account", request.url), {
-    headers: {
-      "x-kerb-session-token": sessionToken,
-    },
-    cache: "no-store",
-  });
+  let accountResult = {};
+  let accountId = "";
+  let accountEmail = "";
 
-  const accountResult = await accountResponse.json().catch(() => ({}));
+  try {
+    const accountResponse = await fetch(new URL("/api/account", request.url), {
+      headers: {
+        "x-kerb-session-token": sessionToken,
+      },
+      cache: "no-store",
+    });
 
-  if (!accountResponse.ok) {
+    accountResult = await accountResponse.json().catch(() => ({}));
+
+    if (!accountResponse.ok) {
+      return NextResponse.json(
+        { error: accountResult.error || "Could not verify your account." },
+        { status: 401 }
+      );
+    }
+
+    const identity = getAccountIdentity(accountResult);
+    accountId = identity.accountId;
+    accountEmail = identity.accountEmail;
+  } catch {
     return NextResponse.json(
-      { error: accountResult.error || "Could not verify your account." },
+      { error: "Could not verify your account." },
       { status: 401 }
     );
   }
-
-  const { accountId, accountEmail } = getAccountIdentity(accountResult);
 
   const { data: listing, error: listingError } = await supabase
     .from("kerb_listings")
@@ -200,19 +213,20 @@ export async function POST(request) {
     return NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
 
-  if (!ownsListing(listing, accountId, accountEmail, accountResult, listingId)) {
-    return NextResponse.json(
-      { error: "This listing is not linked to your Kerb account yet." },
-      { status: 403 }
-    );
-  }
-
   if (String(listing.status || "").toLowerCase() === "sold") {
     return NextResponse.json(
       { error: "Sold listings cannot be boosted." },
       { status: 400 }
     );
   }
+
+  const ownershipVerified = ownsListing(
+    listing,
+    accountId,
+    accountEmail,
+    accountResult,
+    listingId
+  );
 
   const siteUrl = getSiteUrl(request);
   const listingTitle =
@@ -243,6 +257,7 @@ export async function POST(request) {
       listing_id: listingId,
       account_id: accountId || "",
       account_email: accountEmail || "",
+      ownership_verified: ownershipVerified ? "true" : "false",
       boost_days: String(selectedPlan.days),
       boost_plan_id: selectedPlan.id,
       boost_plan_label: selectedPlan.label,
