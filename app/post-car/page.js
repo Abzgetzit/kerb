@@ -1025,15 +1025,12 @@ export default function PostCarPage() {
               <p>
                 Boosting moves your car into Kerb’s priority listing positions,
                 giving it a better chance of being seen near the top of Browse
-                Cars and Featured Cars. Boosted listings rotate fairly with
-                other boosted cars, so the same advert is not permanently pinned
-                first.
+                Cars and Featured Cars. Boosted listings increase the chance of getting a quicker sale and a favourable price.
               </p>
 
               <ul className="boostBenefits">
                 <li>Higher placement in “Featured first” browse results</li>
                 <li>Priority chance to appear in homepage Featured Cars</li>
-                <li>No public boosted badge shown to buyers</li>
                 <li>No charge until after the listing has been created</li>
               </ul>
 
