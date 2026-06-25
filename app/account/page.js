@@ -450,6 +450,20 @@ export default function AccountPage() {
       .slice(0, 4);
   }, [accountData]);
 
+  const heroListing = useMemo(() => {
+    const listings = accountData?.my_listings || [];
+
+    return (
+      listings.find((listing) => normaliseStatus(listing.status) === "approved") ||
+      listings[0] ||
+      null
+    );
+  }, [accountData]);
+
+  const heroListingStatus = heroListing
+    ? getListingStatusInfo(heroListing.status)
+    : null;
+
   if (isLoading) {
     return (
       <main className="page">
@@ -513,13 +527,99 @@ export default function AccountPage() {
       </header>
 
       <section className="hero">
-        <div>
+        <div className="heroMain">
           <div className="pill">Kerb account</div>
           <h1>My account</h1>
           <p>
             Signed in as <strong>{accountData?.email}</strong>. Manage your
             listings, saved cars and enquiries from one place.
           </p>
+
+          {heroListing ? (
+            <div className="heroListingCard">
+              <Link href={`/listing/${heroListing.id}`} className="heroListingImage">
+                <img
+                  src={getImage(heroListing)}
+                  alt={getTitle(heroListing)}
+                  onError={(event) => {
+                    event.currentTarget.src = "/cars/hero-car.png";
+                  }}
+                />
+              </Link>
+
+              <div className="heroListingBody">
+                <div className="heroListingTop">
+                  <span className={`status ${heroListingStatus.className}`}>
+                    {heroListingStatus.label}
+                  </span>
+                  {isListingFeatured(heroListing) && (
+                    <span className="privateBoostPill">
+                      Boost active
+                    </span>
+                  )}
+                </div>
+
+                <h2>{getTitle(heroListing)}</h2>
+
+                <p>
+                  {formatPrice(heroListing.price || heroListing.asking_price)}
+                  {heroListing.location ? ` · ${heroListing.location}` : ""}
+                </p>
+
+                <div className="heroListingStats">
+                  <span>
+                    <strong>
+                      {formatCount(
+                        getAnalyticsCount(heroListing, "view_count", "view_count")
+                      )}
+                    </strong>
+                    Views
+                  </span>
+                  <span>
+                    <strong>
+                      {formatCount(getAnalyticsCount(heroListing, "save_count"))}
+                    </strong>
+                    Saves
+                  </span>
+                  <span>
+                    <strong>
+                      {formatCount(getAnalyticsCount(heroListing, "enquiry_count"))}
+                    </strong>
+                    Enquiries
+                  </span>
+                </div>
+
+                <div className="heroListingActions">
+                  <Link href={`/listing/${heroListing.id}`}>View listing</Link>
+                  <Link href={`/listing/${heroListing.id}/edit`}>Edit</Link>
+
+                  {normaliseStatus(heroListing.status) !== "sold" && (
+                    <BoostListingButton
+                      listingId={heroListing.id}
+                      label={
+                        isListingFeatured(heroListing)
+                          ? "Extend boost"
+                          : "Boost listing"
+                      }
+                      source="account-hero"
+                      small
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="heroEmptyCard">
+              <strong>Ready to sell?</strong>
+              <span>
+                Post your first car and manage views, saves, enquiries and
+                boosts from this page.
+              </span>
+              <button type="button" onClick={goToPostCar}>
+                Post your car
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="statsGrid">
@@ -614,6 +714,33 @@ export default function AccountPage() {
 
       {activeTab === "overview" && (
         <section className="overviewGrid">
+          <div className="panel widePanel boostExplainPanel">
+            <div>
+              <span className="sectionKicker">Seller visibility</span>
+              <h2>What boosting does</h2>
+              <p>
+                Boosting moves your car into Kerb’s priority listing positions
+                so it has a better chance of being seen near the top of Browse
+                Cars and Featured Cars. Buyers do not see a public boosted badge.
+              </p>
+            </div>
+
+            <div className="boostExplainGrid">
+              <div>
+                <strong>Higher placement</strong>
+                <span>Priority chance to appear above normal listings.</span>
+              </div>
+              <div>
+                <strong>Fair rotation</strong>
+                <span>Boosted cars rotate with other boosted cars.</span>
+              </div>
+              <div>
+                <strong>No guarantee</strong>
+                <span>Good photos, fair price and clear notes still matter.</span>
+              </div>
+            </div>
+          </div>
+
           <div className="panel">
             <h2>Quick actions</h2>
             <p>Use these to manage your Kerb activity.</p>
@@ -1299,6 +1426,187 @@ const styles = `
 
   p strong {
     color: #071126;
+  }
+
+  .heroMain {
+    min-width: 0;
+  }
+
+  .heroListingCard {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+    margin-top: 24px;
+    background: white;
+    border: 1px solid #dfe8fb;
+    border-radius: 22px;
+    padding: 14px;
+    box-shadow: 0 14px 34px rgba(10, 20, 40, 0.07);
+  }
+
+  .heroListingImage {
+    min-height: 145px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #eef3ff;
+  }
+
+  .heroListingImage img,
+  .miniImage img,
+  .cardImage img,
+  .inboxImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .heroListingBody {
+    display: grid;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .heroListingTop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .privateBoostPill {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    background: #eef3ff;
+    color: #0048ff;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  .heroListingBody h2 {
+    font-size: 24px;
+    line-height: 1.05;
+  }
+
+  .heroListingBody p {
+    font-weight: 850;
+  }
+
+  .heroListingStats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .heroListingStats span {
+    display: grid;
+    gap: 2px;
+    border: 1px solid #e5eaf4;
+    border-radius: 13px;
+    background: #f7f9fd;
+    padding: 9px 10px;
+    color: #657189;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .heroListingStats strong {
+    color: #071126;
+    font-size: 16px;
+  }
+
+  .heroListingActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .heroListingActions a,
+  .heroEmptyCard button {
+    border: none;
+    background: #eef3ff;
+    color: #0048ff;
+    border-radius: 12px;
+    padding: 11px 13px;
+    font-weight: 950;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .heroListingActions a:first-child,
+  .heroEmptyCard button {
+    background: #0048ff;
+    color: white;
+  }
+
+  .heroEmptyCard {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+    background: white;
+    border: 1px solid #dfe8fb;
+    border-radius: 22px;
+    padding: 20px;
+    max-width: 620px;
+  }
+
+  .heroEmptyCard strong {
+    font-size: 20px;
+    letter-spacing: -0.4px;
+  }
+
+  .heroEmptyCard span {
+    color: #59657a;
+    line-height: 1.55;
+    font-weight: 750;
+  }
+
+  .boostExplainPanel {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 20px;
+    align-items: center;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 245, 255, 0.98));
+  }
+
+  .sectionKicker {
+    display: inline-flex;
+    color: #0048ff;
+    font-size: 12px;
+    font-weight: 950;
+    margin-bottom: 8px;
+  }
+
+  .boostExplainGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .boostExplainGrid div {
+    border: 1px solid #dfe8fb;
+    border-radius: 16px;
+    background: white;
+    padding: 15px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .boostExplainGrid strong {
+    color: #071126;
+    font-weight: 950;
+  }
+
+  .boostExplainGrid span {
+    color: #657189;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
   }
 
   .statsGrid {
@@ -2130,12 +2438,17 @@ const styles = `
     .hero,
     .overviewGrid,
     .cardsGrid,
-    .statusSummary {
+    .statusSummary,
+    .boostExplainPanel {
       grid-template-columns: 1fr;
     }
 
     .widePanel {
       grid-column: auto;
+    }
+
+    .boostExplainGrid {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -2166,8 +2479,14 @@ const styles = `
     }
 
     .statsGrid,
-    .detailsGrid {
+    .detailsGrid,
+    .heroListingCard,
+    .heroListingStats {
       grid-template-columns: 1fr;
+    }
+
+    .heroListingImage {
+      min-height: 190px;
     }
 
     .panelHeader {
