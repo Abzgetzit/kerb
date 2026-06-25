@@ -582,10 +582,21 @@ export default function PostCarPage() {
                 <span className="boostKicker">Optional featured boost</span>
                 <h2>Want your listing to get more attention?</h2>
                 <p>
-                  Choose a paid featured boost. Boosted cars get priority
-                  placement in featured areas, but Kerb still rotates boosted
-                  listings fairly so the same car is not fixed first every time.
+                  Move this car into Kerb’s priority listing positions so it has
+                  a better chance of being seen near the top of Browse Cars and
+                  Featured Cars. Buyers will not see a public boosted badge.
                 </p>
+
+                <div className="successBoostList">
+                  <span>Higher placement</span>
+                  <span>Fair boosted rotation</span>
+                  <span>No sale guarantee</span>
+                </div>
+
+                <small className="boostNote">
+                  Boosting improves visibility, but good photos, a realistic
+                  price and an honest description still matter most.
+                </small>
               </div>
 
               <BoostListingButton
@@ -1012,10 +1023,25 @@ export default function PostCarPage() {
               <span className="boostKicker">Optional paid boost</span>
               <h2>Boost after posting</h2>
               <p>
-                After your listing is created, you can pay to feature it from
-                the success screen or from My account. You are not charged just
-                for submitting the listing.
+                Boosting moves your car into Kerb’s priority listing positions,
+                giving it a better chance of being seen near the top of Browse
+                Cars and Featured Cars. Boosted listings rotate fairly with
+                other boosted cars, so the same advert is not permanently pinned
+                first.
               </p>
+
+              <ul className="boostBenefits">
+                <li>Higher placement in “Featured first” browse results</li>
+                <li>Priority chance to appear in homepage Featured Cars</li>
+                <li>No public boosted badge shown to buyers</li>
+                <li>No charge until after the listing has been created</li>
+              </ul>
+
+              <small className="boostNote">
+                Boosting can increase visibility, but it does not guarantee
+                enquiries or a sale. Good photos, fair pricing and clear seller
+                notes still matter.
+              </small>
             </div>
 
             <div className="boostPreviewPlans">
@@ -1490,6 +1516,43 @@ const styles = `
     margin: 0;
   }
 
+  .boostBenefits {
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .boostBenefits li,
+  .successBoostList span {
+    background: #eef4ff;
+    border: 1px solid #dbe7ff;
+    color: #172033;
+    border-radius: 999px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .successBoostList {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .boostNote {
+    display: block;
+    color: #657189;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.5;
+    margin-top: 12px;
+  }
+
   .boostPreviewPlans {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1667,7 +1730,8 @@ const styles = `
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .boostPreviewPlans {
+    .boostPreviewPlans,
+    .boostBenefits {
       grid-template-columns: 1fr;
     }
 
