@@ -72,23 +72,63 @@ function getAccountIdentity(accountResult) {
     accountId: cleanId(
       account.id ||
         account.user_id ||
+        account.account_id ||
         accountResult?.id ||
         accountResult?.user_id ||
         accountResult?.account_id
     ),
-    accountEmail: cleanEmail(accountResult?.email || account.email),
+    accountEmail: cleanEmail(
+      accountResult?.email ||
+        account.email ||
+        account.account_email ||
+        accountResult?.account_email
+    ),
   };
 }
 
-function ownsListing(listing, accountId, accountEmail) {
-  const listingAccountId = cleanId(listing?.account_id || listing?.seller_id);
-  const listingAccountEmail = cleanEmail(
-    listing?.account_email || listing?.seller_email || listing?.email
+function listingEmailValues(listing) {
+  return [
+    listing?.account_email,
+    listing?.seller_email,
+    listing?.email,
+    listing?.owner_email,
+  ]
+    .map(cleanEmail)
+    .filter(Boolean);
+}
+
+function listingIdValues(listing) {
+  return [listing?.account_id, listing?.seller_id, listing?.owner_id]
+    .map(cleanId)
+    .filter(Boolean);
+}
+
+function accountResultIncludesListing(accountResult, listingId) {
+  const listingIdText = cleanId(listingId);
+
+  if (!listingIdText) return false;
+
+  const allAccountListings = [
+    ...(Array.isArray(accountResult?.my_listings) ? accountResult.my_listings : []),
+    ...(Array.isArray(accountResult?.listings) ? accountResult.listings : []),
+    ...(Array.isArray(accountResult?.seller_listings)
+      ? accountResult.seller_listings
+      : []),
+  ];
+
+  return allAccountListings.some(
+    (item) => cleanId(item?.id || item?.listing_id || item) === listingIdText
   );
+}
+
+function ownsListing(listing, accountId, accountEmail, accountResult, listingId) {
+  const listingAccountIds = listingIdValues(listing);
+  const listingAccountEmails = listingEmailValues(listing);
 
   return (
-    (accountId && listingAccountId && accountId === listingAccountId) ||
-    (accountEmail && listingAccountEmail && accountEmail === listingAccountEmail)
+    accountResultIncludesListing(accountResult, listingId) ||
+    (accountId && listingAccountIds.includes(accountId)) ||
+    (accountEmail && listingAccountEmails.includes(accountEmail))
   );
 }
 
@@ -160,9 +200,9 @@ export async function POST(request) {
     return NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
 
-  if (!ownsListing(listing, accountId, accountEmail)) {
+  if (!ownsListing(listing, accountId, accountEmail, accountResult, listingId)) {
     return NextResponse.json(
-      { error: "You can only boost your own listing." },
+      { error: "This listing is not linked to your Kerb account yet." },
       { status: 403 }
     );
   }
