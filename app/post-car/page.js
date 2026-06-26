@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import SiteMenu from "../components/SiteMenu";
-import BoostListingButton from "../components/BoostListingButton";
 
 const carMakes = {
   Abarth: ["595", "695", "124 Spider"],
@@ -176,6 +175,33 @@ const listingCategoryOptions = [
   { value: "newer-car", label: "Newer car" },
 ];
 
+const boostPlanOptions = [
+  {
+    value: "none",
+    label: "No boost",
+    price: "Free",
+    description: "List your car normally with no paid boost.",
+  },
+  {
+    value: "7-days",
+    label: "1 week",
+    price: "£7.99",
+    description: "Priority placement for 7 days.",
+  },
+  {
+    value: "14-days",
+    label: "2 weeks",
+    price: "£13.99",
+    description: "Priority placement for 14 days.",
+  },
+  {
+    value: "30-days",
+    label: "1 month",
+    price: "£19.99",
+    description: "Priority placement for 30 days.",
+  },
+];
+
 const modelValueGuide = {
   "BMW|1 Series": 31000,
   "BMW|2 Series": 34000,
@@ -322,6 +348,7 @@ export default function PostCarPage() {
   const [submittedListing, setSubmittedListing] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [boostCheckoutError, setBoostCheckoutError] = useState("");
 
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
@@ -336,6 +363,7 @@ export default function PostCarPage() {
   const [condition, setCondition] = useState("");
   const [financeAvailable, setFinanceAvailable] = useState("false");
   const [listingCategory, setListingCategory] = useState("general");
+  const [selectedBoostPlan, setSelectedBoostPlan] = useState("none");
   const [photos, setPhotos] = useState([]);
   const photoUrlsRef = useRef([]);
 
@@ -485,10 +513,45 @@ export default function PostCarPage() {
     });
   }
 
+  async function startBoostCheckout({ listingId, token, planId }) {
+    const response = await fetch("/api/listing-boosts/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-kerb-session-token": token,
+      },
+      body: JSON.stringify({
+        listing_id: listingId,
+        plan_id: planId,
+        source: "post-car-create",
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not start boost checkout.");
+    }
+
+    if (!result.url) {
+      throw new Error("Stripe checkout link was not created.");
+    }
+
+    return result.url;
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage("");
+    setBoostCheckoutError("");
+
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
 
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -498,6 +561,7 @@ export default function PostCarPage() {
     });
 
     formData.set("model", finalModel);
+    formData.set("model_detail", modelDetail);
     formData.set("body_type", bodyType);
     formData.set("condition", condition);
     formData.set("finance_available", financeAvailable);
@@ -528,6 +592,9 @@ export default function PostCarPage() {
     try {
       const response = await fetch("/api/post-car", {
         method: "POST",
+        headers: {
+          "x-kerb-session-token": token,
+        },
         body: formData,
       });
 
@@ -538,6 +605,31 @@ export default function PostCarPage() {
       }
 
       setSubmittedListing(result.listing);
+
+      if (selectedBoostPlan !== "none" && result.listing?.id) {
+        try {
+          const checkoutUrl = await startBoostCheckout({
+            listingId: result.listing.id,
+            token,
+            planId: selectedBoostPlan,
+          });
+
+          window.location.href = checkoutUrl;
+          return;
+        } catch (checkoutError) {
+          setBoostCheckoutError(
+            `Your listing is live, but the boost checkout could not start. ${checkoutError.message || ""}`.trim()
+          );
+          setSubmitted(true);
+          return;
+        }
+      }
+
+      if (result.listing?.id) {
+        window.location.href = `/listing/${result.listing.id}`;
+        return;
+      }
+
       setSubmitted(true);
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
@@ -561,11 +653,14 @@ export default function PostCarPage() {
         <div className="successBox">
           <a href="/" className="logo">Kerb</a>
           <div className="successIcon">✅</div>
-          <h1>Listing request received</h1>
+          <h1>Your listing is live</h1>
           <p>
-            Your car listing has been saved. It is currently marked as pending
-            and can be reviewed before being shown publicly.
+            Your car listing has been saved and is now live on Kerb.
           </p>
+
+          {boostCheckoutError && (
+            <div className="warningBox">{boostCheckoutError}</div>
+          )}
 
           {submittedListing && (
             <div className="listingSummary">
@@ -576,39 +671,13 @@ export default function PostCarPage() {
             </div>
           )}
 
-          {submittedListing?.id && (
-            <div className="successBoostBox">
-              <div>
-                <span className="boostKicker">Optional featured boost</span>
-                <h2>Want your listing to get more attention?</h2>
-                <p>
-                  Move this car into Kerb’s priority listing positions so it has
-                  a better chance of being seen near the top of Browse Cars and
-                  Featured Cars. Buyers will not see a public boosted badge.
-                </p>
-
-                <div className="successBoostList">
-                  <span>Higher placement</span>
-                  <span>Fair boosted rotation</span>
-                  <span>No sale guarantee</span>
-                </div>
-
-                <small className="boostNote">
-                  Boosting improves visibility, but good photos, a realistic
-                  price and an honest description still matter most.
-                </small>
-              </div>
-
-              <BoostListingButton
-                listingId={submittedListing.id}
-                label="Boost this listing"
-                source="post-car-success"
-              />
-            </div>
-          )}
-
           <div className="successActions">
             <a href="/account" className="secondaryBtn">My account</a>
+            {submittedListing?.id && (
+              <a href={`/listing/${submittedListing.id}`} className="secondaryBtn">
+                View live listing
+              </a>
+            )}
             <a href="/browse" className="primaryBtn">Browse cars</a>
           </div>
         </div>
@@ -1020,47 +1089,61 @@ export default function PostCarPage() {
 
           <section className="boostPreviewSection">
             <div>
-              <span className="boostKicker">Optional paid boost</span>
-              <h2>Boost after posting</h2>
+              <span className="boostKicker">Optional listing boost</span>
+              <h2>Choose visibility before submitting</h2>
               <p>
-                Boosting moves your car into Kerb’s priority listing positions,
-                giving it a better chance of being seen near the top of Browse
-                Cars and Featured Cars. Boosted listings increase the chance of getting a quicker sale and a favourable price.
+                Boost your listing to give it higher placement in Kerb’s
+                priority listing positions across Browse Cars and Featured Cars.
+                Boosted listings rotate fairly with other boosted cars, so the
+                same advert is not permanently pinned. Buyers will not see a
+                public boosted badge. Boosting increases visibility but does not
+                guarantee enquiries or a sale.
               </p>
 
               <ul className="boostBenefits">
-                <li>Higher placement in “Featured first” browse results</li>
-                <li>Priority chance to appear in homepage Featured Cars</li>
-                <li>No charge until after the listing has been created</li>
+                <li>Listing goes live immediately</li>
+                <li>Paid boosts start after Stripe confirms payment</li>
+                <li>If checkout is cancelled, the listing stays live</li>
               </ul>
-
-              <small className="boostNote">
-                Boosting can increase visibility, but it does not guarantee
-                enquiries or a sale. Good photos, fair pricing and clear seller
-                notes still matter.
-              </small>
             </div>
 
-            <div className="boostPreviewPlans">
-              <div>
-                <strong>1 week</strong>
-                <span>£7.99</span>
-              </div>
-              <div>
-                <strong>2 weeks</strong>
-                <span>£13.99</span>
-              </div>
-              <div>
-                <strong>1 month</strong>
-                <span>£19.99</span>
-              </div>
+            <div className="boostChoiceGrid">
+              {boostPlanOptions.map((plan) => (
+                <label
+                  className={
+                    selectedBoostPlan === plan.value
+                      ? "boostChoice active"
+                      : "boostChoice"
+                  }
+                  key={plan.value}
+                >
+                  <input
+                    type="radio"
+                    name="boost_plan"
+                    value={plan.value}
+                    checked={selectedBoostPlan === plan.value}
+                    onChange={() => setSelectedBoostPlan(plan.value)}
+                  />
+                  <span>
+                    <strong>{plan.label}</strong>
+                    <em>{plan.description}</em>
+                  </span>
+                  <b>{plan.price}</b>
+                </label>
+              ))}
             </div>
           </section>
 
           {errorMessage && <div className="errorBox">{errorMessage}</div>}
 
           <button className="primaryBtn" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting listing..." : "Submit listing request"}
+            {isSubmitting
+              ? selectedBoostPlan === "none"
+                ? "Submitting listing..."
+                : "Creating listing..."
+              : selectedBoostPlan === "none"
+                ? "Submit listing"
+                : "Submit listing and continue to boost"}
           </button>
         </form>
       </section>
@@ -1473,8 +1556,7 @@ const styles = `
     background: #d7193f;
   }
 
-  .boostPreviewSection,
-  .successBoostBox {
+  .boostPreviewSection {
     margin: 0 0 24px;
     background: linear-gradient(135deg, #f7faff, #ffffff);
     border: 1px solid #dce8ff;
@@ -1482,11 +1564,6 @@ const styles = `
     padding: 22px;
     display: grid;
     gap: 18px;
-  }
-
-  .successBoostBox {
-    text-align: left;
-    margin: 24px 0;
   }
 
   .boostKicker {
@@ -1502,15 +1579,17 @@ const styles = `
     margin-bottom: 10px;
   }
 
-  .boostPreviewSection h2,
-  .successBoostBox h2 {
+  .boostPreviewSection h2 {
     margin: 0 0 8px;
     font-size: 24px;
     letter-spacing: -0.7px;
   }
 
-  .successBoostBox p {
+  .boostPreviewSection p {
     margin: 0;
+    color: #5f6a82;
+    font-weight: 760;
+    line-height: 1.58;
   }
 
   .boostBenefits {
@@ -1522,8 +1601,7 @@ const styles = `
     gap: 10px;
   }
 
-  .boostBenefits li,
-  .successBoostList span {
+  .boostBenefits li {
     background: #eef4ff;
     border: 1px solid #dbe7ff;
     color: #172033;
@@ -1533,49 +1611,67 @@ const styles = `
     font-weight: 900;
   }
 
-  .successBoostList {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 14px;
-  }
-
-  .boostNote {
-    display: block;
-    color: #657189;
-    font-size: 13px;
-    font-weight: 750;
-    line-height: 1.5;
-    margin-top: 12px;
-  }
-
-  .boostPreviewPlans {
+  .boostChoiceGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .boostPreviewPlans div {
+  .boostChoice {
     background: white;
     border: 1px solid #dfe7f6;
     border-radius: 18px;
     padding: 15px;
     display: grid;
-    gap: 4px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
   }
 
-  .boostPreviewPlans strong {
+  .boostChoice:hover {
+    border-color: #b9ccff;
+    box-shadow: 0 16px 34px rgba(18, 45, 105, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .boostChoice.active {
+    border-color: #0b4bff;
+    box-shadow: 0 18px 38px rgba(11, 75, 255, 0.12);
+  }
+
+  .boostChoice input {
+    width: 18px;
+    height: 18px;
+    accent-color: #0b4bff;
+  }
+
+  .boostChoice span {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .boostChoice strong {
     font-size: 13px;
     font-weight: 950;
     color: #172033;
   }
 
-  .boostPreviewPlans span {
-    font-size: 22px;
-    font-weight: 950;
+  .boostChoice em {
+    color: #69758d;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 760;
+    line-height: 1.35;
+  }
+
+  .boostChoice b {
     color: #0048ff;
-    letter-spacing: -0.6px;
+    font-size: 16px;
+    font-weight: 950;
+    white-space: nowrap;
   }
 
   .errorBox {
@@ -1586,6 +1682,17 @@ const styles = `
     padding: 14px 16px;
     font-weight: 800;
     margin-bottom: 18px;
+  }
+
+  .warningBox {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-weight: 850;
+    line-height: 1.5;
+    margin: 18px 0;
   }
 
   .primaryBtn,
@@ -1727,7 +1834,7 @@ const styles = `
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .boostPreviewPlans,
+    .boostChoiceGrid,
     .boostBenefits {
       grid-template-columns: 1fr;
     }
