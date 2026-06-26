@@ -1143,7 +1143,7 @@ export default function HomePage() {
 
         .categoryCard {
           display: grid;
-          grid-template-columns: 84px minmax(0, 1fr) 14px;
+          grid-template-columns: 92px minmax(0, 1fr) 14px;
           align-items: center;
           gap: 10px;
           background: white;
@@ -1156,7 +1156,7 @@ export default function HomePage() {
           transition: transform 0.18s ease, box-shadow 0.18s ease,
             border-color 0.18s ease;
           min-width: 0;
-          min-height: 70px;
+          min-height: 74px;
         }
 
         .categoryCard:hover {
@@ -1166,10 +1166,10 @@ export default function HomePage() {
         }
 
         .categoryImage {
-          width: 84px;
-          height: 46px;
+          width: 92px;
+          height: 52px;
           border-radius: 10px;
-          background: white;
+          background: #f8fbff;
           overflow: hidden;
           position: relative;
         }
@@ -1177,8 +1177,10 @@ export default function HomePage() {
         .categoryImage img {
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover;
+          object-position: center 56%;
           display: block;
+          transform: scale(1.12);
         }
 
         .categoryImage span {
