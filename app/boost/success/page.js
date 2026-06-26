@@ -43,10 +43,10 @@ async function getSessionStatus(sessionId) {
     if (paymentStatus === "paid" || paymentStatus === "no_payment_required") {
       return {
         state: "paid",
-        title: "Your listing boost is being applied",
+        title: "Your boost payment is confirmed",
         pill: "Payment confirmed",
         text:
-          "Stripe has confirmed your payment. The webhook will mark your listing as boosted and it can appear higher in Kerb browse results.",
+          "Your listing is live. Your boost payment is confirmed and your listing will now appear in Kerb priority listing positions.",
         listingId,
         checkoutUrl: "",
       };
@@ -58,7 +58,7 @@ async function getSessionStatus(sessionId) {
         title: "Boost payment not completed",
         pill: "Payment still open",
         text:
-          "You opened the Stripe checkout but the payment has not been completed yet. Your listing has not been boosted.",
+          "Your listing is live. Stripe checkout is still open, but payment has not been confirmed yet so the boost has not been applied.",
         listingId,
         checkoutUrl: session.url || "",
       };
@@ -69,7 +69,7 @@ async function getSessionStatus(sessionId) {
       title: "Boost payment not completed",
       pill: "No payment taken",
       text:
-        "Stripe has not confirmed a paid checkout for this boost. Your listing has not been boosted from this attempt.",
+        "Your listing is live. Stripe has not confirmed a paid checkout for this boost, so no paid priority placement has been applied.",
       listingId,
       checkoutUrl: "",
     };
