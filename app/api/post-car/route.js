@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import {
-  createListingSubmittedEmail,
+  createListingLiveEmail,
   getListingTitle,
   getSiteUrl,
   sendKerbEmail,
@@ -31,6 +31,72 @@ function cleanBoolean(value) {
   const text = String(value || "").trim().toLowerCase();
 
   return text === "true" || text === "yes" || text === "1";
+}
+
+function normaliseEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+async function getSignedInAccount(supabase, request) {
+  const sessionToken = cleanText(request.headers.get("x-kerb-session-token"));
+
+  if (!sessionToken) {
+    return {
+      error: "Sign in required.",
+      status: 401,
+    };
+  }
+
+  const now = new Date().toISOString();
+
+  const { data: session, error: sessionError } = await supabase
+    .from("kerb_account_sessions")
+    .select("*")
+    .eq("session_token", sessionToken)
+    .gt("expires_at", now)
+    .maybeSingle();
+
+  if (sessionError) {
+    return {
+      error: sessionError.message,
+      status: 500,
+    };
+  }
+
+  if (!session) {
+    return {
+      error: "Session expired. Please sign in again.",
+      status: 401,
+    };
+  }
+
+  const { data: account, error: accountError } = await supabase
+    .from("kerb_accounts")
+    .select("*")
+    .eq("id", session.account_id)
+    .maybeSingle();
+
+  if (accountError) {
+    return {
+      error: accountError.message,
+      status: 500,
+    };
+  }
+
+  const accountEmail = normaliseEmail(session.email || account?.email);
+  const accountName =
+    cleanText(account?.full_name) ||
+    cleanText(account?.name) ||
+    (accountEmail ? accountEmail.split("@")[0] : null) ||
+    null;
+
+  return {
+    session,
+    account,
+    accountId: cleanText(session.account_id || account?.id),
+    accountEmail,
+    accountName,
+  };
 }
 
 function roundToNearestHundred(value) {
@@ -132,6 +198,14 @@ export async function POST(request) {
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const signedInAccount = await getSignedInAccount(supabase, request);
+
+    if (signedInAccount.error) {
+      return Response.json(
+        { error: signedInAccount.error },
+        { status: signedInAccount.status || 401 }
+      );
+    }
 
     const photos = formData
       .getAll("photos")
@@ -173,15 +247,18 @@ export async function POST(request) {
     }
 
     const sellerEmail =
+      signedInAccount.accountEmail ||
       cleanText(formData.get("seller_email")) ||
       cleanText(formData.get("account_email"));
 
     const sellerName =
       cleanText(formData.get("seller_name")) ||
+      signedInAccount.accountName ||
       cleanText(formData.get("account_name"));
 
     const make = cleanText(formData.get("make"));
     const model = cleanText(formData.get("model"));
+    const modelDetail = cleanText(formData.get("model_detail"));
     const year = cleanNumber(formData.get("year"));
     const mileage = cleanNumber(formData.get("mileage"));
     const bodyType = cleanText(formData.get("body_type"));
@@ -204,11 +281,15 @@ export async function POST(request) {
     const title = [year, make, model].filter(Boolean).join(" ");
 
     const listing = {
-      status: "pending",
+      status: "approved",
 
-      account_id: cleanText(formData.get("account_id")),
-      account_email: cleanText(formData.get("account_email")),
-      account_name: cleanText(formData.get("account_name")),
+      account_id: signedInAccount.accountId || cleanText(formData.get("account_id")),
+      account_email:
+        signedInAccount.accountEmail || cleanText(formData.get("account_email")),
+      account_name:
+        signedInAccount.accountName ||
+        cleanText(formData.get("account_name")) ||
+        sellerName,
 
       seller_name: sellerName,
       seller_email: sellerEmail,
@@ -218,6 +299,7 @@ export async function POST(request) {
       title: title || null,
       make,
       model,
+      model_detail: modelDetail,
       year,
       mileage,
       body_type: bodyType,
@@ -258,8 +340,8 @@ export async function POST(request) {
     const siteUrl = getSiteUrl(request);
     const sellerConfirmationEmail = await sendKerbEmail({
       to: data.seller_email || data.account_email,
-      subject: `Kerb received your ${getListingTitle(data)} listing`,
-      html: createListingSubmittedEmail({
+      subject: `Your ${getListingTitle(data)} listing is now live on Kerb`,
+      html: createListingLiveEmail({
         listing: data,
         siteUrl,
       }),
