@@ -22,7 +22,12 @@ function cleanId(value) {
 }
 
 function getBoostDays(session) {
-  const value = Number(session?.metadata?.boost_days || process.env.KERB_BOOST_DAYS || 14);
+  const value = Number(
+    session?.metadata?.plan_days ||
+      session?.metadata?.boost_days ||
+      process.env.KERB_BOOST_DAYS ||
+      14
+  );
 
   if (!Number.isFinite(value) || value <= 0) return 14;
 
@@ -31,13 +36,79 @@ function getBoostDays(session) {
 
 async function applyPaidBoost(session, event) {
   const listingId = cleanId(session?.metadata?.listing_id || session?.client_reference_id);
+  const sessionId = cleanId(session?.id);
 
-  if (!listingId || !supabase) return;
+  if (!listingId || !sessionId || !supabase) return;
+
+  const { data: existingPaidBoost, error: existingPaidBoostError } = await supabase
+    .from("kerb_listing_boosts")
+    .select("id, status, stripe_checkout_session_id")
+    .eq("stripe_checkout_session_id", sessionId)
+    .eq("status", "paid")
+    .maybeSingle();
+
+  if (existingPaidBoostError) {
+    console.warn("Boost idempotency check failed:", existingPaidBoostError);
+  }
+
+  if (existingPaidBoost) return;
 
   const boostDays = getBoostDays(session);
   const now = new Date();
+  const { data: listing, error: listingError } = await supabase
+    .from("kerb_listings")
+    .select("id, status, featured_until")
+    .eq("id", listingId)
+    .maybeSingle();
+
+  if (listingError) {
+    console.warn("Boost listing lookup failed:", listingError);
+    return;
+  }
+
+  if (!listing) return;
+
+  const listingStatus = String(listing.status || "").toLowerCase();
+
+  if (listingStatus === "sold" || listingStatus === "rejected") {
+    try {
+      await supabase.from("kerb_listing_boosts").upsert(
+        {
+          listing_id: listingId,
+          account_id: session?.metadata?.account_id || null,
+          account_email: session?.metadata?.account_email || null,
+          provider: "stripe",
+          stripe_checkout_session_id: sessionId,
+          stripe_payment_intent_id:
+            typeof session.payment_intent === "string"
+              ? session.payment_intent
+              : null,
+          amount_total: session.amount_total,
+          currency: session.currency,
+          status: "ignored_listing_unavailable",
+          boost_days: boostDays,
+          plan_id: session?.metadata?.boost_plan_id || null,
+          plan_label: session?.metadata?.boost_plan_label || null,
+          paid_at: now.toISOString(),
+          raw_event: event,
+        },
+        { onConflict: "stripe_checkout_session_id" }
+      );
+    } catch (error) {
+      console.warn("Boost ignored payment log upsert failed:", error);
+    }
+
+    return;
+  }
+
+  const currentFeaturedUntilTime = Date.parse(listing.featured_until || "");
+  const baseDate =
+    Number.isFinite(currentFeaturedUntilTime) &&
+    currentFeaturedUntilTime > now.getTime()
+      ? new Date(currentFeaturedUntilTime)
+      : now;
   const featuredUntil = new Date(
-    now.getTime() + boostDays * 24 * 60 * 60 * 1000
+    baseDate.getTime() + boostDays * 24 * 60 * 60 * 1000
   ).toISOString();
 
   await supabase
@@ -57,7 +128,7 @@ async function applyPaidBoost(session, event) {
         account_id: session?.metadata?.account_id || null,
         account_email: session?.metadata?.account_email || null,
         provider: "stripe",
-        stripe_checkout_session_id: session.id,
+        stripe_checkout_session_id: sessionId,
         stripe_payment_intent_id:
           typeof session.payment_intent === "string" ? session.payment_intent : null,
         amount_total: session.amount_total,
