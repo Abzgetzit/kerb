@@ -60,9 +60,27 @@ function cleanEmail(value) {
 }
 
 function getBoostPlan(value) {
-  const planId = cleanId(value || "14-days");
+  const rawPlanId = cleanId(value || "14-days").toLowerCase();
+  const planIdAliases = {
+    "7": "7-days",
+    "7-days": "7-days",
+    "7 days": "7-days",
+    "1-week": "7-days",
+    "1 week": "7-days",
+    "14": "14-days",
+    "14-days": "14-days",
+    "14 days": "14-days",
+    "2-weeks": "14-days",
+    "2 weeks": "14-days",
+    "30": "30-days",
+    "30-days": "30-days",
+    "30 days": "30-days",
+    "1-month": "30-days",
+    "1 month": "30-days",
+  };
+  const planId = planIdAliases[rawPlanId] || rawPlanId;
 
-  return boostPlans[planId] || boostPlans["14-days"];
+  return boostPlans[planId] || null;
 }
 
 function getAccountIdentity(accountResult) {
@@ -162,10 +180,24 @@ export async function POST(request) {
   }
 
   const listingId = cleanId(body?.listing_id || body?.listingId);
-  const selectedPlan = getBoostPlan(body?.plan_id || body?.planId || body?.plan);
+  const selectedPlan = getBoostPlan(
+    body?.plan_id ||
+      body?.planId ||
+      body?.plan ||
+      body?.plan_days ||
+      body?.planDays ||
+      body?.days
+  );
 
   if (!listingId) {
     return NextResponse.json({ error: "Listing id is required." }, { status: 400 });
+  }
+
+  if (!selectedPlan) {
+    return NextResponse.json(
+      { error: "Choose a valid boost plan." },
+      { status: 400 }
+    );
   }
 
   let accountResult = {};
@@ -213,9 +245,18 @@ export async function POST(request) {
     return NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
 
-  if (String(listing.status || "").toLowerCase() === "sold") {
+  const listingStatus = String(listing.status || "").toLowerCase();
+
+  if (listingStatus === "sold") {
     return NextResponse.json(
       { error: "Sold listings cannot be boosted." },
+      { status: 400 }
+    );
+  }
+
+  if (listingStatus === "rejected") {
+    return NextResponse.json(
+      { error: "Rejected listings cannot be boosted." },
       { status: 400 }
     );
   }
@@ -227,6 +268,13 @@ export async function POST(request) {
     accountResult,
     listingId
   );
+
+  if (!ownershipVerified) {
+    return NextResponse.json(
+      { error: "Only the listing owner can boost this listing." },
+      { status: 403 }
+    );
+  }
 
   const siteUrl = getSiteUrl(request);
   const listingTitle =
@@ -257,7 +305,7 @@ export async function POST(request) {
       listing_id: listingId,
       account_id: accountId || "",
       account_email: accountEmail || "",
-      ownership_verified: ownershipVerified ? "true" : "false",
+      plan_days: String(selectedPlan.days),
       boost_days: String(selectedPlan.days),
       boost_plan_id: selectedPlan.id,
       boost_plan_label: selectedPlan.label,
