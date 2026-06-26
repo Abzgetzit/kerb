@@ -131,7 +131,7 @@ export default function AdminListingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingId, setIsUpdatingId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [filter, setFilter] = useState("pending");
+  const [filter, setFilter] = useState("approved");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
