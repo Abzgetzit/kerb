@@ -1168,19 +1168,18 @@ export default function HomePage() {
         .categoryImage {
           width: 92px;
           height: 52px;
-          border-radius: 10px;
-          background: #f8fbff;
-          overflow: hidden;
+          background: transparent;
+          overflow: visible;
           position: relative;
         }
 
         .categoryImage img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
-          object-position: center 56%;
+          object-fit: contain;
+          object-position: center;
           display: block;
-          transform: scale(1.12);
+          filter: drop-shadow(0 7px 7px rgba(15, 23, 42, 0.14));
         }
 
         .categoryImage span {
