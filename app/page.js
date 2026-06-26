@@ -298,28 +298,7 @@ function sortListingsForFeatured(listings) {
 
   if (featuredListings.length === 0) return normalListings;
 
-  const prioritySlots = [0, 1, 2, 4, 6, 8, 10, 12];
-  const result = [];
-  let featuredIndex = 0;
-  let normalIndex = 0;
-
-  for (let slotIndex = 0; slotIndex < listings.length; slotIndex += 1) {
-    const shouldUsePrioritySlot =
-      prioritySlots.includes(slotIndex) && featuredIndex < featuredListings.length;
-
-    if (shouldUsePrioritySlot) {
-      result.push(featuredListings[featuredIndex]);
-      featuredIndex += 1;
-    } else if (normalIndex < normalListings.length) {
-      result.push(normalListings[normalIndex]);
-      normalIndex += 1;
-    } else if (featuredIndex < featuredListings.length) {
-      result.push(featuredListings[featuredIndex]);
-      featuredIndex += 1;
-    }
-  }
-
-  return result;
+  return [...featuredListings, ...normalListings];
 }
 
 
