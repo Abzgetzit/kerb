@@ -407,6 +407,7 @@ export default function ListingPage() {
   const [enquirySuccess, setEnquirySuccess] = useState("");
   const [enquiryError, setEnquiryError] = useState("");
   const [sentEnquiryId, setSentEnquiryId] = useState("");
+  const [showOptionalBuyerDetails, setShowOptionalBuyerDetails] = useState(false);
   const [enquiryForm, setEnquiryForm] = useState({
     buyer_name: "",
     buyer_email: "",
@@ -1514,7 +1515,7 @@ export default function ListingPage() {
               <h2>Message the seller</h2>
               <p>
                 Send an enquiry about <strong>{title}</strong>. The seller can
-                reply using your contact details.
+                reply in Kerb chat. Your email is needed so they can respond.
               </p>
 
               <div className="enquiry-listing-preview">
@@ -1555,52 +1556,63 @@ export default function ListingPage() {
                 </div>
               ) : (
                 <form onSubmit={submitEnquiry} className="enquiry-form">
-                  <div className="enquiry-fields">
-                    <label>
-                      Your name
-                      <input
-                        value={enquiryForm.buyer_name}
-                        onChange={(event) =>
-                          setEnquiryForm((current) => ({
-                            ...current,
-                            buyer_name: event.target.value,
-                          }))
-                        }
-                        placeholder="Enter your name"
-                        required
-                      />
-                    </label>
-
-                    <label>
-                      Your email
-                      <input
-                        type="email"
-                        value={enquiryForm.buyer_email}
-                        onChange={(event) =>
-                          setEnquiryForm((current) => ({
-                            ...current,
-                            buyer_email: event.target.value,
-                          }))
-                        }
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </label>
-                  </div>
-
                   <label>
-                    Your phone
+                    Your email
                     <input
-                      value={enquiryForm.buyer_phone}
+                      type="email"
+                      value={enquiryForm.buyer_email}
                       onChange={(event) =>
                         setEnquiryForm((current) => ({
                           ...current,
-                          buyer_phone: event.target.value,
+                          buyer_email: event.target.value,
                         }))
                       }
-                      placeholder="Enter your phone number"
+                      placeholder="Enter your email"
+                      required
                     />
                   </label>
+
+                  <button
+                    type="button"
+                    className="optional-contact-toggle"
+                    onClick={() => setShowOptionalBuyerDetails((current) => !current)}
+                  >
+                    {showOptionalBuyerDetails
+                      ? "Hide optional contact details"
+                      : "Add name or phone number (optional)"}
+                  </button>
+
+                  {showOptionalBuyerDetails && (
+                    <div className="enquiry-fields optional-contact-fields">
+                      <label>
+                        Your name <span>Optional</span>
+                        <input
+                          value={enquiryForm.buyer_name}
+                          onChange={(event) =>
+                            setEnquiryForm((current) => ({
+                              ...current,
+                              buyer_name: event.target.value,
+                            }))
+                          }
+                          placeholder="Enter your name"
+                        />
+                      </label>
+
+                      <label>
+                        Your phone <span>Optional</span>
+                        <input
+                          value={enquiryForm.buyer_phone}
+                          onChange={(event) =>
+                            setEnquiryForm((current) => ({
+                              ...current,
+                              buyer_phone: event.target.value,
+                            }))
+                          }
+                          placeholder="Enter your phone number"
+                        />
+                      </label>
+                    </div>
+                  )}
 
                   <label>
                     Message
@@ -2842,7 +2854,7 @@ const styles = `
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 100;
+    z-index: 1000;
     background: rgba(8, 15, 35, 0.55);
     display: grid;
     place-items: center;
@@ -2851,6 +2863,9 @@ const styles = `
 
   .enquiry-modal {
     width: min(520px, 100%);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     position: relative;
     background: white;
     border: 1px solid #e4eaf4;
@@ -2939,6 +2954,31 @@ const styles = `
     color: #101832;
     font-size: 14px;
     font-weight: 900;
+  }
+
+  .enquiry-form label span {
+    color: #7a8598;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .optional-contact-toggle {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #dfe7f5;
+    border-radius: 13px;
+    background: #f3f7ff;
+    color: #0048ff;
+    font-size: 14px;
+    font-weight: 950;
+    cursor: pointer;
+  }
+
+  .optional-contact-fields {
+    padding: 12px;
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    background: #f8fbff;
   }
 
   .enquiry-form input,
@@ -3173,8 +3213,38 @@ const styles = `
       font-size: 15px;
     }
 
+    .modal-backdrop {
+      align-items: start;
+      place-items: start center;
+      padding: max(10px, env(safe-area-inset-top)) 10px max(22px, env(safe-area-inset-bottom));
+    }
+
     .enquiry-modal {
-      padding: 24px;
+      width: min(100%, 430px);
+      max-height: calc(100dvh - 20px);
+      padding: 20px;
+      border-radius: 24px;
+    }
+
+    .modal-close {
+      position: sticky;
+      top: 0;
+      margin-left: auto;
+      display: flex;
+      z-index: 2;
+    }
+
+    .enquiry-modal h2 {
+      font-size: 32px;
+      line-height: 1;
+      margin-top: -38px;
+      padding-right: 54px;
+    }
+
+    .enquiry-modal p {
+      font-size: 16px;
+      line-height: 1.45;
+      margin-bottom: 16px;
     }
 
     .enquiry-fields,
@@ -3182,8 +3252,34 @@ const styles = `
       grid-template-columns: 1fr;
     }
 
+    .enquiry-listing-preview {
+      margin-bottom: 14px;
+      padding: 10px;
+    }
+
     .enquiry-listing-preview img {
       width: 100%;
+      max-height: 210px;
+      object-fit: cover;
+    }
+
+    .enquiry-form {
+      gap: 12px;
+      padding-bottom: 18px;
+    }
+
+    .enquiry-form input,
+    .enquiry-form textarea {
+      min-height: 52px;
+      font-size: 16px;
+    }
+
+    .enquiry-form textarea {
+      min-height: 96px;
+    }
+
+    .send-enquiry-button {
+      min-height: 54px;
     }
   }
 `;
