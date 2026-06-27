@@ -97,7 +97,7 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
   }
 
   return (
-    <div className="siteMenu" ref={menuRef}>
+    <div className={isOpen ? "siteMenu open" : "siteMenu"} ref={menuRef}>
       <button
         className={isOpen ? "menuButton open" : "menuButton"}
         type="button"
@@ -122,7 +122,14 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
       </button>
 
       {isOpen && (
-        <div className="menuPanel">
+        <>
+          <button
+            className="menuBackdrop"
+            type="button"
+            aria-label="Close menu"
+            onClick={closeMenu}
+          />
+          <div className="menuPanel">
           <Link href="/browse" onClick={closeMenu}>
             Browse cars
           </Link>
@@ -195,14 +202,19 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
           <Link href="/post-car" className="primaryMenuLink" onClick={closeMenu}>
             Post your car
           </Link>
-        </div>
+          </div>
+        </>
       )}
 
       <style jsx>{`
         .siteMenu {
           position: relative;
-          z-index: 200;
+          z-index: 600;
           flex: 0 0 auto;
+        }
+
+        .menuBackdrop {
+          display: none;
         }
 
         .menuButton {
@@ -355,17 +367,40 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
         }
 
         @media (max-width: 700px) {
+          .siteMenu {
+            z-index: 900;
+          }
+
           .menuButton {
             width: 46px;
             height: 46px;
             border-radius: 14px;
+            position: relative;
+            z-index: 902;
+          }
+
+          .menuBackdrop {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 900;
+            border: 0;
+            background: rgba(10, 18, 35, 0.18);
+            backdrop-filter: blur(4px);
           }
 
           .menuPanel {
             position: fixed;
-            top: 72px;
-            right: 14px;
-            width: min(320px, calc(100vw - 28px));
+            top: 92px;
+            left: 16px;
+            right: 16px;
+            width: auto;
+            max-width: none;
+            max-height: calc(100vh - 112px);
+            overflow: auto;
+            z-index: 901;
+            border-radius: 22px;
+            padding: 12px;
           }
         }
       `}</style>
