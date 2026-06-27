@@ -368,7 +368,8 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
 
         @media (max-width: 700px) {
           .siteMenu {
-            z-index: 900;
+            position: relative;
+            z-index: 10000;
           }
 
           .menuButton {
@@ -376,31 +377,26 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
             height: 46px;
             border-radius: 14px;
             position: relative;
-            z-index: 902;
+            z-index: 10002;
           }
 
           .menuBackdrop {
-            display: block;
-            position: fixed;
-            inset: 0;
-            z-index: 900;
-            border: 0;
-            background: rgba(10, 18, 35, 0.18);
-            backdrop-filter: blur(4px);
+            display: none;
           }
 
           .menuPanel {
-            position: fixed;
-            top: 92px;
-            left: 16px;
-            right: 16px;
-            width: auto;
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            left: auto;
+            width: min(320px, calc(100vw - 28px));
             max-width: none;
-            max-height: calc(100vh - 112px);
+            max-height: calc(100vh - 124px);
             overflow: auto;
-            z-index: 901;
+            z-index: 10001;
             border-radius: 22px;
             padding: 12px;
+            transform-origin: top right;
           }
         }
       `}</style>
