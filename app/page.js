@@ -13,6 +13,114 @@ const supabase =
     ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
 
+
+const homepageMakes = [
+  {
+    make: "Abarth",
+    models: ["595", "695", "124 Spider"],
+  },
+  {
+    make: "Audi",
+    models: ["A1", "A3", "A4", "A5", "A6", "Q2", "Q3", "Q5", "Q7", "TT", "e-tron"],
+  },
+  {
+    make: "BMW",
+    models: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "X1", "X3", "X5", "i3", "i4", "iX"],
+  },
+  {
+    make: "Ford",
+    models: ["Fiesta", "Focus", "Kuga", "Puma", "Mondeo", "Mustang"],
+  },
+  {
+    make: "Honda",
+    models: ["Civic", "Jazz", "CR-V", "HR-V"],
+  },
+  {
+    make: "Hyundai",
+    models: ["i10", "i20", "i30", "Tucson", "Kona", "Ioniq", "Ioniq 5"],
+  },
+  {
+    make: "Jaguar",
+    models: ["XE", "XF", "F-Pace", "E-Pace", "I-Pace", "F-Type"],
+  },
+  {
+    make: "Kia",
+    models: ["Picanto", "Rio", "Ceed", "Sportage", "Niro", "Sorento", "EV6"],
+  },
+  {
+    make: "Land Rover",
+    models: ["Range Rover Evoque", "Discovery Sport", "Range Rover Sport", "Range Rover", "Defender"],
+  },
+  {
+    make: "Mercedes",
+    models: ["A-Class", "B-Class", "C-Class", "E-Class", "CLA", "GLA", "GLC", "GLE", "EQA", "EQC"],
+  },
+  {
+    make: "MINI",
+    models: ["Hatch", "Clubman", "Countryman", "Convertible", "Electric"],
+  },
+  {
+    make: "Nissan",
+    models: ["Micra", "Juke", "Qashqai", "X-Trail", "Leaf", "Ariya"],
+  },
+  {
+    make: "Peugeot",
+    models: ["108", "208", "308", "508", "2008", "3008", "5008"],
+  },
+  {
+    make: "Porsche",
+    models: ["Boxster", "Cayman", "911", "Macan", "Cayenne", "Panamera", "Taycan"],
+  },
+  {
+    make: "Tesla",
+    models: ["Model 3", "Model Y", "Model S", "Model X"],
+  },
+  {
+    make: "Toyota",
+    models: ["Aygo", "Yaris", "Corolla", "Auris", "C-HR", "RAV4", "Prius"],
+  },
+  {
+    make: "Vauxhall",
+    models: ["Adam", "Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland"],
+  },
+  {
+    make: "Volkswagen",
+    models: ["Up", "Polo", "Golf", "Passat", "Tiguan", "T-Roc", "Touareg", "ID.3", "ID.4"],
+  },
+  {
+    make: "Volvo",
+    models: ["V40", "V60", "V90", "S60", "XC40", "XC60", "XC90", "EX30"],
+  },
+  {
+    make: "Other",
+    models: [],
+  },
+];
+
+const priceOptions = [
+  ["", "Any price"],
+  ["1000", "£1,000"],
+  ["3000", "£3,000"],
+  ["5000", "£5,000"],
+  ["7500", "£7,500"],
+  ["10000", "£10,000"],
+  ["15000", "£15,000"],
+  ["20000", "£20,000"],
+  ["30000", "£30,000"],
+  ["50000", "£50,000"],
+];
+
+const mileageOptions = [
+  ["", "Any miles"],
+  ["10000", "10,000"],
+  ["20000", "20,000"],
+  ["30000", "30,000"],
+  ["50000", "50,000"],
+  ["75000", "75,000"],
+  ["100000", "100,000"],
+  ["150000", "150,000"],
+];
+
 function Icon({ name }) {
   const icons = {
     car: (
@@ -307,6 +415,18 @@ export default function HomePage() {
   const [approvedListings, setApprovedListings] = useState([]);
   const [isLoadingListings, setIsLoadingListings] = useState(true);
   const [listingError, setListingError] = useState("");
+  const [searchLocation, setSearchLocation] = useState("Leicester");
+  const [searchMake, setSearchMake] = useState("");
+  const [searchModel, setSearchModel] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [mileageMax, setMileageMax] = useState("");
+  const [bodyType, setBodyType] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+
+  const selectedMake = homepageMakes.find((item) => item.make === searchMake);
+  const selectedModels = selectedMake?.models || [];
 
   const categories = [
     {
@@ -434,6 +554,30 @@ export default function HomePage() {
     window.location.href = "/";
   }
 
+  function handleMakeChange(value) {
+    setSearchMake(value);
+    setSearchModel("");
+  }
+
+  function handleHomepageSearch(event) {
+    event.preventDefault();
+
+    const params = new URLSearchParams();
+
+    if (searchLocation.trim()) params.set("location", searchLocation.trim());
+    if (searchMake) params.set("make", searchMake);
+    if (searchModel) params.set("model", searchModel);
+    if (priceMin) params.set("priceMin", priceMin);
+    if (priceMax) params.set("priceMax", priceMax);
+    if (mileageMax) params.set("mileageMax", mileageMax);
+    if (bodyType) params.set("body_type", bodyType);
+    if (fuelType) params.set("fuel", fuelType);
+
+    const query = params.toString();
+
+    window.location.href = query ? `/browse?${query}` : "/browse";
+  }
+
   return (
     <main className="page">
       <header className="navbar">
@@ -501,27 +645,13 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="heroText">
-          <div className="pill">UK car marketplace</div>
-
           <h1>Find your next car with confidence</h1>
 
           <p>
-            Browse cars from private sellers and dealers, save favourites and
-            message sellers directly. Kerb is a marketplace, not a direct car
-            seller.
+            Browse trusted cars from private sellers and dealers, compare clear
+            details, save favourites and message sellers directly from one
+            simple place.
           </p>
-
-          <div className="heroStats">
-            <span>
-              <Icon name="car" /> Private sellers
-            </span>
-            <span>
-              <Icon name="mail" /> Message sellers
-            </span>
-            <span>
-              <Icon name="heart" /> Save favourites
-            </span>
-          </div>
         </div>
 
         <div className="heroCar">
@@ -529,67 +659,152 @@ export default function HomePage() {
           <img src="/cars/hero-car.png" alt="White BMW on Kerb" />
         </div>
 
-        <div className="searchBox">
-          <Link className="filterItem" href="/browse?location=Leicester">
+        <form className="searchBox" onSubmit={handleHomepageSearch}>
+          <label className="filterItem locationField">
             <Icon name="location" />
             <div>
-              <small>Location</small>
-              <strong>Leicester</strong>
+              <small>Town or city</small>
+              <input
+                value={searchLocation}
+                onChange={(event) => setSearchLocation(event.target.value)}
+                placeholder="Any location"
+              />
             </div>
-          </Link>
+          </label>
 
-          <Link className="filterItem desktopMakeFilter" href="/browse">
+          <label className="filterItem makeField">
             <Icon name="car" />
             <div>
-              <small>Make & model</small>
-              <strong>Any make</strong>
-            </div>
-          </Link>
-
-          <div className="mobileMakeModelRow">
-            <Link className="mobileChoice" href="/browse">
               <small>Make</small>
-              <strong>Any make</strong>
-            </Link>
+              <select
+                value={searchMake}
+                onChange={(event) => handleMakeChange(event.target.value)}
+              >
+                <option value="">Any make</option>
+                {homepageMakes.map((item) => (
+                  <option key={item.make} value={item.make}>
+                    {item.make}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
 
-            <Link className="mobileChoice" href="/browse">
+          <label className="filterItem modelField">
+            <Icon name="car" />
+            <div>
               <small>Model</small>
-              <strong>Any model</strong>
-            </Link>
-          </div>
-
-          <Link className="filterItem desktopOptionalFilter" href="/browse?sort=price-low">
-            <Icon name="price" />
-            <div>
-              <small>Price</small>
-              <strong>Any price</strong>
+              <select
+                value={searchModel}
+                onChange={(event) => setSearchModel(event.target.value)}
+                disabled={!searchMake || selectedModels.length === 0}
+              >
+                <option value="">
+                  {searchMake ? "Any model" : "Choose make first"}
+                </option>
+                {selectedModels.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
             </div>
-          </Link>
+          </label>
 
-          <Link className="filterItem desktopOptionalFilter" href="/browse?sort=mileage-low">
-            <Icon name="mileage" />
-            <div>
-              <small>Mileage</small>
-              <strong>Any miles</strong>
-            </div>
-          </Link>
-
-          <Link className="filterItem desktopOptionalFilter" href="/browse">
-            <Icon name="body" />
-            <div>
-              <small>Body type</small>
-              <strong>Any</strong>
-            </div>
-          </Link>
-
-          <Link className="mobileMoreOptions" href="/browse">
+          <button
+            className="moreOptionsButton"
+            type="button"
+            onClick={() => setShowMoreOptions((current) => !current)}
+            aria-expanded={showMoreOptions}
+          >
             More options
-          </Link>
+            <span>{showMoreOptions ? "−" : "+"}</span>
+          </button>
 
-          <Link className="searchBtn" href="/browse">
+          <button className="searchBtn" type="submit">
             Search cars
-          </Link>
-        </div>
+          </button>
+
+          {showMoreOptions && (
+            <div className="moreOptionsGrid">
+              <label>
+                <span>Price from</span>
+                <select
+                  value={priceMin}
+                  onChange={(event) => setPriceMin(event.target.value)}
+                >
+                  {priceOptions.map(([value, label]) => (
+                    <option key={`min-${value}`} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span>Price to</span>
+                <select
+                  value={priceMax}
+                  onChange={(event) => setPriceMax(event.target.value)}
+                >
+                  {priceOptions.map(([value, label]) => (
+                    <option key={`max-${value}`} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span>Max mileage</span>
+                <select
+                  value={mileageMax}
+                  onChange={(event) => setMileageMax(event.target.value)}
+                >
+                  {mileageOptions.map(([value, label]) => (
+                    <option key={`miles-${value}`} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span>Body type</span>
+                <select
+                  value={bodyType}
+                  onChange={(event) => setBodyType(event.target.value)}
+                >
+                  <option value="">Any body</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="Saloon">Saloon</option>
+                  <option value="Estate">Estate</option>
+                  <option value="SUV">SUV</option>
+                  <option value="Coupe">Coupe</option>
+                  <option value="Convertible">Convertible</option>
+                  <option value="MPV">MPV</option>
+                  <option value="Pickup">Pickup</option>
+                  <option value="Van">Van</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Fuel type</span>
+                <select
+                  value={fuelType}
+                  onChange={(event) => setFuelType(event.target.value)}
+                >
+                  <option value="">Any fuel</option>
+                  <option value="petrol">Petrol</option>
+                  <option value="diesel">Diesel</option>
+                  <option value="hybrid">Hybrid</option>
+                  <option value="electric">Electric</option>
+                  <option value="electric-hybrid">Electric & hybrid</option>
+                </select>
+              </label>
+            </div>
+          )}
+        </form>
       </section>
 
       <section className="categories">
@@ -1090,7 +1305,7 @@ export default function HomePage() {
           bottom: 28px;
           z-index: 4;
           display: grid;
-          grid-template-columns: repeat(5, 1fr) 170px;
+          grid-template-columns: 1.2fr 1fr 1fr 150px 170px;
           gap: 16px;
           background: rgba(255,255,255,0.94);
           backdrop-filter: blur(20px);
@@ -1889,6 +2104,190 @@ export default function HomePage() {
           }
 
         }
+
+        .searchBox input,
+        .searchBox select {
+          width: 100%;
+          border: 0;
+          outline: none;
+          background: transparent;
+          color: #071126;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 900;
+          padding: 0;
+          min-width: 0;
+          appearance: none;
+        }
+
+        .searchBox select {
+          cursor: pointer;
+        }
+
+        .searchBox select:disabled {
+          color: #8a94aa;
+          cursor: not-allowed;
+        }
+
+        .searchBox input::placeholder {
+          color: #071126;
+          opacity: 1;
+        }
+
+        .moreOptionsButton {
+          border-radius: 16px;
+          background: #f3f7ff;
+          color: #0048ff;
+          border: 1px solid #d9e6ff;
+          font-weight: 950;
+          font-size: 14px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 58px;
+          padding: 0 14px;
+        }
+
+        .moreOptionsButton span {
+          width: 22px;
+          height: 22px;
+          border-radius: 999px;
+          background: #ffffff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 6px 14px rgba(0, 72, 255, 0.12);
+        }
+
+        .moreOptionsGrid {
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 12px;
+          padding-top: 2px;
+        }
+
+        .moreOptionsGrid label {
+          display: grid;
+          gap: 6px;
+          background: #f8fbff;
+          border: 1px solid #e3ebf8;
+          border-radius: 14px;
+          padding: 12px 14px;
+        }
+
+        .moreOptionsGrid span {
+          color: #7a8398;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        @media (max-width: 700px) {
+          .heroText h1,
+          .heroText p,
+          .pill,
+          .heroStats {
+            display: none;
+          }
+
+          .heroCar {
+            height: 224px !important;
+            align-items: flex-end !important;
+          }
+
+          .heroCar img {
+            width: min(88vw, 390px) !important;
+            margin-bottom: -8px !important;
+          }
+
+          .searchBox {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px !important;
+            margin: -24px 16px 0 !important;
+            padding: 16px !important;
+            border-radius: 22px !important;
+            box-shadow: 0 14px 34px rgba(10, 20, 40, 0.13) !important;
+          }
+
+          .filterItem,
+          .mobileChoice {
+            min-height: 58px !important;
+            padding: 12px !important;
+            border: 1px solid #e4ebf6 !important;
+            border-radius: 15px !important;
+            background: #ffffff !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+          }
+
+          .locationField {
+            grid-column: 1 / -1;
+          }
+
+          .filterItem .icon {
+            width: 20px !important;
+            height: 20px !important;
+          }
+
+          .filterItem small,
+          .mobileChoice small {
+            font-size: 11px !important;
+            line-height: 1.1 !important;
+            color: #728098 !important;
+            margin: 0 0 3px !important;
+            font-weight: 900 !important;
+          }
+
+          .filterItem strong,
+          .mobileChoice strong,
+          .searchBox input,
+          .searchBox select {
+            font-size: 14px !important;
+            line-height: 1.2 !important;
+            font-weight: 900 !important;
+            color: #071126 !important;
+          }
+
+          .modelField .icon {
+            display: none;
+          }
+
+          .moreOptionsButton {
+            grid-column: 1 / -1;
+            min-height: 46px;
+            border-radius: 14px;
+            font-size: 14px;
+          }
+
+          .moreOptionsGrid {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+
+          .moreOptionsGrid label {
+            padding: 11px 12px;
+          }
+
+          .moreOptionsGrid label:nth-child(5) {
+            grid-column: 1 / -1;
+          }
+
+          .searchBtn {
+            grid-column: 1 / -1;
+            min-height: 54px !important;
+            border-radius: 16px !important;
+            font-size: 17px !important;
+            padding: 14px !important;
+          }
+
+          .mobileMakeModelRow,
+          .mobileMoreOptions {
+            display: none !important;
+          }
+        }
+
       `}</style>
     </main>
   );
