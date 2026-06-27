@@ -1900,9 +1900,9 @@ export default function HomePage() {
           .navbar {
             position: relative;
             z-index: 6000;
-            min-height: 98px;
+            min-height: 86px;
             margin: 0;
-            padding: 22px 22px 14px;
+            padding: 18px 22px 10px;
             align-items: center;
             gap: 12px;
             background: rgba(255, 255, 255, 0.78);
@@ -1933,7 +1933,7 @@ export default function HomePage() {
           .heroText {
             display: block;
             max-width: none;
-            padding: 2px 22px 14px;
+            padding: 0 22px 6px;
             position: relative;
             z-index: 2;
           }
@@ -2209,11 +2209,11 @@ export default function HomePage() {
 
           .heroText h1 {
             display: block !important;
-            margin: 4px 0 10px !important;
+            margin: 0 0 8px !important;
             max-width: 330px;
-            font-size: 34px !important;
+            font-size: 31px !important;
             line-height: 1.02 !important;
-            letter-spacing: -1.8px !important;
+            letter-spacing: -1.6px !important;
           }
 
           .heroText p {
@@ -2221,61 +2221,61 @@ export default function HomePage() {
             max-width: 355px;
             margin: 0 !important;
             color: #465269 !important;
-            font-size: 14.5px !important;
-            line-height: 1.45 !important;
+            font-size: 13.2px !important;
+            line-height: 1.35 !important;
           }
 
           .mobileHeroPoints {
             display: flex;
-            gap: 8px;
+            gap: 7px;
             flex-wrap: wrap;
-            margin-top: 12px;
+            margin-top: 9px;
           }
 
           .mobileHeroPoints span {
             display: inline-flex;
             align-items: center;
-            min-height: 28px;
-            padding: 0 10px;
+            min-height: 25px;
+            padding: 0 9px;
             border-radius: 999px;
             background: #ffffff;
             border: 1px solid #dbe7ff;
             color: #0048ff;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 950;
             box-shadow: 0 8px 18px rgba(20, 35, 70, 0.05);
           }
 
           .heroCar {
-            height: 205px !important;
+            height: 155px !important;
             align-items: flex-end !important;
-            margin-top: -2px;
+            margin-top: -8px;
           }
 
           .heroCar img {
-            width: min(84vw, 360px) !important;
-            margin-bottom: -5px !important;
+            width: min(76vw, 320px) !important;
+            margin-bottom: -6px !important;
           }
 
           .searchBox {
             grid-template-columns: 1fr 1fr !important;
-            gap: 12px !important;
-            margin: -18px 16px 0 !important;
-            padding: 16px !important;
+            gap: 10px !important;
+            margin: -24px 16px 0 !important;
+            padding: 14px !important;
             border-radius: 22px !important;
             box-shadow: 0 14px 34px rgba(10, 20, 40, 0.13) !important;
           }
 
           .filterItem,
           .mobileChoice {
-            min-height: 58px !important;
-            padding: 12px !important;
+            min-height: 52px !important;
+            padding: 10px !important;
             border: 1px solid #e4ebf6 !important;
             border-radius: 15px !important;
             background: #ffffff !important;
             display: flex !important;
             align-items: center !important;
-            gap: 10px !important;
+            gap: 9px !important;
           }
 
           .locationField {
@@ -2312,7 +2312,7 @@ export default function HomePage() {
 
           .moreOptionsButton {
             grid-column: 1 / -1;
-            min-height: 46px;
+            min-height: 42px;
             border-radius: 14px;
             font-size: 14px;
           }
@@ -2332,15 +2332,69 @@ export default function HomePage() {
 
           .searchBtn {
             grid-column: 1 / -1;
-            min-height: 54px !important;
+            min-height: 50px !important;
             border-radius: 16px !important;
-            font-size: 17px !important;
-            padding: 14px !important;
+            font-size: 16px !important;
+            padding: 12px !important;
           }
 
           .mobileMakeModelRow,
           .mobileMoreOptions {
             display: none !important;
+          }
+        }
+
+        @media (max-width: 700px) and (max-height: 760px) {
+          .navbar {
+            min-height: 78px;
+            padding-top: 14px;
+          }
+
+          .logo {
+            font-size: 38px;
+          }
+
+          .heroText h1 {
+            font-size: 28px !important;
+            margin-bottom: 6px !important;
+          }
+
+          .heroText p {
+            font-size: 12.5px !important;
+            line-height: 1.3 !important;
+          }
+
+          .mobileHeroPoints {
+            margin-top: 7px;
+          }
+
+          .mobileHeroPoints span {
+            min-height: 23px;
+            font-size: 10px;
+          }
+
+          .heroCar {
+            height: 138px !important;
+            margin-top: -10px;
+          }
+
+          .heroCar img {
+            width: min(72vw, 300px) !important;
+          }
+
+          .searchBox {
+            gap: 9px !important;
+            padding: 12px !important;
+          }
+
+          .filterItem,
+          .mobileChoice {
+            min-height: 48px !important;
+            padding: 9px !important;
+          }
+
+          .searchBtn {
+            min-height: 48px !important;
           }
         }
 
