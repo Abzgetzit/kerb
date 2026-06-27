@@ -52,7 +52,7 @@ function createSellerEmailHtml({
         </p>
 
         <div style="background:#f7f9fd; border:1px solid #e5eaf4; border-radius:14px; padding:18px; margin-bottom:18px;">
-          <p style="margin:0 0 8px;"><strong>Buyer name:</strong> ${escapeHtml(buyerName)}</p>
+          <p style="margin:0 0 8px;"><strong>Buyer name:</strong> ${escapeHtml(buyerName || "Not provided")}</p>
           <p style="margin:0 0 8px;"><strong>Buyer email:</strong> ${escapeHtml(buyerEmail)}</p>
           <p style="margin:0;"><strong>Buyer phone:</strong> ${escapeHtml(buyerPhone || "Not provided")}</p>
         </div>
@@ -121,6 +121,7 @@ export async function POST(request) {
 
   const listingId = clean(body.listing_id);
   const buyerName = clean(body.buyer_name);
+  const safeBuyerName = buyerName || "Kerb buyer";
   const buyerEmail = clean(body.buyer_email);
   const buyerPhone = clean(body.buyer_phone);
   const message = clean(body.message);
@@ -128,13 +129,6 @@ export async function POST(request) {
   if (!listingId) {
     return NextResponse.json(
       { error: "Listing ID is required." },
-      { status: 400 }
-    );
-  }
-
-  if (!buyerName) {
-    return NextResponse.json(
-      { error: "Your name is required." },
       { status: 400 }
     );
   }
@@ -191,7 +185,7 @@ export async function POST(request) {
     .from("kerb_enquiries")
     .insert({
       listing_id: listingId,
-      buyer_name: buyerName,
+      buyer_name: safeBuyerName,
       buyer_email: buyerEmail,
       buyer_phone: buyerPhone || null,
       message,
@@ -218,7 +212,7 @@ export async function POST(request) {
       enquiry_id: enquiry.id,
       sender_role: "buyer",
       sender_email: buyerEmail,
-      sender_name: buyerName,
+      sender_name: safeBuyerName,
       message,
       created_at: enquiry.created_at || now,
     });
@@ -250,7 +244,7 @@ export async function POST(request) {
           replyTo: buyerEmail,
           subject: `New enquiry about ${listingTitle}`,
           html: createSellerEmailHtml({
-            buyerName,
+            buyerName: buyerName || "Not provided",
             buyerEmail,
             buyerPhone,
             message,
@@ -274,7 +268,7 @@ export async function POST(request) {
         replyTo: sellerEmail || undefined,
         subject: `Your Kerb enquiry has been sent`,
         html: createBuyerEmailHtml({
-          buyerName,
+          buyerName: safeBuyerName,
           listingTitle,
           conversationUrl,
         }),
