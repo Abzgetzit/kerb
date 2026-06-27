@@ -1786,23 +1786,29 @@ export default function HomePage() {
           color: #6b7891;
           display: flex;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: center;
           gap: 14px;
           flex-wrap: wrap;
           font-size: 13px;
           font-weight: 800;
+          max-width: 100%;
+          overflow: hidden;
+          padding: 0 12px 18px;
         }
 
         .siteFooter div {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 12px;
           flex-wrap: wrap;
+          max-width: 100%;
         }
 
         .siteFooter a {
           color: #0048ff;
           text-decoration: none;
+          white-space: nowrap;
         }
 
         .loadingListings {
@@ -2247,20 +2253,20 @@ export default function HomePage() {
           }
 
           .heroCar {
-            height: 155px !important;
+            height: 168px !important;
             align-items: flex-end !important;
-            margin-top: -8px;
+            margin-top: -2px;
           }
 
           .heroCar img {
             width: min(76vw, 320px) !important;
-            margin-bottom: -6px !important;
+            margin-bottom: 0 !important;
           }
 
           .searchBox {
             grid-template-columns: 1fr 1fr !important;
             gap: 10px !important;
-            margin: -24px 16px 0 !important;
+            margin: -8px 16px 0 !important;
             padding: 14px !important;
             border-radius: 22px !important;
             box-shadow: 0 14px 34px rgba(10, 20, 40, 0.13) !important;
@@ -2344,6 +2350,29 @@ export default function HomePage() {
           }
         }
 
+
+
+          .homeListingsGrid .listingCard:nth-child(n + 5),
+          .loadingListings div:nth-child(n + 5) {
+            display: none;
+          }
+
+          .siteFooter {
+            justify-content: center;
+            padding: 4px 18px 28px;
+            margin-top: 14px;
+          }
+
+          .siteFooter div {
+            width: 100%;
+            justify-content: center;
+            row-gap: 8px;
+          }
+
+          .siteFooter a {
+            font-size: 13px;
+          }
+
         @media (max-width: 700px) and (max-height: 760px) {
           .navbar {
             min-height: 78px;
@@ -2374,8 +2403,8 @@ export default function HomePage() {
           }
 
           .heroCar {
-            height: 138px !important;
-            margin-top: -10px;
+            height: 150px !important;
+            margin-top: -4px;
           }
 
           .heroCar img {
@@ -2385,6 +2414,7 @@ export default function HomePage() {
           .searchBox {
             gap: 9px !important;
             padding: 12px !important;
+            margin-top: -6px !important;
           }
 
           .filterItem,
