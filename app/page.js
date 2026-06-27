@@ -538,7 +538,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link className="filterItem" href="/browse">
+          <Link className="filterItem desktopMakeFilter" href="/browse">
             <Icon name="car" />
             <div>
               <small>Make & model</small>
@@ -546,7 +546,19 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link className="filterItem" href="/browse?sort=price-low">
+          <div className="mobileMakeModelRow">
+            <Link className="mobileChoice" href="/browse">
+              <small>Make</small>
+              <strong>Any make</strong>
+            </Link>
+
+            <Link className="mobileChoice" href="/browse">
+              <small>Model</small>
+              <strong>Any model</strong>
+            </Link>
+          </div>
+
+          <Link className="filterItem desktopOptionalFilter" href="/browse?sort=price-low">
             <Icon name="price" />
             <div>
               <small>Price</small>
@@ -554,7 +566,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link className="filterItem" href="/browse?sort=mileage-low">
+          <Link className="filterItem desktopOptionalFilter" href="/browse?sort=mileage-low">
             <Icon name="mileage" />
             <div>
               <small>Mileage</small>
@@ -562,12 +574,16 @@ export default function HomePage() {
             </div>
           </Link>
 
-          <Link className="filterItem" href="/browse">
+          <Link className="filterItem desktopOptionalFilter" href="/browse">
             <Icon name="body" />
             <div>
               <small>Body type</small>
               <strong>Any</strong>
             </div>
+          </Link>
+
+          <Link className="mobileMoreOptions" href="/browse">
+            More options
           </Link>
 
           <Link className="searchBtn" href="/browse">
@@ -1134,6 +1150,11 @@ export default function HomePage() {
           transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
 
+        .mobileMakeModelRow,
+        .mobileMoreOptions {
+          display: none;
+        }
+
         .categories {
           display: grid;
           grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1644,13 +1665,19 @@ export default function HomePage() {
 
         @media (max-width: 700px) {
           .page {
-            padding: 16px;
+            padding: 0;
+            background:
+              linear-gradient(180deg, #eef4ff 0%, #f7f9fd 44%, #f7f9fd 100%);
           }
 
           .navbar {
-            height: auto;
+            min-height: 112px;
+            margin: 0;
+            padding: 24px 22px 18px;
             align-items: center;
             gap: 12px;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(18px);
           }
 
           .navActions {
@@ -1658,20 +1685,24 @@ export default function HomePage() {
           }
 
           .logo {
-            font-size: 34px;
+            font-size: 43px;
+            letter-spacing: -2px;
           }
 
           .hero {
             min-height: auto;
-            padding: 32px 20px 20px;
+            margin: 0;
+            padding: 0 0 30px;
+            border: 0;
+            border-radius: 0;
+            overflow: visible;
+            background: transparent;
+            box-shadow: none;
+            animation: none;
           }
 
-          .heroText h1 {
-            font-size: 42px;
-          }
-
-          .heroText p {
-            font-size: 15px;
+          .heroText {
+            display: none;
           }
 
           .heroCar {
@@ -1679,19 +1710,36 @@ export default function HomePage() {
             right: auto;
             bottom: auto;
             width: 100%;
+            height: 306px;
+            margin: 0;
             opacity: 1;
-            margin: 18px 0 0;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            background:
+              radial-gradient(circle at 67% 36%, rgba(0, 72, 255, 0.14), transparent 34%),
+              linear-gradient(180deg, #eaf2ff 0%, #f6f9ff 54%, #e5ecf8 100%);
           }
 
           .heroCar::after {
-            bottom: 5px;
-            width: 68%;
-            height: 20px;
-            filter: blur(16px);
+            bottom: 25px;
+            width: 76%;
+            height: 18px;
+            filter: blur(17px);
+            background: rgba(8, 18, 38, 0.16);
           }
 
           .heroCarGlow {
-            inset: -25px -20px -18px;
+            display: none;
+          }
+
+          .heroCar img {
+            position: relative;
+            width: min(94vw, 460px);
+            max-width: none;
+            margin: 0 auto -6px;
+            filter: drop-shadow(0 18px 24px rgba(8, 18, 38, 0.18));
           }
 
           .searchBox {
@@ -1699,12 +1747,114 @@ export default function HomePage() {
             left: auto;
             right: auto;
             bottom: auto;
-            margin-top: 18px;
-            grid-template-columns: 1fr;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            margin: -50px 18px 0;
+            padding: 22px 24px 24px;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #e5ebf5;
+            box-shadow: 0 18px 42px rgba(10, 20, 40, 0.16);
+            backdrop-filter: blur(18px);
+          }
+
+          .filterItem,
+          .mobileChoice {
+            min-height: 66px;
+            padding: 0 0 13px;
+            border: 0;
+            border-bottom: 1px solid #dfe6f2;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            color: #10182f;
+          }
+
+          .filterItem:hover,
+          .mobileChoice:hover {
+            transform: none;
+            box-shadow: none;
+          }
+
+          .filterItem:first-child {
+            grid-column: 1 / -1;
+          }
+
+          .desktopMakeFilter,
+          .desktopOptionalFilter {
+            display: none;
+          }
+
+          .filterItem .icon {
+            width: 24px;
+            height: 24px;
+            color: #172033;
+          }
+
+          .filterItem small,
+          .mobileChoice small {
+            font-size: 18px;
+            line-height: 1.15;
+            color: #0b1228;
+            margin: 0 0 9px;
+            font-weight: 950;
+          }
+
+          .filterItem strong,
+          .mobileChoice strong {
+            font-size: 18px;
+            line-height: 1.2;
+            font-weight: 650;
+            color: #273246;
+          }
+
+          .mobileMakeModelRow {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+          }
+
+          .mobileChoice {
+            display: block;
+            text-decoration: none;
+            position: relative;
+            padding-right: 26px;
+          }
+
+          .mobileChoice::after {
+            content: "";
+            position: absolute;
+            right: 2px;
+            bottom: 23px;
+            width: 12px;
+            height: 12px;
+            border-right: 3px solid #172033;
+            border-bottom: 3px solid #172033;
+            transform: rotate(45deg);
+          }
+
+          .mobileMoreOptions {
+            grid-column: 1 / -1;
+            display: inline-flex;
+            justify-self: center;
+            color: #0048ff;
+            font-size: 18px;
+            font-weight: 850;
+            text-decoration: underline;
+            text-underline-offset: 8px;
+            margin: 0 0 4px;
           }
 
           .searchBtn {
+            grid-column: 1 / -1;
+            min-height: 64px;
             padding: 16px;
+            border-radius: 999px;
+            font-size: 20px;
+            box-shadow: 0 13px 28px rgba(0, 72, 255, 0.24);
           }
 
           .categories,
@@ -1714,10 +1864,15 @@ export default function HomePage() {
             grid-template-columns: 1fr;
           }
 
+          .categories {
+            margin: 4px 16px 22px;
+          }
+
           .listingsPanel,
           .sellerBox,
           .guidesSection {
             padding: 24px;
+            margin-inline: 16px;
           }
 
           .sectionTitleRow {
