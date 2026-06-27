@@ -652,6 +652,12 @@ export default function HomePage() {
             details, save favourites and message sellers directly from one
             simple place.
           </p>
+
+          <div className="mobileHeroPoints">
+            <span>Private sellers</span>
+            <span>Dealer listings</span>
+            <span>Message directly</span>
+          </div>
         </div>
 
         <div className="heroCar">
@@ -700,7 +706,7 @@ export default function HomePage() {
                 disabled={!searchMake || selectedModels.length === 0}
               >
                 <option value="">
-                  {searchMake ? "Any model" : "Choose make first"}
+                  {searchMake ? "Any model" : ""}
                 </option>
                 {selectedModels.map((model) => (
                   <option key={model} value={model}>
@@ -1058,6 +1064,8 @@ export default function HomePage() {
         }
 
         .navbar {
+          position: relative;
+          z-index: 3000;
           min-height: 64px;
           display: flex;
           align-items: center;
@@ -1232,6 +1240,10 @@ export default function HomePage() {
           font-size: 17px;
           line-height: 1.5;
           margin: 0 0 22px;
+        }
+
+        .mobileHeroPoints {
+          display: none;
         }
 
         .heroStats {
@@ -1886,12 +1898,14 @@ export default function HomePage() {
           }
 
           .navbar {
-            min-height: 112px;
+            position: relative;
+            z-index: 6000;
+            min-height: 98px;
             margin: 0;
-            padding: 24px 22px 18px;
+            padding: 22px 22px 14px;
             align-items: center;
             gap: 12px;
-            background: rgba(255, 255, 255, 0.72);
+            background: rgba(255, 255, 255, 0.78);
             backdrop-filter: blur(18px);
           }
 
@@ -1917,7 +1931,11 @@ export default function HomePage() {
           }
 
           .heroText {
-            display: none;
+            display: block;
+            max-width: none;
+            padding: 2px 22px 14px;
+            position: relative;
+            z-index: 2;
           }
 
           .heroCar {
@@ -1925,7 +1943,7 @@ export default function HomePage() {
             right: auto;
             bottom: auto;
             width: 100%;
-            height: 306px;
+            height: 230px;
             margin: 0;
             opacity: 1;
             overflow: hidden;
@@ -2184,27 +2202,65 @@ export default function HomePage() {
         }
 
         @media (max-width: 700px) {
-          .heroText h1,
-          .heroText p,
           .pill,
           .heroStats {
             display: none;
           }
 
+          .heroText h1 {
+            display: block !important;
+            margin: 4px 0 10px !important;
+            max-width: 330px;
+            font-size: 34px !important;
+            line-height: 1.02 !important;
+            letter-spacing: -1.8px !important;
+          }
+
+          .heroText p {
+            display: block !important;
+            max-width: 355px;
+            margin: 0 !important;
+            color: #465269 !important;
+            font-size: 14.5px !important;
+            line-height: 1.45 !important;
+          }
+
+          .mobileHeroPoints {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+          }
+
+          .mobileHeroPoints span {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 1px solid #dbe7ff;
+            color: #0048ff;
+            font-size: 11px;
+            font-weight: 950;
+            box-shadow: 0 8px 18px rgba(20, 35, 70, 0.05);
+          }
+
           .heroCar {
-            height: 224px !important;
+            height: 205px !important;
             align-items: flex-end !important;
+            margin-top: -2px;
           }
 
           .heroCar img {
-            width: min(88vw, 390px) !important;
-            margin-bottom: -8px !important;
+            width: min(84vw, 360px) !important;
+            margin-bottom: -5px !important;
           }
 
           .searchBox {
             grid-template-columns: 1fr 1fr !important;
             gap: 12px !important;
-            margin: -24px 16px 0 !important;
+            margin: -18px 16px 0 !important;
             padding: 16px !important;
             border-radius: 22px !important;
             box-shadow: 0 14px 34px rgba(10, 20, 40, 0.13) !important;
