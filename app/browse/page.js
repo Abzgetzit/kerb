@@ -2260,8 +2260,21 @@ export default function BrowsePage() {
 
                 return (
                   <article
-                    className="car-card"
+                    className="car-card clickable-card"
                     key={car.id || index}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`View ${title}`}
+                    onClick={() => {
+                      if (!listingId) return;
+                      window.location.href = `/listing/${listingId}`;
+                    }}
+                    onKeyDown={(event) => {
+                      if ((event.key === "Enter" || event.key === " ") && listingId) {
+                        event.preventDefault();
+                        window.location.href = `/listing/${listingId}`;
+                      }
+                    }}
                     style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
                   >
                     <div className="image-wrap">
@@ -2283,7 +2296,10 @@ export default function BrowsePage() {
                         className={
                           isSaved ? "heart-button saved" : "heart-button"
                         }
-                        onClick={() => toggleSavedListing(listingId)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleSavedListing(listingId);
+                        }}
                         disabled={isSaving}
                         aria-label={
                           isSaved ? "Remove saved car" : "Save this car"
@@ -2320,7 +2336,11 @@ export default function BrowsePage() {
                         )}
                       </div>
 
-                      <Link href={`/listing/${car.id}`} className="view-link">
+                      <Link
+                        href={`/listing/${car.id}`}
+                        className="view-link"
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         View listing
                       </Link>
                     </div>
@@ -3028,6 +3048,12 @@ export default function BrowsePage() {
           box-shadow: 0 12px 28px rgba(13, 23, 55, 0.06);
           transition: transform 0.18s ease, box-shadow 0.18s ease;
           animation: browseCardIn 0.42s ease both;
+          cursor: pointer;
+        }
+
+        .car-card:focus-visible {
+          outline: 4px solid rgba(11, 69, 255, 0.16);
+          outline-offset: 4px;
         }
 
         .car-card:hover {
@@ -3091,6 +3117,7 @@ export default function BrowsePage() {
 
         .heart-button {
           position: absolute;
+          z-index: 4;
           right: 12px;
           top: 12px;
           width: 38px;
@@ -3208,6 +3235,8 @@ export default function BrowsePage() {
         }
 
         .view-link {
+          position: relative;
+          z-index: 4;
           margin-top: 14px;
           height: 42px;
           border-radius: 12px;
