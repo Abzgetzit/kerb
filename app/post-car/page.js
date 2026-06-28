@@ -364,6 +364,8 @@ export default function PostCarPage() {
   const [financeAvailable, setFinanceAvailable] = useState("false");
   const [listingCategory, setListingCategory] = useState("general");
   const [selectedBoostPlan, setSelectedBoostPlan] = useState("none");
+  const [showSellerName, setShowSellerName] = useState(true);
+  const [showSellerPhone, setShowSellerPhone] = useState(false);
   const [photos, setPhotos] = useState([]);
   const photoUrlsRef = useRef([]);
 
@@ -566,6 +568,8 @@ export default function PostCarPage() {
     formData.set("condition", condition);
     formData.set("finance_available", financeAvailable);
     formData.set("listing_category", listingCategory);
+    formData.set("show_seller_name", showSellerName ? "true" : "false");
+    formData.set("show_seller_phone", showSellerPhone ? "true" : "false");
 
     if (currentUser?.id) {
       formData.set("account_id", currentUser.id);
@@ -1047,7 +1051,7 @@ export default function PostCarPage() {
 
           <div className="grid">
             <label>
-              Full name
+              Full name <span className="optionalText">Optional to show publicly</span>
               <input
                 name="seller_name"
                 placeholder="Your name"
@@ -1056,7 +1060,6 @@ export default function PostCarPage() {
                   currentUser?.full_name ||
                   ""
                 }
-                required
               />
             </label>
 
@@ -1073,8 +1076,12 @@ export default function PostCarPage() {
             </label>
 
             <label>
-              Phone number
-              <input name="seller_phone" placeholder="07..." required />
+              Phone number <span className="optionalText">Optional</span>
+              <input
+                name="seller_phone"
+                placeholder="07..."
+                required={showSellerPhone}
+              />
             </label>
 
             <label>
@@ -1086,6 +1093,43 @@ export default function PostCarPage() {
               </select>
             </label>
           </div>
+
+          <section className="privacySection">
+            <div>
+              <span className="privacyKicker">Public contact options</span>
+              <h2>Choose what buyers can see</h2>
+              <p>
+                Your email is kept for Kerb messages and account checks. Choose
+                whether your public listing shows your name or phone number.
+              </p>
+            </div>
+
+            <div className="privacyOptions">
+              <label className="privacyOption">
+                <input
+                  type="checkbox"
+                  checked={showSellerName}
+                  onChange={(event) => setShowSellerName(event.target.checked)}
+                />
+                <span>
+                  <strong>Show my name on the listing</strong>
+                  <em>Turn this off to show only your seller type, like Private seller.</em>
+                </span>
+              </label>
+
+              <label className="privacyOption">
+                <input
+                  type="checkbox"
+                  checked={showSellerPhone}
+                  onChange={(event) => setShowSellerPhone(event.target.checked)}
+                />
+                <span>
+                  <strong>Show my phone number on the listing</strong>
+                  <em>If this is off, buyers can still message you through Kerb.</em>
+                </span>
+              </label>
+            </div>
+          </section>
 
           <section className="boostPreviewSection">
             <div>
@@ -1333,6 +1377,12 @@ const styles = `
     color: #172033;
   }
 
+  .optionalText {
+    color: #7a8499;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
   input,
   select,
   textarea {
@@ -1554,6 +1604,86 @@ const styles = `
 
   .removePhotoButton:hover {
     background: #d7193f;
+  }
+
+  .privacySection {
+    margin: -6px 0 24px;
+    background: linear-gradient(135deg, #f8fbff, #ffffff);
+    border: 1px solid #dce8ff;
+    border-radius: 24px;
+    padding: 22px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .privacyKicker {
+    display: inline-flex;
+    width: fit-content;
+    background: #eaf1ff;
+    color: #0048ff;
+    border: 1px solid #d7e4ff;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    margin-bottom: 10px;
+  }
+
+  .privacySection h2 {
+    margin: 0 0 8px;
+    font-size: 24px;
+    letter-spacing: -0.7px;
+  }
+
+  .privacySection p {
+    margin: 0;
+    color: #5f6a82;
+    font-weight: 760;
+    line-height: 1.58;
+  }
+
+  .privacyOptions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .privacyOption {
+    background: white;
+    border: 1px solid #dfe7f6;
+    border-radius: 18px;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .privacyOption input {
+    width: 20px;
+    height: 20px;
+    margin: 2px 0 0;
+    accent-color: #0048ff;
+  }
+
+  .privacyOption span {
+    display: grid;
+    gap: 4px;
+  }
+
+  .privacyOption strong {
+    font-size: 14px;
+    font-weight: 950;
+    color: #172033;
+  }
+
+  .privacyOption em {
+    color: #69758d;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 760;
+    line-height: 1.4;
   }
 
   .boostPreviewSection {
@@ -1835,7 +1965,8 @@ const styles = `
     }
 
     .boostChoiceGrid,
-    .boostBenefits {
+    .boostBenefits,
+    .privacyOptions {
       grid-template-columns: 1fr;
     }
 
