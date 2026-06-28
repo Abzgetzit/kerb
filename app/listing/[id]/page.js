@@ -568,6 +568,14 @@ export default function ListingPage() {
     ? car.seller_name || car.account_name || car.owner_name || ""
     : "";
   const sellerPhone = car ? car.seller_phone || car.phone : "";
+  const showSellerName = car ? car.show_seller_name !== false : true;
+  const showSellerPhone = car
+    ? car.show_seller_phone === true ||
+      String(car.show_seller_phone || "").toLowerCase() === "true"
+    : false;
+  const publicSellerName =
+    showSellerName && sellerName ? sellerName : sellerType || "Seller";
+  const canShowSellerPhone = Boolean(showSellerPhone && sellerPhone);
   const year = car ? car.year || car.registration_year : "";
   const financeAvailable = car ? car.finance_available === true : false;
   const status = car ? String(car.status || "").toLowerCase() : "";
@@ -737,8 +745,8 @@ export default function ListingPage() {
       value: sellerType,
     },
     {
-      label: "Seller name",
-      value: sellerName,
+      label: "Seller",
+      value: publicSellerName,
     },
     {
       label: "Listed",
@@ -1402,8 +1410,10 @@ export default function ListingPage() {
                 </div>
 
                 <div>
-                  <strong>{sellerName || sellerType}</strong>
-                  {sellerName && sellerType && <small>{sellerType}</small>}
+                  <strong>{publicSellerName}</strong>
+                  {showSellerName && sellerName && sellerType && (
+                    <small>{sellerType}</small>
+                  )}
                   {location && <span>{location}</span>}
                 </div>
               </div>
@@ -1450,18 +1460,12 @@ export default function ListingPage() {
                 Message seller
               </button>
 
-              {sellerPhone ? (
+              {canShowSellerPhone && (
                 <a className="phone-box" href={`tel:${sellerPhone}`}>
                   <SvgIcon name="phone" />
                   <strong>{sellerPhone}</strong>
                   <span>Call the seller directly</span>
                 </a>
-              ) : (
-                <div className="phone-box inactive">
-                  <SvgIcon name="phone" />
-                  <strong>Phone not provided</strong>
-                  <span>Message the seller instead</span>
-                </div>
               )}
 
               <button
