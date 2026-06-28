@@ -861,7 +861,11 @@ export default function HomePage() {
           {!isLoadingListings && !listingError && approvedListings.length > 0 ? (
             <div className="homeListingsGrid">
               {approvedListings.map((car) => (
-                <article className="listingCard" key={car.id}>
+                <Link
+                  href={`/listing/${car.id}`}
+                  className="listingCard"
+                  key={car.id}
+                >
                   <div className="listingImageWrap">
                     <img
                       src={getListingImage(car)}
@@ -890,12 +894,10 @@ export default function HomePage() {
                     <div className="listingFooter">
                       <strong>{formatPrice(car.price || car.asking_price)}</strong>
 
-                      <Link href={`/listing/${car.id}`} className="viewCarBtn">
-                        View car
-                      </Link>
+                      <span className="viewCarBtn">View car</span>
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           ) : null}
@@ -1516,6 +1518,10 @@ export default function HomePage() {
         }
 
         .listingCard {
+          display: block;
+          color: inherit;
+          text-decoration: none;
+          cursor: pointer;
           border: 1px solid #e7edf6;
           border-radius: 20px;
           overflow: hidden;
