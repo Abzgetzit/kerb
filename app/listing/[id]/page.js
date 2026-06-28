@@ -407,7 +407,6 @@ export default function ListingPage() {
   const [enquirySuccess, setEnquirySuccess] = useState("");
   const [enquiryError, setEnquiryError] = useState("");
   const [sentEnquiryId, setSentEnquiryId] = useState("");
-  const [showOptionalBuyerDetails, setShowOptionalBuyerDetails] = useState(false);
   const [enquiryForm, setEnquiryForm] = useState({
     buyer_name: "",
     buyer_email: "",
@@ -1572,47 +1571,35 @@ export default function ListingPage() {
                     />
                   </label>
 
-                  <button
-                    type="button"
-                    className="optional-contact-toggle"
-                    onClick={() => setShowOptionalBuyerDetails((current) => !current)}
-                  >
-                    {showOptionalBuyerDetails
-                      ? "Hide optional contact details"
-                      : "Add name or phone number (optional)"}
-                  </button>
+                  <div className="enquiry-fields optional-contact-fields">
+                    <label>
+                      Your name <span>Optional</span>
+                      <input
+                        value={enquiryForm.buyer_name}
+                        onChange={(event) =>
+                          setEnquiryForm((current) => ({
+                            ...current,
+                            buyer_name: event.target.value,
+                          }))
+                        }
+                        placeholder="Your name"
+                      />
+                    </label>
 
-                  {showOptionalBuyerDetails && (
-                    <div className="enquiry-fields optional-contact-fields">
-                      <label>
-                        Your name <span>Optional</span>
-                        <input
-                          value={enquiryForm.buyer_name}
-                          onChange={(event) =>
-                            setEnquiryForm((current) => ({
-                              ...current,
-                              buyer_name: event.target.value,
-                            }))
-                          }
-                          placeholder="Enter your name"
-                        />
-                      </label>
-
-                      <label>
-                        Your phone <span>Optional</span>
-                        <input
-                          value={enquiryForm.buyer_phone}
-                          onChange={(event) =>
-                            setEnquiryForm((current) => ({
-                              ...current,
-                              buyer_phone: event.target.value,
-                            }))
-                          }
-                          placeholder="Enter your phone number"
-                        />
-                      </label>
-                    </div>
-                  )}
+                    <label>
+                      Your phone <span>Optional</span>
+                      <input
+                        value={enquiryForm.buyer_phone}
+                        onChange={(event) =>
+                          setEnquiryForm((current) => ({
+                            ...current,
+                            buyer_phone: event.target.value,
+                          }))
+                        }
+                        placeholder="Phone number"
+                      />
+                    </label>
+                  </div>
 
                   <label>
                     Message
@@ -2962,23 +2949,11 @@ const styles = `
     font-weight: 800;
   }
 
-  .optional-contact-toggle {
-    width: 100%;
-    min-height: 44px;
-    border: 1px solid #dfe7f5;
-    border-radius: 13px;
-    background: #f3f7ff;
-    color: #0048ff;
-    font-size: 14px;
-    font-weight: 950;
-    cursor: pointer;
-  }
-
   .optional-contact-fields {
-    padding: 12px;
-    border: 1px solid #e5eaf4;
-    border-radius: 16px;
-    background: #f8fbff;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
   }
 
   .enquiry-form input,
