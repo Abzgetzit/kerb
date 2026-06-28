@@ -30,7 +30,7 @@ function cleanBoolean(value) {
 
   const text = String(value || "").trim().toLowerCase();
 
-  return text === "true" || text === "yes" || text === "1";
+  return text === "true" || text === "yes" || text === "1" || text === "on";
 }
 
 function normaliseEmail(value) {
@@ -231,10 +231,7 @@ export async function POST(request) {
         });
 
       if (uploadError) {
-        return Response.json(
-          { error: uploadError.message },
-          { status: 400 }
-        );
+        return Response.json({ error: uploadError.message }, { status: 400 });
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -251,10 +248,14 @@ export async function POST(request) {
       cleanText(formData.get("seller_email")) ||
       cleanText(formData.get("account_email"));
 
+    const sellerNameInput = cleanText(formData.get("seller_name"));
     const sellerName =
-      cleanText(formData.get("seller_name")) ||
+      sellerNameInput ||
       signedInAccount.accountName ||
       cleanText(formData.get("account_name"));
+    const sellerPhone = cleanText(formData.get("seller_phone"));
+    const showSellerName = cleanBoolean(formData.get("show_seller_name"));
+    const showSellerPhone = cleanBoolean(formData.get("show_seller_phone"));
 
     const make = cleanText(formData.get("make"));
     const model = cleanText(formData.get("model"));
@@ -274,16 +275,15 @@ export async function POST(request) {
       askingPrice,
     });
     const features = cleanFeatures(formData);
-    const listingCategory = cleanListingCategory(
-      formData.get("listing_category")
-    );
+    const listingCategory = cleanListingCategory(formData.get("listing_category"));
 
     const title = [year, make, model].filter(Boolean).join(" ");
 
     const listing = {
       status: "approved",
 
-      account_id: signedInAccount.accountId || cleanText(formData.get("account_id")),
+      account_id:
+        signedInAccount.accountId || cleanText(formData.get("account_id")),
       account_email:
         signedInAccount.accountEmail || cleanText(formData.get("account_email")),
       account_name:
@@ -293,8 +293,10 @@ export async function POST(request) {
 
       seller_name: sellerName,
       seller_email: sellerEmail,
-      seller_phone: cleanText(formData.get("seller_phone")),
+      seller_phone: sellerPhone,
       seller_type: cleanText(formData.get("seller_type")),
+      show_seller_name: showSellerName,
+      show_seller_phone: Boolean(showSellerPhone && sellerPhone),
 
       title: title || null,
       make,
@@ -331,10 +333,7 @@ export async function POST(request) {
       .single();
 
     if (error) {
-      return Response.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return Response.json({ error: error.message }, { status: 400 });
     }
 
     const siteUrl = getSiteUrl(request);
