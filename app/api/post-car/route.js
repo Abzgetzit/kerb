@@ -276,11 +276,22 @@ export async function POST(request) {
     });
     const features = cleanFeatures(formData);
     const listingCategory = cleanListingCategory(formData.get("listing_category"));
+    const termsAccepted = cleanBoolean(formData.get("terms_accepted"));
+    const termsVersion = cleanText(formData.get("terms_version")) || "2026-06-28";
+
+    if (!termsAccepted) {
+      return Response.json(
+        { error: "You must agree to Kerb’s Terms and Conditions before listing your car." },
+        { status: 400 }
+      );
+    }
 
     const title = [year, make, model].filter(Boolean).join(" ");
 
     const listing = {
       status: "approved",
+      terms_accepted_at: new Date().toISOString(),
+      terms_version: termsVersion,
 
       account_id:
         signedInAccount.accountId || cleanText(formData.get("account_id")),
