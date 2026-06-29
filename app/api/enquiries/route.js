@@ -121,7 +121,6 @@ export async function POST(request) {
 
   const listingId = clean(body.listing_id);
   const buyerName = clean(body.buyer_name);
-  const safeBuyerName = buyerName || "Kerb buyer";
   const buyerEmail = clean(body.buyer_email);
   const buyerPhone = clean(body.buyer_phone);
   const message = clean(body.message);
@@ -129,6 +128,13 @@ export async function POST(request) {
   if (!listingId) {
     return NextResponse.json(
       { error: "Listing ID is required." },
+      { status: 400 }
+    );
+  }
+
+  if (!buyerName) {
+    return NextResponse.json(
+      { error: "Your name is required." },
       { status: 400 }
     );
   }
@@ -185,7 +191,7 @@ export async function POST(request) {
     .from("kerb_enquiries")
     .insert({
       listing_id: listingId,
-      buyer_name: safeBuyerName,
+      buyer_name: buyerName,
       buyer_email: buyerEmail,
       buyer_phone: buyerPhone || null,
       message,
@@ -212,7 +218,7 @@ export async function POST(request) {
       enquiry_id: enquiry.id,
       sender_role: "buyer",
       sender_email: buyerEmail,
-      sender_name: safeBuyerName,
+      sender_name: buyerName,
       message,
       created_at: enquiry.created_at || now,
     });
@@ -268,7 +274,7 @@ export async function POST(request) {
         replyTo: sellerEmail || undefined,
         subject: `Your Kerb enquiry has been sent`,
         html: createBuyerEmailHtml({
-          buyerName: safeBuyerName,
+          buyerName,
           listingTitle,
           conversationUrl,
         }),
