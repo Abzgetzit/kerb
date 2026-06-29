@@ -1577,7 +1577,7 @@ export default function ListingPage() {
 
                   <div className="enquiry-fields optional-contact-fields">
                     <label>
-                      Your name <span>Optional</span>
+                      Your name
                       <input
                         value={enquiryForm.buyer_name}
                         onChange={(event) =>
@@ -1587,6 +1587,7 @@ export default function ListingPage() {
                           }))
                         }
                         placeholder="Your name"
+                        required
                       />
                     </label>
 
