@@ -408,6 +408,10 @@ export default function AdminListingsPage() {
             View browse page
           </a>
 
+          <a className="secondaryLink" href="/admin/reports">
+            Reports dashboard
+          </a>
+
           <button className="secondaryBtn" onClick={() => fetchListings()}>
             Refresh
           </button>
@@ -423,7 +427,7 @@ export default function AdminListingsPage() {
           <div className="pill">Admin dashboard</div>
           <h1>Manage Kerb listings</h1>
           <p>
-            Search listings, approve submissions, mark cars as sold and manually
+            Search listings, approve submissions, handle reports, mark cars as sold and manually
             boost cars into the featured positions.
           </p>
         </div>
