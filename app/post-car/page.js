@@ -366,6 +366,7 @@ export default function PostCarPage() {
   const [selectedBoostPlan, setSelectedBoostPlan] = useState("none");
   const [showSellerName, setShowSellerName] = useState(true);
   const [showSellerPhone, setShowSellerPhone] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [photos, setPhotos] = useState([]);
   const photoUrlsRef = useRef([]);
 
@@ -570,6 +571,8 @@ export default function PostCarPage() {
     formData.set("listing_category", listingCategory);
     formData.set("show_seller_name", showSellerName ? "true" : "false");
     formData.set("show_seller_phone", showSellerPhone ? "true" : "false");
+    formData.set("terms_accepted", acceptedTerms ? "true" : "false");
+    formData.set("terms_version", "2026-06-28");
 
     if (currentUser?.id) {
       formData.set("account_id", currentUser.id);
@@ -1051,7 +1054,7 @@ export default function PostCarPage() {
 
           <div className="grid">
             <label>
-              Full name <span className="optionalText">Optional to show publicly</span>
+              Full name
               <input
                 name="seller_name"
                 placeholder="Your name"
@@ -1060,6 +1063,7 @@ export default function PostCarPage() {
                   currentUser?.full_name ||
                   ""
                 }
+                required
               />
             </label>
 
@@ -1178,9 +1182,31 @@ export default function PostCarPage() {
             </div>
           </section>
 
+          <section className="termsSection">
+            <label className="termsOption">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(event) => setAcceptedTerms(event.target.checked)}
+                required
+              />
+              <span>
+                <strong>I agree to Kerb’s Terms and Conditions</strong>
+                <em>
+                  I understand Kerb is a marketplace, not a direct car seller,
+                  and I am responsible for making sure my listing is accurate,
+                  honest and allowed under Kerb’s rules.
+                </em>
+                <a href="/terms" target="_blank" rel="noreferrer">
+                  Read Terms and Conditions
+                </a>
+              </span>
+            </label>
+          </section>
+
           {errorMessage && <div className="errorBox">{errorMessage}</div>}
 
-          <button className="primaryBtn" type="submit" disabled={isSubmitting}>
+          <button className="primaryBtn" type="submit" disabled={isSubmitting || !acceptedTerms}>
             {isSubmitting
               ? selectedBoostPlan === "none"
                 ? "Submitting listing..."
@@ -1802,6 +1828,60 @@ const styles = `
     font-size: 16px;
     font-weight: 950;
     white-space: nowrap;
+  }
+
+  .termsSection {
+    margin: 0 0 24px;
+    background: #fbfcff;
+    border: 1px solid #dfe7f6;
+    border-radius: 20px;
+    padding: 18px;
+  }
+
+  .termsOption {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    cursor: pointer;
+  }
+
+  .termsOption input {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: #0048ff;
+    flex: 0 0 auto;
+  }
+
+  .termsOption span {
+    display: grid;
+    gap: 5px;
+  }
+
+  .termsOption strong {
+    color: #172033;
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .termsOption em {
+    color: #657189;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 760;
+    line-height: 1.45;
+  }
+
+  .termsOption a {
+    color: #0048ff;
+    width: fit-content;
+    font-size: 13px;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  .termsOption a:hover {
+    text-decoration: underline;
   }
 
   .errorBox {
