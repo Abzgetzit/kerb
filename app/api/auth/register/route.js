@@ -10,6 +10,7 @@ import {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const TERMS_VERSION = "2026-06-terms";
 
 const supabase =
   supabaseUrl && serviceRoleKey
@@ -22,6 +23,15 @@ function clean(value) {
 
 function cleanEmail(value) {
   return clean(value).toLowerCase();
+}
+
+function cleanBoolean(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+
+  const text = String(value || "").trim().toLowerCase();
+
+  return text === "true" || text === "yes" || text === "1";
 }
 
 function createSessionToken() {
@@ -73,6 +83,8 @@ export async function POST(request) {
   const email = cleanEmail(body.email);
   const password = String(body.password || "");
   const confirmPassword = String(body.confirm_password || "");
+  const termsAccepted = cleanBoolean(body.terms_accepted);
+  const termsVersion = clean(body.terms_version) || TERMS_VERSION;
 
   if (!fullName) {
     return NextResponse.json(
@@ -109,6 +121,13 @@ export async function POST(request) {
     );
   }
 
+  if (!termsAccepted) {
+    return NextResponse.json(
+      { error: "You must agree to Kerb’s Terms and Conditions to create an account." },
+      { status: 400 }
+    );
+  }
+
   const { data: existingAccount, error: existingError } = await supabase
     .from("kerb_accounts")
     .select("id")
@@ -127,6 +146,7 @@ export async function POST(request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const termsAcceptedAt = new Date().toISOString();
 
   const { data: account, error: createError } = await supabase
     .from("kerb_accounts")
@@ -137,8 +157,10 @@ export async function POST(request) {
       password_hash: passwordHash,
       email_verified: false,
       phone_verified: false,
+      terms_accepted_at: termsAcceptedAt,
+      terms_version: termsVersion,
     })
-    .select("id, email, full_name, phone, created_at")
+    .select("id, email, full_name, phone, created_at, terms_accepted_at, terms_version")
     .single();
 
   if (createError) {
