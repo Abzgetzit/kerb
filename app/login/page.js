@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+const TERMS_VERSION = "2026-06-terms";
+
 export default function LoginPage() {
   const [mode, setMode] = useState("login");
   const [step, setStep] = useState("form");
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +60,8 @@ export default function LoginPage() {
           email: cleanEmail,
           password,
           confirm_password: confirmPassword,
+          terms_accepted: termsAccepted,
+          terms_version: TERMS_VERSION,
         }),
       });
 
@@ -188,6 +193,7 @@ export default function LoginPage() {
     setStep("form");
     setPassword("");
     setConfirmPassword("");
+    setTermsAccepted(false);
     setCode("");
     resetMessages();
   }
@@ -298,6 +304,26 @@ export default function LoginPage() {
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 required
               />
+            </label>
+
+            <label className="termsConsent">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(event) => setTermsAccepted(event.target.checked)}
+                required
+              />
+              <span>
+                I understand and agree to Kerb’s {" "}
+                <Link href="/terms" target="_blank" rel="noreferrer">
+                  Terms and Conditions
+                </Link>
+                , {" "}
+                <Link href="/privacy" target="_blank" rel="noreferrer">
+                  Privacy Policy
+                </Link>{" "}
+                and marketplace rules.
+              </span>
             </label>
 
             {successMessage && (
@@ -584,6 +610,40 @@ const styles = `
   .secondaryButton:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+  }
+
+  .termsConsent {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #f7f9fd;
+    border: 1px solid #e5eaf4;
+    border-radius: 16px;
+    padding: 15px 16px;
+    color: #59657a;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+  }
+
+  .termsConsent input {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin: 2px 0 0;
+    padding: 0;
+    accent-color: #0048ff;
+    box-shadow: none;
+  }
+
+  .termsConsent a {
+    color: #0048ff;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
+  .termsConsent a:hover {
+    text-decoration: underline;
   }
 
   .textButton {
