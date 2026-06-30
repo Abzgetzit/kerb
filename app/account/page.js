@@ -305,8 +305,89 @@ function createKerbUserFromAccount(result) {
       result?.name ||
       result?.full_name ||
       "",
+    full_name: account.full_name || result?.full_name || "",
+    phone: account.phone || result?.phone || "",
+    default_show_seller_name: account.default_show_seller_name !== false,
+    default_show_seller_phone: account.default_show_seller_phone === true,
     created_at: account.created_at || result?.created_at || "",
   };
+}
+
+function getAccountName(accountData) {
+  return (
+    accountData?.account?.full_name ||
+    accountData?.account?.name ||
+    accountData?.name ||
+    accountData?.email ||
+    "Not set"
+  );
+}
+
+function getAccountPhone(accountData) {
+  return accountData?.account?.phone || accountData?.phone || "Not set";
+}
+
+function prefersPublicName(accountData) {
+  return accountData?.account?.default_show_seller_name !== false;
+}
+
+function prefersPublicPhone(accountData) {
+  return accountData?.account?.default_show_seller_phone === true;
+}
+
+function formatBoostMoney(value, currency = "gbp") {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) return "Not set";
+
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: String(currency || "gbp").toUpperCase(),
+    maximumFractionDigits: 2,
+  }).format(number / 100);
+}
+
+function getBoostListingTitle(boost) {
+  const listing = boost?.listing || {};
+
+  return (
+    boost?.listing_title ||
+    listing.title ||
+    [listing.year, listing.make, listing.model].filter(Boolean).join(" ") ||
+    "Kerb listing"
+  );
+}
+
+function getBoostStatusInfo(boost) {
+  const status = normaliseStatus(boost?.status);
+  const listing = boost?.listing || {};
+  const boostedUntil = listing.featured_until || boost?.featured_until || "";
+  const isActive =
+    (listing.is_featured === true ||
+      String(listing.is_featured || "").toLowerCase() === "true" ||
+      Boolean(listing.boosted_at)) &&
+    (!boostedUntil || new Date(boostedUntil).getTime() > Date.now());
+
+  if (isActive) {
+    return {
+      className: "approved",
+      label: `Active${boostedUntil ? ` until ${formatDate(boostedUntil)}` : ""}`,
+    };
+  }
+
+  if (["paid", "complete", "completed", "succeeded", "checkout_completed"].includes(status)) {
+    return { className: "sold", label: "Completed" };
+  }
+
+  if (["checkout_created", "open", "pending"].includes(status)) {
+    return { className: "pending", label: "Checkout started" };
+  }
+
+  if (["failed", "cancelled", "canceled", "expired"].includes(status)) {
+    return { className: "rejected", label: "Not completed" };
+  }
+
+  return { className: "pending", label: status || "Unknown" };
 }
 
 export default function AccountPage() {
@@ -314,6 +395,15 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [settingsForm, setSettingsForm] = useState({
+    full_name: "",
+    phone: "",
+    default_show_seller_name: true,
+    default_show_seller_phone: false,
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState("");
+  const [settingsError, setSettingsError] = useState("");
 
   function syncKerbUser(result) {
     const kerbUser = createKerbUserFromAccount(result);
@@ -356,6 +446,12 @@ export default function AccountPage() {
 
       syncKerbUser(result);
       setAccountData(result);
+      setSettingsForm({
+        full_name: result?.account?.full_name || result?.account?.name || "",
+        phone: result?.account?.phone || "",
+        default_show_seller_name: result?.account?.default_show_seller_name !== false,
+        default_show_seller_phone: result?.account?.default_show_seller_phone === true,
+      });
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong.");
     } finally {
@@ -368,7 +464,7 @@ export default function AccountPage() {
     const nextTab =
       tab === "sent" || tab === "received" ? "messages" : tab || "overview";
 
-    if (["overview", "messages", "listings", "saved"].includes(nextTab)) {
+    if (["overview", "messages", "listings", "boosts", "saved", "settings"].includes(nextTab)) {
       setActiveTab(nextTab);
     }
 
@@ -391,6 +487,54 @@ export default function AccountPage() {
     window.location.href = "/post-car";
   }
 
+  async function saveAccountSettings(event) {
+    event.preventDefault();
+
+    const token = localStorage.getItem("kerbSessionToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setIsSavingSettings(true);
+    setSettingsMessage("");
+    setSettingsError("");
+
+    try {
+      const response = await fetch("/api/account/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-kerb-session-token": token,
+        },
+        body: JSON.stringify(settingsForm),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Could not save account settings.");
+      }
+
+      setAccountData((current) => ({
+        ...current,
+        account: result.account,
+        email: result.account?.email || current?.email,
+      }));
+      syncKerbUser({
+        ...accountData,
+        account: result.account,
+        email: result.account?.email || accountData?.email,
+      });
+      setSettingsMessage("Account settings saved.");
+    } catch (error) {
+      setSettingsError(error.message || "Something went wrong.");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  }
+
   const stats = useMemo(() => {
     const myListings = accountData?.my_listings || [];
 
@@ -405,6 +549,7 @@ export default function AccountPage() {
       sent: accountData?.sent_enquiries?.length || 0,
       received: accountData?.received_enquiries?.length || 0,
       saved: accountData?.saved_listings?.length || 0,
+      boosts: accountData?.boost_history?.length || 0,
       unreadSent: accountData?.unread_sent_count || 0,
       unreadReceived: accountData?.unread_received_count || 0,
       unreadTotal: accountData?.unread_total || 0,
@@ -437,6 +582,11 @@ export default function AccountPage() {
 
   const savedPreview = useMemo(
     () => (accountData?.saved_listings || []).slice(0, 3),
+    [accountData]
+  );
+
+  const boostHistory = useMemo(
+    () => accountData?.boost_history || [],
     [accountData]
   );
 
@@ -704,11 +854,28 @@ export default function AccountPage() {
         </button>
 
         <button
+          className={activeTab === "boosts" ? "active" : ""}
+          onClick={() => setActiveTab("boosts")}
+          type="button"
+        >
+          Boosts
+          {stats.boosts > 0 && <span className="tabBadge">{stats.boosts}</span>}
+        </button>
+
+        <button
           className={activeTab === "saved" ? "active" : ""}
           onClick={() => setActiveTab("saved")}
           type="button"
         >
           Saved cars
+        </button>
+
+        <button
+          className={activeTab === "settings" ? "active" : ""}
+          onClick={() => setActiveTab("settings")}
+          type="button"
+        >
+          Settings
         </button>
       </section>
 
@@ -742,6 +909,34 @@ export default function AccountPage() {
           </div>
 
           <div className="panel">
+            <div className="panelHeader compactHeader">
+              <div>
+                <h2>Recent boosts</h2>
+                <p>Track paid boosts and active featured placement.</p>
+              </div>
+
+              <button type="button" onClick={() => setActiveTab("boosts")}>
+                View all
+              </button>
+            </div>
+
+            {boostHistory.length === 0 ? (
+              <div className="softEmpty">
+                <p>No boost payments yet. Boost one of your listings to see history here.</p>
+                <button type="button" onClick={() => setActiveTab("listings")}>
+                  View listings
+                </button>
+              </div>
+            ) : (
+              <div className="boostHistoryList compact">
+                {boostHistory.slice(0, 3).map((boost) => (
+                  <BoostHistoryCard key={boost.id || boost.stripe_checkout_session_id} boost={boost} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="panel">
             <h2>Quick actions</h2>
             <p>Use these to manage your Kerb activity.</p>
 
@@ -765,16 +960,50 @@ export default function AccountPage() {
               <button type="button" onClick={() => setActiveTab("messages")}>
                 Open messages
               </button>
+
+              <button type="button" onClick={() => setActiveTab("boosts")}>
+                Boost history
+              </button>
+
+              <button type="button" onClick={() => setActiveTab("settings")}>
+                Account settings
+              </button>
             </div>
           </div>
 
           <div className="panel">
-            <h2>Account details</h2>
+            <div className="panelHeader compactHeader">
+              <div>
+                <h2>Account details</h2>
+                <p>Your saved seller details and default privacy choices.</p>
+              </div>
+
+              <button type="button" onClick={() => setActiveTab("settings")}>
+                Edit
+              </button>
+            </div>
 
             <div className="detailsGrid one">
               <div>
+                <span>Name</span>
+                <strong>{getAccountName(accountData)}</strong>
+              </div>
+
+              <div>
                 <span>Email</span>
                 <strong>{accountData?.email}</strong>
+              </div>
+
+              <div>
+                <span>Phone</span>
+                <strong>{getAccountPhone(accountData)}</strong>
+              </div>
+
+              <div>
+                <span>Default listing visibility</span>
+                <strong>
+                  {prefersPublicName(accountData) ? "Show name" : "Hide name"} · {prefersPublicPhone(accountData) ? "Show phone" : "Hide phone"}
+                </strong>
               </div>
 
               <div>
@@ -1112,6 +1341,137 @@ export default function AccountPage() {
         </section>
       )}
 
+      {activeTab === "boosts" && (
+        <section className="contentSection">
+          <div className="sectionHeader">
+            <div>
+              <h2>Boost history</h2>
+              <p>See your boost checkout history, plan, payment amount and active placement.</p>
+            </div>
+
+            <button
+              type="button"
+              className="sectionButton"
+              onClick={() => setActiveTab("listings")}
+            >
+              Boost another listing
+            </button>
+          </div>
+
+          {boostHistory.length === 0 ? (
+            <EmptyBox
+              title="No boosts yet"
+              text="When you pay to boost a listing, the plan and status will appear here."
+              buttonText="View my listings"
+              onButtonClick={() => setActiveTab("listings")}
+            />
+          ) : (
+            <div className="boostHistoryList">
+              {boostHistory.map((boost) => (
+                <BoostHistoryCard key={boost.id || boost.stripe_checkout_session_id} boost={boost} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {activeTab === "settings" && (
+        <section className="contentSection">
+          <div className="sectionHeader">
+            <div>
+              <h2>Account settings</h2>
+              <p>Update your saved details and default privacy choices for future listings.</p>
+            </div>
+          </div>
+
+          <form className="settingsForm" onSubmit={saveAccountSettings}>
+            <div className="settingsGrid">
+              <label>
+                Full name
+                <input
+                  value={settingsForm.full_name}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({
+                      ...current,
+                      full_name: event.target.value,
+                    }))
+                  }
+                  placeholder="Your full name"
+                  required
+                />
+              </label>
+
+              <label>
+                Phone number
+                <input
+                  type="tel"
+                  value={settingsForm.phone}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({
+                      ...current,
+                      phone: event.target.value,
+                    }))
+                  }
+                  placeholder="07..."
+                />
+              </label>
+            </div>
+
+            <div className="settingsPrivacyBox">
+              <div>
+                <span className="sectionKicker">Listing defaults</span>
+                <h3>Default public contact options</h3>
+                <p>
+                  These are the default choices used when you create future listings.
+                  You can still change them on the post-car page for each listing.
+                </p>
+              </div>
+
+              <label className="toggleRow">
+                <input
+                  type="checkbox"
+                  checked={settingsForm.default_show_seller_name}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({
+                      ...current,
+                      default_show_seller_name: event.target.checked,
+                    }))
+                  }
+                />
+                <span>
+                  <strong>Show my name on listings by default</strong>
+                  <em>If switched off, buyers will see your seller type instead.</em>
+                </span>
+              </label>
+
+              <label className="toggleRow">
+                <input
+                  type="checkbox"
+                  checked={settingsForm.default_show_seller_phone}
+                  onChange={(event) =>
+                    setSettingsForm((current) => ({
+                      ...current,
+                      default_show_seller_phone: event.target.checked,
+                    }))
+                  }
+                />
+                <span>
+                  <strong>Show my phone number on listings by default</strong>
+                  <em>If switched off, buyers can still message you through Kerb.</em>
+                </span>
+              </label>
+            </div>
+
+            {settingsMessage && <div className="successBox">{settingsMessage}</div>}
+            {settingsError && <div className="errorBox">{settingsError}</div>}
+
+            <button className="primaryLink" type="submit" disabled={isSavingSettings}>
+              {isSavingSettings ? "Saving settings..." : "Save account settings"}
+            </button>
+          </form>
+        </section>
+      )}
+
       {activeTab === "saved" && (
         <section className="contentSection">
           <h2>Saved cars</h2>
@@ -1303,6 +1663,62 @@ function MessageThreadCard({ enquiry }) {
         <small>{formatDate(latestMessageDate)}</small>
         <Link href={`/enquiries/${enquiry.id}`}>Open chat</Link>
         <Link href={`/listing/${enquiry.listing_id}`}>View listing</Link>
+      </div>
+    </article>
+  );
+}
+
+function BoostHistoryCard({ boost }) {
+  const statusInfo = getBoostStatusInfo(boost);
+  const listing = boost?.listing || {};
+  const amount = boost.amount_total || boost.amount || boost.boost_amount;
+  const currency = boost.currency || "gbp";
+  const planLabel =
+    boost.plan_label ||
+    boost.boost_plan_label ||
+    boost.plan_id ||
+    (boost.boost_days ? `${boost.boost_days} days` : "Boost plan");
+  const createdAt = boost.created_at || boost.created || boost.paid_at;
+  const checkoutId = boost.stripe_checkout_session_id || boost.checkout_session_id;
+
+  return (
+    <article className="boostHistoryCard">
+      <div>
+        <span className={`status ${statusInfo.className}`}>{statusInfo.label}</span>
+        <h3>{getBoostListingTitle(boost)}</h3>
+        <p>
+          {planLabel} · {formatBoostMoney(amount, currency)}
+          {createdAt ? ` · ${formatDate(createdAt)}` : ""}
+        </p>
+      </div>
+
+      <div className="boostHistoryMeta">
+        <div>
+          <span>Plan</span>
+          <strong>{planLabel}</strong>
+        </div>
+
+        <div>
+          <span>Payment status</span>
+          <strong>{boost.status || "Unknown"}</strong>
+        </div>
+
+        <div>
+          <span>Reference</span>
+          <strong>{checkoutId ? String(checkoutId).slice(-10).toUpperCase() : "Not set"}</strong>
+        </div>
+      </div>
+
+      <div className="boostHistoryActions">
+        {listing.id && <Link href={`/listing/${listing.id}`}>View listing</Link>}
+        {listing.id && normaliseStatus(listing.status) !== "sold" && (
+          <BoostListingButton
+            listingId={listing.id}
+            label={isListingFeatured(listing) ? "Extend boost" : "Boost again"}
+            source="account-boost-history"
+            small
+          />
+        )}
       </div>
     </article>
   );
@@ -2434,6 +2850,179 @@ const styles = `
     }
   }
 
+  .compactHeader {
+    margin-bottom: 16px;
+  }
+
+  .settingsForm {
+    display: grid;
+    gap: 18px;
+  }
+
+  .settingsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .settingsForm label:not(.toggleRow) {
+    display: grid;
+    gap: 8px;
+    color: #172033;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .settingsForm input[type="text"],
+  .settingsForm input[type="tel"],
+  .settingsForm input:not([type]) {
+    width: 100%;
+    min-height: 54px;
+    border: 1px solid #dfe6f1;
+    border-radius: 15px;
+    background: #fbfcff;
+    color: #071126;
+    font-size: 15px;
+    padding: 0 16px;
+    outline: none;
+  }
+
+  .settingsForm input:focus {
+    border-color: #0048ff;
+    box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
+  }
+
+  .settingsPrivacyBox {
+    display: grid;
+    gap: 14px;
+    border: 1px solid #dfe8fb;
+    border-radius: 22px;
+    background: #f7faff;
+    padding: 20px;
+  }
+
+  .toggleRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    border: 1px solid #dfe8fb;
+    border-radius: 18px;
+    background: white;
+    padding: 15px;
+    cursor: pointer;
+  }
+
+  .toggleRow input {
+    width: 20px;
+    height: 20px;
+    accent-color: #0048ff;
+    margin-top: 2px;
+  }
+
+  .toggleRow span {
+    display: grid;
+    gap: 4px;
+  }
+
+  .toggleRow strong {
+    color: #071126;
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .toggleRow em {
+    color: #657189;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 750;
+    line-height: 1.45;
+  }
+
+  .successBox,
+  .errorBox {
+    border-radius: 15px;
+    padding: 14px 16px;
+    font-weight: 850;
+  }
+
+  .successBox {
+    background: #eafaf0;
+    color: #137333;
+    border: 1px solid #bce8ca;
+  }
+
+  .errorBox {
+    background: #fff1f1;
+    color: #b42318;
+    border: 1px solid #ffd1d1;
+  }
+
+  .boostHistoryList {
+    display: grid;
+    gap: 14px;
+  }
+
+  .boostHistoryList.compact {
+    gap: 10px;
+  }
+
+  .boostHistoryCard {
+    display: grid;
+    gap: 16px;
+    border: 1px solid #e5eaf4;
+    background: #fbfcff;
+    border-radius: 20px;
+    padding: 18px;
+  }
+
+  .boostHistoryCard h3 {
+    margin-bottom: 5px;
+  }
+
+  .boostHistoryMeta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .boostHistoryMeta div {
+    border: 1px solid #e5eaf4;
+    border-radius: 14px;
+    background: white;
+    padding: 12px;
+  }
+
+  .boostHistoryMeta span {
+    display: block;
+    color: #657189;
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 5px;
+  }
+
+  .boostHistoryMeta strong {
+    color: #071126;
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .boostHistoryActions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .boostHistoryActions a {
+    border: none;
+    background: #eef3ff;
+    color: #0048ff;
+    border-radius: 13px;
+    padding: 12px 15px;
+    font-weight: 950;
+    text-decoration: none;
+  }
+
   @media (max-width: 1000px) {
     .hero,
     .overviewGrid,
@@ -2481,7 +3070,9 @@ const styles = `
     .statsGrid,
     .detailsGrid,
     .heroListingCard,
-    .heroListingStats {
+    .heroListingStats,
+    .settingsGrid,
+    .boostHistoryMeta {
       grid-template-columns: 1fr;
     }
 
