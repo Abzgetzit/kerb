@@ -319,6 +319,67 @@ export async function GET(request) {
     };
   });
 
+  let boostHistory = [];
+
+  try {
+    let boostQuery = supabase
+      .from("kerb_listing_boosts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (myListingIds.length > 0) {
+      boostQuery = boostQuery.in("listing_id", myListingIds);
+    } else if (session.account_id) {
+      boostQuery = boostQuery.eq("account_id", session.account_id);
+    } else if (email) {
+      boostQuery = boostQuery.ilike("account_email", email);
+    }
+
+    const { data: boostRows, error: boostError } = await boostQuery;
+
+    if (boostError) {
+      console.warn("Kerb boost history could not be loaded:", boostError);
+    } else {
+      const myListingsById = new Map(
+        (myListings || []).map((listing) => [String(listing.id), listing])
+      );
+      const missingListingIds = [
+        ...new Set(
+          (boostRows || [])
+            .map((boost) => String(boost.listing_id || ""))
+            .filter((listingId) => listingId && !myListingsById.has(listingId))
+        ),
+      ];
+      let extraListingsById = new Map();
+
+      if (missingListingIds.length > 0) {
+        const { data: extraListings, error: extraListingsError } = await supabase
+          .from("kerb_listings")
+          .select("*")
+          .in("id", missingListingIds);
+
+        if (extraListingsError) {
+          console.warn("Kerb boost listing details could not be loaded:", extraListingsError);
+        } else {
+          extraListingsById = new Map(
+            (extraListings || []).map((listing) => [String(listing.id), listing])
+          );
+        }
+      }
+
+      boostHistory = (boostRows || []).map((boost) => ({
+        ...boost,
+        listing:
+          myListingsById.get(String(boost.listing_id || "")) ||
+          extraListingsById.get(String(boost.listing_id || "")) ||
+          null,
+      }));
+    }
+  } catch (error) {
+    console.warn("Kerb boost history failed:", error);
+  }
+
   const { data: savedRows, error: savedError } = await supabase
     .from("kerb_saved_listings")
     .select("*")
@@ -379,5 +440,6 @@ export async function GET(request) {
     my_listings: myListingsWithAnalytics,
     saved_listings: savedListings,
     saved_listing_ids: savedListingIds,
+    boost_history: boostHistory,
   });
 }
