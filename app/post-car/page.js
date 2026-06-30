@@ -379,6 +379,10 @@ export default function PostCarPage() {
       try {
         const parsedUser = JSON.parse(savedUser);
         setCurrentUser(parsedUser);
+        setShowSellerName(parsedUser.default_show_seller_name !== false);
+        setShowSellerPhone(
+          parsedUser.default_show_seller_phone === true && Boolean(parsedUser.phone)
+        );
         setIsCheckingAuth(false);
         return;
       } catch {
@@ -1084,6 +1088,7 @@ export default function PostCarPage() {
               <input
                 name="seller_phone"
                 placeholder="07..."
+                defaultValue={currentUser?.phone || ""}
                 required={showSellerPhone}
               />
             </label>
