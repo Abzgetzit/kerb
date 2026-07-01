@@ -480,7 +480,7 @@ export default function PostCarPage() {
         <div className="heroCard">
           <h3>Listing checklist</h3>
           <ul>
-            <li>Choose the make, model and body type</li>
+            <li>Choose the make, model, type and body style</li>
             <li>Add mileage, year, condition and price</li>
             <li>Upload clear car photos</li>
             <li>Submit your seller details</li>
@@ -521,7 +521,7 @@ export default function PostCarPage() {
             </label>
 
             <label>
-              Model
+              Model line
               {make === "Other" || availableModels.length === 0 ? (
                 <input
                   name="model_manual"
@@ -540,7 +540,7 @@ export default function PostCarPage() {
                     }}
                     required={!customModel}
                   >
-                    <option value="">Select model</option>
+                    <option value="">Select model line</option>
                     {availableModels.map((modelName) => (
                       <option key={modelName} value={modelName}>
                         {modelName}
@@ -566,12 +566,12 @@ export default function PostCarPage() {
 
             {(availableModelDetails.length > 0 || modelDetail) && (
               <label>
-                Variant
+                Type / variant
                 <select
                   value={modelDetail}
                   onChange={(e) => setModelDetail(e.target.value)}
                 >
-                  <option value="">I am not sure / standard variant</option>
+                  <option value="">I am not sure / standard type</option>
                   {modelDetail &&
                     !availableModelDetails.includes(modelDetail) && (
                       <option value={modelDetail}>{modelDetail}</option>
