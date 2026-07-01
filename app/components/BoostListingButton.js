@@ -70,7 +70,7 @@ export default function BoostListingButton({
         onClick={startBoost}
         disabled={disabled || isLoading || !listingId}
       >
-        <span>★</span>
+        <span>{"\u2605"}</span>
         {isLoading ? "Opening checkout..." : label}
       </button>
 
