@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
+const MAX_LISTING_PHOTOS = 30;
+
 const allowedFeatures = new Set([
   "Apple CarPlay",
   "Android Auto",
@@ -511,12 +513,12 @@ export async function PATCH(request) {
     const keptPhotoUrls = requestedExistingPhotoUrls.filter((url) =>
       currentPhotoUrlSet.has(url)
     );
-    const uploadSlots = Math.max(12 - keptPhotoUrls.length, 0);
+    const uploadSlots = Math.max(MAX_LISTING_PHOTOS - keptPhotoUrls.length, 0);
     const uploadedPhotoUrls = await uploadPhotos(
       verified.supabase,
       newPhotos.slice(0, uploadSlots)
     );
-    const nextPhotoUrls = [...keptPhotoUrls, ...uploadedPhotoUrls].slice(0, 12);
+    const nextPhotoUrls = [...keptPhotoUrls, ...uploadedPhotoUrls].slice(0, MAX_LISTING_PHOTOS);
     const removedPhotoUrls = currentPhotoUrls.filter(
       (url) => !nextPhotoUrls.includes(url)
     );
