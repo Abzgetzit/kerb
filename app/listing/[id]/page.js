@@ -945,7 +945,9 @@ export default function ListingPage() {
       }
 
       setEnquirySuccess(
-        "Message sent to the seller. Your chat has been started."
+        result.reused_existing_enquiry
+          ? "Message added to your existing chat. Open chat to continue this enquiry."
+          : "Message sent to the seller. Open chat to continue this enquiry."
       );
       setSentEnquiryId(result.enquiry?.id || "");
       setEnquiryForm((current) => ({
@@ -1050,9 +1052,9 @@ export default function ListingPage() {
           <span className="divider" />
 
           <Link href="/">Home</Link>
-          <span>›</span>
+          <span>â€º</span>
           <Link href="/browse">Browse cars</Link>
-          <span>›</span>
+          <span>â€º</span>
           <strong>{title}</strong>
 
           <div className="save-share">
@@ -1094,7 +1096,7 @@ export default function ListingPage() {
                       className="gallery-arrow left"
                       onClick={previousPhoto}
                     >
-                      ‹
+                      â€¹
                     </button>
 
                     <button
@@ -1102,7 +1104,7 @@ export default function ListingPage() {
                       className="gallery-arrow right"
                       onClick={nextPhoto}
                     >
-                      ›
+                      â€º
                     </button>
                   </>
                 )}
@@ -1141,7 +1143,7 @@ export default function ListingPage() {
                 {year && <span className="year-pill">{year}</span>}
                 {status === "sold" && <span className="status-pill sold">Sold</span>}
                 {status === "pending" && (
-                  <span className="status-pill pending">Pending approval</span>
+                  <span className="status-pill pending">Not live</span>
                 )}
               </div>
 
@@ -1309,30 +1311,29 @@ export default function ListingPage() {
                     </div>
 
                     <p>
-                      Move this car into Kerb’s priority listing positions so it
+                      Move this car into Kerbâ€™s priority listing positions so it
                       has a better chance of being seen near the top of Browse
-                      Cars and Featured Cars. Buyers will not see a public
-                      boosted badge.
+                      Cars and Featured Cars.
                     </p>
 
                     <div className="boost-benefits">
                       <span>Higher placement</span>
-                      <span>Rotates fairly</span>
+                      <span>More visibility</span>
                       <span>No sale guarantee</span>
                     </div>
 
                     <div className="boost-prices">
                       <div>
                         <span>1 week</span>
-                        <strong>£7.99</strong>
+                        <strong>Â£7.99</strong>
                       </div>
                       <div>
                         <span>2 weeks</span>
-                        <strong>£13.99</strong>
+                        <strong>Â£13.99</strong>
                       </div>
                       <div>
                         <span>1 month</span>
-                        <strong>£19.99</strong>
+                        <strong>Â£19.99</strong>
                       </div>
                     </div>
 
@@ -1340,21 +1341,21 @@ export default function ListingPage() {
                       <BoostListingButton
                         listingId={id}
                         planId="7-days"
-                        label="1 week · £7.99"
+                        label="1 week Â· Â£7.99"
                         source="listing-owner-card"
                         small
                       />
                       <BoostListingButton
                         listingId={id}
                         planId="14-days"
-                        label="2 weeks · £13.99"
+                        label="2 weeks Â· Â£13.99"
                         source="listing-owner-card"
                         small
                       />
                       <BoostListingButton
                         listingId={id}
                         planId="30-days"
-                        label="1 month · £19.99"
+                        label="1 month Â· Â£19.99"
                         source="listing-owner-card"
                         small
                       />
@@ -1512,7 +1513,7 @@ export default function ListingPage() {
                 type="button"
                 onClick={() => setIsEnquiryOpen(false)}
               >
-                ×
+                Ã—
               </button>
 
               <h2>Message the seller</h2>
@@ -1534,7 +1535,7 @@ export default function ListingPage() {
                   <strong>{title}</strong>
                   <span>
                     {formatPrice(price)}
-                    {location ? ` · ${location}` : ""}
+                    {location ? ` Â· ${location}` : ""}
                   </span>
                 </div>
               </div>
@@ -1646,7 +1647,7 @@ export default function ListingPage() {
                 type="button"
                 onClick={() => setIsReportOpen(false)}
               >
-                ×
+                Ã—
               </button>
 
               <h2>Report this listing</h2>
