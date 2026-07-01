@@ -5,7 +5,9 @@ import { Resend } from "resend";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <onboarding@resend.dev>";
+const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <hello@kerbcar.co.uk>";
+
+export const runtime = "nodejs";
 
 const supabase =
   supabaseUrl && serviceRoleKey
@@ -28,10 +30,33 @@ function escapeHtml(value) {
 }
 
 function getListingTitle(listing) {
-  return [listing?.year, listing?.make, listing?.model, listing?.variant]
+  return [
+    listing?.year,
+    listing?.make,
+    listing?.model,
+    listing?.model_detail,
+    listing?.variant,
+  ]
     .filter(Boolean)
     .join(" ")
     .trim();
+}
+
+function getMessagePreview(message) {
+  const text = clean(message).replace(/\s+/g, " ");
+
+  return text.length > 220 ? `${text.slice(0, 217)}...` : text;
+}
+
+function getSiteUrl(request) {
+  return String(
+    process.env.NEXT_PUBLIC_KERB_SITE_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      request.headers.get("origin") ||
+      "https://kerbcar.co.uk"
+  )
+    .trim()
+    .replace(/\/$/, "");
 }
 
 function createSellerEmailHtml({
@@ -186,52 +211,115 @@ export async function POST(request) {
   const sellerEmail = clean(listing.seller_email);
   const sellerPhone = clean(listing.seller_phone);
   const now = new Date().toISOString();
+  const messagePreview = getMessagePreview(message);
+  let reusedExistingEnquiry = false;
+  let enquiry = null;
 
-  const { data: enquiry, error: enquiryError } = await supabase
+  const { data: existingEnquiries, error: existingEnquiryError } = await supabase
     .from("kerb_enquiries")
-    .insert({
-      listing_id: listingId,
-      buyer_name: buyerName,
-      buyer_email: buyerEmail,
-      buyer_phone: buyerPhone || null,
-      message,
-      seller_email: sellerEmail || null,
-      seller_phone: sellerPhone || null,
-      listing_title: listingTitle,
-      status: "new",
-      last_message_at: now,
-      last_message_preview: message.replace(/\s+/g, " ").slice(0, 220),
-      last_message_sender_role: "buyer",
-      buyer_last_read_at: now,
-      seller_last_read_at: null,
-    })
     .select("*")
-    .single();
+    .eq("listing_id", listingId)
+    .ilike("buyer_email", buyerEmail)
+    .order("created_at", { ascending: false })
+    .limit(1);
 
-  if (enquiryError) {
-    return NextResponse.json({ error: enquiryError.message }, { status: 500 });
+  if (existingEnquiryError) {
+    return NextResponse.json(
+      { error: existingEnquiryError.message },
+      { status: 500 }
+    );
   }
 
-  const { error: messageError } = await supabase
-    .from("kerb_enquiry_messages")
-    .insert({
-      enquiry_id: enquiry.id,
-      sender_role: "buyer",
-      sender_email: buyerEmail,
-      sender_name: buyerName,
-      message,
-      created_at: enquiry.created_at || now,
-    });
+  const existingEnquiry = existingEnquiries?.[0] || null;
 
-  if (messageError) {
-    return NextResponse.json({ error: messageError.message }, { status: 500 });
+  if (existingEnquiry) {
+    reusedExistingEnquiry = true;
+
+    const { error: messageError } = await supabase
+      .from("kerb_enquiry_messages")
+      .insert({
+        enquiry_id: existingEnquiry.id,
+        sender_role: "buyer",
+        sender_email: buyerEmail,
+        sender_name: buyerName,
+        message,
+        created_at: now,
+      });
+
+    if (messageError) {
+      return NextResponse.json({ error: messageError.message }, { status: 500 });
+    }
+
+    const { data: updatedEnquiry, error: updateError } = await supabase
+      .from("kerb_enquiries")
+      .update({
+        buyer_name: buyerName,
+        buyer_phone: buyerPhone || null,
+        message,
+        seller_email: sellerEmail || null,
+        seller_phone: sellerPhone || null,
+        listing_title: listingTitle,
+        status: "new",
+        last_message_at: now,
+        last_message_preview: messagePreview,
+        last_message_sender_role: "buyer",
+        buyer_last_read_at: now,
+        seller_last_read_at: null,
+      })
+      .eq("id", existingEnquiry.id)
+      .select("*")
+      .single();
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    enquiry = updatedEnquiry;
+  } else {
+    const { data: newEnquiry, error: enquiryError } = await supabase
+      .from("kerb_enquiries")
+      .insert({
+        listing_id: listingId,
+        buyer_name: buyerName,
+        buyer_email: buyerEmail,
+        buyer_phone: buyerPhone || null,
+        message,
+        seller_email: sellerEmail || null,
+        seller_phone: sellerPhone || null,
+        listing_title: listingTitle,
+        status: "new",
+        last_message_at: now,
+        last_message_preview: messagePreview,
+        last_message_sender_role: "buyer",
+        buyer_last_read_at: now,
+        seller_last_read_at: null,
+      })
+      .select("*")
+      .single();
+
+    if (enquiryError) {
+      return NextResponse.json({ error: enquiryError.message }, { status: 500 });
+    }
+
+    const { error: messageError } = await supabase
+      .from("kerb_enquiry_messages")
+      .insert({
+        enquiry_id: newEnquiry.id,
+        sender_role: "buyer",
+        sender_email: buyerEmail,
+        sender_name: buyerName,
+        message,
+        created_at: newEnquiry.created_at || now,
+      });
+
+    if (messageError) {
+      return NextResponse.json({ error: messageError.message }, { status: 500 });
+    }
+
+    enquiry = newEnquiry;
   }
 
-  const siteUrl =
-    request.headers.get("origin") ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://kerb.vercel.app";
-
+  const siteUrl = getSiteUrl(request);
   const conversationUrl = `${siteUrl}/enquiries/${enquiry.id}`;
 
   const emailResults = {
@@ -291,6 +379,7 @@ export async function POST(request) {
   return NextResponse.json({
     success: true,
     enquiry,
+    reused_existing_enquiry: reusedExistingEnquiry,
     emails: emailResults,
   });
 }
