@@ -7308,6 +7308,174 @@ const trailingDescriptors = [
   "Sport", "SE", "SEL", "S", "SXT", "Limited", "Luxury", "Premium", "Plus", "Pro",
 ];
 
+const allowedVehicleMakes = [
+  "Abarth",
+  "AC",
+  "AION",
+  "Aixam",
+  "AK",
+  "Alfa Romeo",
+  "Allard",
+  "Alpine",
+  "Alvis",
+  "Ariel",
+  "Asia",
+  "Aston Martin",
+  "Audi",
+  "Austin",
+  "BAC",
+  "Beauford",
+  "Bentley",
+  "BMW",
+  "Bramwith",
+  "Bristol",
+  "Bugatti",
+  "Buick",
+  "BYD",
+  "Cadillac",
+  "Carbodies",
+  "Caterham",
+  "CFMOTO",
+  "Changan",
+  "Chery",
+  "Chesil",
+  "Chevrolet",
+  "Chrysler",
+  "Citroen",
+  "Corbin",
+  "Corvette",
+  "CUPRA",
+  "Dacia",
+  "Daewoo",
+  "Daihatsu",
+  "Daimler",
+  "Datsun",
+  "David Brown",
+  "Dax",
+  "De Tomaso",
+  "Dodge",
+  "DS AUTOMOBILES",
+  "E-COBRA",
+  "Ferrari",
+  "Fiat",
+  "Fisker",
+  "Ford",
+  "Gardner Douglas",
+  "GBS",
+  "Geely",
+  "Genesis",
+  "Ginetta",
+  "GMC",
+  "Great Wall",
+  "GWM",
+  "Healey",
+  "Hillman",
+  "Holden",
+  "Honda",
+  "Hummer",
+  "Hyundai",
+  "INEOS",
+  "Infiniti",
+  "Isuzu",
+  "Iveco",
+  "JAECOO",
+  "Jaguar",
+  "JBA",
+  "Jeep",
+  "Jensen",
+  "Jiayuan",
+  "KGM",
+  "Kia",
+  "Koenigsegg",
+  "Lada",
+  "Lamborghini",
+  "Lancia",
+  "Land Rover",
+  "LDV",
+  "Leapmotor",
+  "LEVC",
+  "Lexus",
+  "Leyland",
+  "Lincoln",
+  "Lister",
+  "Locust",
+  "London Taxis International",
+  "Lotus",
+  "Mahindra",
+  "Maserati",
+  "MAXUS",
+  "Maybach",
+  "Mazda",
+  "McLaren",
+  "Mercedes-Benz",
+  "MEV",
+  "MG",
+  "Micro",
+  "Microcar",
+  "MINI",
+  "Mitsubishi",
+  "MOKE",
+  "Morgan",
+  "Morris",
+  "Nardini",
+  "Nissan",
+  "Noble",
+  "Oldsmobile",
+  "OMODA",
+  "Opel",
+  "Panther",
+  "Perodua",
+  "Peugeot",
+  "Pilgrim",
+  "Plymouth",
+  "Polestar",
+  "Pontiac",
+  "Porsche",
+  "Proton",
+  "Quantum",
+  "Radical",
+  "Ram",
+  "Raptor",
+  "Reliant",
+  "Renault",
+  "Rolls-Royce",
+  "Rover",
+  "RUF",
+  "Saab",
+  "SEAT",
+  "Shelby",
+  "Skoda",
+  "Skywell",
+  "Smart",
+  "SsangYong",
+  "Standard",
+  "Subaru",
+  "Sunbeam",
+  "Suzuki",
+  "Tesla",
+  "Toyota",
+  "Triumph",
+  "TVR",
+  "Ultima",
+  "Vauxhall",
+  "Volkswagen",
+  "Volvo",
+  "VRS",
+  "Westfield",
+  "Wiesmann",
+  "XPENG",
+  "Yugo",
+  "Zenos"
+];
+
+const makeAliases = {
+  Fiat: ["FIAT"],
+  Hummer: ["HUMMER"],
+  INEOS: ["INEOS Automotive"],
+  JBA: ["JBA Motorcars, Inc."],
+  McLaren: ["McLaren Automotive"],
+};
+
 function cleanText(value) {
   return String(value || "").replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -7383,11 +7551,17 @@ function getVariantFromRaw(rawModel, family) {
   return variant && variant.toLowerCase() !== String(family || "").toLowerCase() ? variant : "";
 }
 
+function getRawModelsForMake(make) {
+  const rawNames = [make, ...(makeAliases[make] || [])];
+
+  return rawNames.flatMap((rawName) => rawVehicleMakes[rawName] || []);
+}
+
 function buildVehicleData() {
   const modelsByMake = {};
   const detailsByMake = {};
 
-  for (const make of Object.keys(rawVehicleMakes)) {
+  for (const make of allowedVehicleMakes) {
     const modelSet = new Set();
     const detailSets = {};
 
@@ -7396,7 +7570,7 @@ function buildVehicleData() {
       detailSets[model] = new Set(curatedVehicleModelDetails[make][model]);
     }
 
-    for (const rawModel of rawVehicleMakes[make] || []) {
+    for (const rawModel of getRawModelsForMake(make)) {
       const family = getModelFamily(make, rawModel);
 
       if (!family) continue;
