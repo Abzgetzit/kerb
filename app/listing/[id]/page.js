@@ -58,7 +58,10 @@ function formatStatus(value) {
 }
 
 function getTitle(car) {
-  const title = [car.year, car.make, car.model].filter(Boolean).join(" ").trim();
+  const title = [car.year, car.make, car.model, car.model_detail]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
   return car.title || title || "Car listing";
 }
@@ -1052,9 +1055,9 @@ export default function ListingPage() {
           <span className="divider" />
 
           <Link href="/">Home</Link>
-          <span>â€º</span>
+          <span>›</span>
           <Link href="/browse">Browse cars</Link>
-          <span>â€º</span>
+          <span>›</span>
           <strong>{title}</strong>
 
           <div className="save-share">
@@ -1096,7 +1099,7 @@ export default function ListingPage() {
                       className="gallery-arrow left"
                       onClick={previousPhoto}
                     >
-                      â€¹
+                      ‹
                     </button>
 
                     <button
@@ -1104,7 +1107,7 @@ export default function ListingPage() {
                       className="gallery-arrow right"
                       onClick={nextPhoto}
                     >
-                      â€º
+                      ›
                     </button>
                   </>
                 )}
@@ -1311,7 +1314,7 @@ export default function ListingPage() {
                     </div>
 
                     <p>
-                      Move this car into Kerbâ€™s priority listing positions so it
+                      Move this car into Kerb's priority listing positions so it
                       has a better chance of being seen near the top of Browse
                       Cars and Featured Cars.
                     </p>
@@ -1325,15 +1328,15 @@ export default function ListingPage() {
                     <div className="boost-prices">
                       <div>
                         <span>1 week</span>
-                        <strong>Â£7.99</strong>
+                        <strong>{"\u00a3"}7.99</strong>
                       </div>
                       <div>
                         <span>2 weeks</span>
-                        <strong>Â£13.99</strong>
+                        <strong>{"\u00a3"}13.99</strong>
                       </div>
                       <div>
                         <span>1 month</span>
-                        <strong>Â£19.99</strong>
+                        <strong>{"\u00a3"}19.99</strong>
                       </div>
                     </div>
 
@@ -1341,21 +1344,21 @@ export default function ListingPage() {
                       <BoostListingButton
                         listingId={id}
                         planId="7-days"
-                        label="1 week Â· Â£7.99"
+                        label={"1 week - \u00a37.99"}
                         source="listing-owner-card"
                         small
                       />
                       <BoostListingButton
                         listingId={id}
                         planId="14-days"
-                        label="2 weeks Â· Â£13.99"
+                        label={"2 weeks - \u00a313.99"}
                         source="listing-owner-card"
                         small
                       />
                       <BoostListingButton
                         listingId={id}
                         planId="30-days"
-                        label="1 month Â· Â£19.99"
+                        label={"1 month - \u00a319.99"}
                         source="listing-owner-card"
                         small
                       />
@@ -1513,7 +1516,7 @@ export default function ListingPage() {
                 type="button"
                 onClick={() => setIsEnquiryOpen(false)}
               >
-                Ã—
+                ×
               </button>
 
               <h2>Message the seller</h2>
@@ -1535,7 +1538,7 @@ export default function ListingPage() {
                   <strong>{title}</strong>
                   <span>
                     {formatPrice(price)}
-                    {location ? ` Â· ${location}` : ""}
+                    {location ? ` - ${location}` : ""}
                   </span>
                 </div>
               </div>
@@ -1647,7 +1650,7 @@ export default function ListingPage() {
                 type="button"
                 onClick={() => setIsReportOpen(false)}
               >
-                Ã—
+                ×
               </button>
 
               <h2>Report this listing</h2>
