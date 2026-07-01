@@ -279,7 +279,9 @@ export async function POST(request) {
   const siteUrl = getSiteUrl(request);
   const listingTitle =
     listing.title ||
-    [listing.year, listing.make, listing.model].filter(Boolean).join(" ") ||
+    [listing.year, listing.make, listing.model, listing.model_detail]
+      .filter(Boolean)
+      .join(" ") ||
     "Kerb listing";
 
   const checkoutSession = await stripe.checkout.sessions.create({
