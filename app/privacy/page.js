@@ -19,36 +19,20 @@ export default function PrivacyPage() {
           anyone who uses Kerb. Kerb is an early-stage marketplace website and is
           not currently described as a limited company or registered company.
         </p>
+        <p>
+          For privacy questions or data requests, contact Kerb at <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
+        </p>
       </section>
 
       <section>
         <h2>2. Information Kerb collects</h2>
         <ul>
-          <li>
-            <strong>Account details:</strong> name, email address, sign-in
-            details and account activity.
-          </li>
-          <li>
-            <strong>Listing details:</strong> vehicle make, model, year, mileage,
-            price, location, description, photos, features, seller name, seller
-            email, phone number and seller type.
-          </li>
-          <li>
-            <strong>Messages and enquiries:</strong> buyer and seller messages,
-            names, email addresses, phone numbers and timestamps.
-          </li>
-          <li>
-            <strong>Saved activity:</strong> saved cars, saved searches and
-            account preferences.
-          </li>
-          <li>
-            <strong>Safety and moderation data:</strong> listing reports,
-            moderation notes, rejection reasons and admin actions.
-          </li>
-          <li>
-            <strong>Technical data:</strong> device, browser, IP-related logs,
-            page visits, listing views and service diagnostics.
-          </li>
+          <li><strong>Account details:</strong> name, email address, phone number, sign-in details and account activity.</li>
+          <li><strong>Listing details:</strong> vehicle make, model, year, mileage, price, location, description, photos, features, seller name, seller email, phone number and seller type.</li>
+          <li><strong>Messages and enquiries:</strong> buyer and seller messages, names, email addresses, phone numbers and timestamps.</li>
+          <li><strong>Saved activity:</strong> saved cars, saved searches and account preferences.</li>
+          <li><strong>Safety and moderation data:</strong> listing reports, moderation notes, rejection reasons and admin actions.</li>
+          <li><strong>Technical data:</strong> device, browser, IP-related logs, page visits, listing views and service diagnostics.</li>
         </ul>
       </section>
 
@@ -85,10 +69,11 @@ export default function PrivacyPage() {
         <h2>5. What other users can see</h2>
         <p>
           Public listings may show vehicle details, photos, seller type, seller
-          name, phone number and location. When a buyer sends an enquiry, the
-          seller may receive the buyer name, email address, phone number and
-          message. When a seller replies, the buyer may receive the seller
-          message and relevant listing details.
+          name, phone number and location, depending on the seller's display
+          choices. When a buyer sends an enquiry, the seller may receive the
+          buyer name, email address, phone number and message. When a seller
+          replies, the buyer may receive the seller message and relevant listing
+          details.
         </p>
       </section>
 
@@ -96,8 +81,9 @@ export default function PrivacyPage() {
         <h2>6. Service providers</h2>
         <p>
           Kerb uses trusted service providers to run the website. These may
-          include hosting, database, storage, email delivery and analytics or
-          logging providers such as Vercel, Supabase and Resend.
+          include hosting, database, storage, email inbox, email delivery,
+          analytics or logging providers such as Vercel, Supabase, Microsoft 365
+          and Resend.
         </p>
         <p>
           These providers process information so Kerb can operate the
@@ -132,9 +118,7 @@ export default function PrivacyPage() {
           Information Commissioner's Office.
         </p>
         <p>
-          Kerb should publish a dedicated privacy contact route before full
-          public launch. Until then, use the account controls and report tools
-          available on the website.
+          To contact Kerb about privacy or personal information, email <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 
