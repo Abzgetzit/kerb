@@ -1,5 +1,5 @@
-// Generated from the supplied vehicle model lists for Kerb listing and browse filters.
-export const vehicleMakes = {
+// Generated from the supplied vehicle model lists, then grouped for Kerb's UK listing forms.
+const rawVehicleMakes = {
   "Abarth": [],
   "AC": [],
   "Acura": [
@@ -6111,28 +6111,1377 @@ export const vehicleMakes = {
   "Zenos": []
 };
 
+const curatedVehicleModelDetails = {
+  "BMW": {
+    "1 Series": [
+      "116i",
+      "116d",
+      "118i",
+      "118i M Sport",
+      "118d",
+      "118d M Sport",
+      "120i",
+      "120d",
+      "125i",
+      "128ti",
+      "M135i",
+      "M140i"
+    ],
+    "2 Series": [
+      "218i",
+      "218d",
+      "220i",
+      "220d",
+      "225e",
+      "225i",
+      "228i",
+      "230i",
+      "M235i",
+      "M240i",
+      "M2"
+    ],
+    "3 Series": [
+      "316i",
+      "316d",
+      "318i",
+      "318i M Sport",
+      "318d",
+      "318d M Sport",
+      "320i",
+      "320i M Sport",
+      "320i xDrive",
+      "320d",
+      "320d M Sport",
+      "320d xDrive",
+      "325d",
+      "328i",
+      "330i",
+      "330i M Sport",
+      "330d",
+      "330d M Sport",
+      "330e",
+      "330e M Sport",
+      "335d",
+      "335i",
+      "340i",
+      "M340i",
+      "M340d",
+      "M3"
+    ],
+    "4 Series": [
+      "418d",
+      "420i",
+      "420i M Sport",
+      "420d",
+      "420d M Sport",
+      "420d xDrive",
+      "425d",
+      "428i",
+      "428i Sport",
+      "428i Luxury",
+      "428i M Sport",
+      "428i Coupe",
+      "428i Convertible",
+      "428i Gran Coupe",
+      "430i",
+      "430i M Sport",
+      "430d",
+      "430d M Sport",
+      "435d",
+      "435i",
+      "440i",
+      "M440i",
+      "M440d",
+      "M4"
+    ],
+    "5 Series": [
+      "520i",
+      "520d",
+      "523i",
+      "525d",
+      "528i",
+      "530i",
+      "530d",
+      "530e",
+      "535d",
+      "535i",
+      "540i",
+      "545e",
+      "550e",
+      "M550i",
+      "M5"
+    ],
+    "6 Series": [
+      "620d",
+      "630i",
+      "630d",
+      "635d",
+      "640i",
+      "640i M Sport",
+      "640d",
+      "640d M Sport",
+      "650i",
+      "M6"
+    ],
+    "7 Series": [
+      "730d",
+      "740d",
+      "740i",
+      "745e",
+      "750i",
+      "760i"
+    ],
+    "8 Series": [
+      "840i",
+      "840d",
+      "M850i",
+      "M8"
+    ],
+    "X1": [
+      "sDrive18i",
+      "sDrive18d",
+      "xDrive20d",
+      "xDrive25e"
+    ],
+    "X2": [
+      "sDrive18i",
+      "sDrive18d",
+      "xDrive20d",
+      "M35i"
+    ],
+    "X3": [
+      "xDrive20d",
+      "xDrive30d",
+      "xDrive30e",
+      "M40i",
+      "M40d",
+      "X3 M"
+    ],
+    "X4": [
+      "xDrive20d",
+      "xDrive30d",
+      "M40i",
+      "M40d",
+      "X4 M"
+    ],
+    "X5": [
+      "xDrive30d",
+      "xDrive40i",
+      "xDrive45e",
+      "xDrive50e",
+      "M50d",
+      "X5 M"
+    ],
+    "X6": [
+      "xDrive30d",
+      "xDrive40i",
+      "M50d",
+      "X6 M"
+    ],
+    "X7": [
+      "xDrive30d",
+      "xDrive40i",
+      "M50i",
+      "M60i"
+    ],
+    "Z4": [
+      "sDrive20i",
+      "sDrive28i",
+      "sDrive30i",
+      "M40i"
+    ],
+    "i3": [
+      "60Ah",
+      "94Ah",
+      "120Ah",
+      "Range Extender"
+    ],
+    "i4": [
+      "eDrive35",
+      "eDrive40",
+      "M50"
+    ],
+    "i5": [
+      "eDrive40",
+      "M60"
+    ],
+    "i7": [
+      "xDrive60",
+      "M70"
+    ],
+    "i8": [
+      "Coupe",
+      "Roadster"
+    ],
+    "iX": [
+      "xDrive40",
+      "xDrive50",
+      "M60"
+    ]
+  },
+  "Audi": {
+    "A1": [
+      "25 TFSI",
+      "30 TFSI",
+      "35 TFSI",
+      "S line"
+    ],
+    "A3": [
+      "30 TFSI",
+      "35 TFSI",
+      "35 TDI",
+      "40 TFSI e",
+      "S line",
+      "S3",
+      "RS3"
+    ],
+    "A4": [
+      "35 TFSI",
+      "40 TFSI",
+      "35 TDI",
+      "40 TDI",
+      "S line",
+      "S4",
+      "RS4"
+    ],
+    "A5": [
+      "35 TFSI",
+      "40 TFSI",
+      "35 TDI",
+      "S line",
+      "S5",
+      "RS5"
+    ],
+    "A6": [
+      "40 TDI",
+      "45 TFSI",
+      "50 TFSI e",
+      "S line",
+      "S6",
+      "RS6"
+    ],
+    "A7": [
+      "45 TFSI",
+      "50 TDI",
+      "55 TFSI e",
+      "S7",
+      "RS7"
+    ],
+    "A8": [
+      "50 TDI",
+      "55 TFSI",
+      "60 TFSI e",
+      "S8"
+    ],
+    "Q2": [
+      "30 TFSI",
+      "35 TFSI",
+      "35 TDI",
+      "S line"
+    ],
+    "Q3": [
+      "35 TFSI",
+      "35 TDI",
+      "40 TFSI e",
+      "S line",
+      "RS Q3"
+    ],
+    "Q5": [
+      "40 TDI",
+      "45 TFSI",
+      "50 TFSI e",
+      "S line",
+      "SQ5"
+    ],
+    "Q7": [
+      "45 TDI",
+      "50 TDI",
+      "55 TFSI",
+      "S line",
+      "SQ7"
+    ],
+    "Q8": [
+      "50 TDI",
+      "55 TFSI",
+      "55 TFSI e",
+      "SQ8",
+      "RS Q8"
+    ],
+    "TT": [
+      "40 TFSI",
+      "45 TFSI",
+      "TTS",
+      "TT RS"
+    ],
+    "R8": [
+      "V10",
+      "V10 Performance"
+    ],
+    "e-tron": [
+      "50 quattro",
+      "55 quattro",
+      "S quattro"
+    ],
+    "Q4 e-tron": [
+      "35",
+      "40",
+      "45",
+      "50 quattro"
+    ],
+    "e-tron GT": [
+      "quattro",
+      "RS"
+    ]
+  },
+  "Mercedes-Benz": {
+    "A-Class": [
+      "A180",
+      "A200",
+      "A220",
+      "A250e",
+      "A35 AMG",
+      "A45 AMG"
+    ],
+    "B-Class": [
+      "B180",
+      "B200",
+      "B250e"
+    ],
+    "C-Class": [
+      "C180",
+      "C200",
+      "C220d",
+      "C300",
+      "C300e",
+      "C43 AMG",
+      "C63 AMG"
+    ],
+    "E-Class": [
+      "E200",
+      "E220d",
+      "E300",
+      "E300e",
+      "E400d",
+      "E53 AMG",
+      "E63 AMG"
+    ],
+    "S-Class": [
+      "S350d",
+      "S400d",
+      "S500",
+      "S580e",
+      "S63 AMG"
+    ],
+    "CLA": [
+      "CLA180",
+      "CLA200",
+      "CLA220d",
+      "CLA250e",
+      "CLA35 AMG",
+      "CLA45 AMG"
+    ],
+    "GLA": [
+      "GLA180",
+      "GLA200",
+      "GLA220d",
+      "GLA250e",
+      "GLA35 AMG",
+      "GLA45 AMG"
+    ],
+    "GLB": [
+      "GLB200",
+      "GLB200d",
+      "GLB220d",
+      "GLB35 AMG"
+    ],
+    "GLC": [
+      "GLC 220d",
+      "GLC 300",
+      "GLC 300e",
+      "GLC 43 AMG",
+      "GLC 63 AMG"
+    ],
+    "GLE": [
+      "GLE 300d",
+      "GLE 350de",
+      "GLE 450",
+      "GLE 53 AMG",
+      "GLE 63 AMG"
+    ],
+    "G": [
+      "G 400d",
+      "G 500",
+      "G 63 AMG"
+    ],
+    "EQA": [
+      "EQA 250",
+      "EQA 300",
+      "EQA 350"
+    ],
+    "EQB": [
+      "EQB 250",
+      "EQB 300",
+      "EQB 350"
+    ],
+    "EQC": [
+      "EQC 400"
+    ],
+    "EQE": [
+      "EQE 300",
+      "EQE 350",
+      "EQE 53 AMG"
+    ],
+    "EQS": [
+      "EQS 450",
+      "EQS 580",
+      "EQS 53 AMG"
+    ]
+  },
+  "Ford": {
+    "Fiesta": [
+      "1.0 EcoBoost",
+      "1.25",
+      "1.5 TDCi",
+      "Titanium",
+      "ST-Line",
+      "ST"
+    ],
+    "Focus": [
+      "1.0 EcoBoost",
+      "1.5 EcoBoost",
+      "1.5 EcoBlue",
+      "Titanium",
+      "ST-Line",
+      "ST",
+      "RS"
+    ],
+    "Puma": [
+      "1.0 EcoBoost",
+      "mHEV",
+      "ST-Line",
+      "ST"
+    ],
+    "Kuga": [
+      "EcoBoost",
+      "EcoBlue",
+      "PHEV",
+      "ST-Line",
+      "Vignale"
+    ],
+    "Mondeo": [
+      "EcoBoost",
+      "TDCi",
+      "Hybrid",
+      "Titanium",
+      "Vignale"
+    ],
+    "Mustang": [
+      "2.3 EcoBoost",
+      "5.0 V8 GT",
+      "Mach 1"
+    ],
+    "Ranger": [
+      "Wildtrak",
+      "Raptor",
+      "Limited"
+    ]
+  },
+  "Volkswagen": {
+    "Golf": [
+      "1.0 TSI",
+      "1.5 TSI",
+      "2.0 TDI",
+      "eTSI",
+      "GTE",
+      "GTI",
+      "GTD",
+      "R"
+    ],
+    "Polo": [
+      "1.0 MPI",
+      "1.0 TSI",
+      "Style",
+      "R-Line",
+      "GTI"
+    ],
+    "Passat": [
+      "1.5 TSI",
+      "2.0 TDI",
+      "GTE",
+      "R-Line"
+    ],
+    "Tiguan": [
+      "1.5 TSI",
+      "2.0 TDI",
+      "eHybrid",
+      "R-Line",
+      "R"
+    ],
+    "T-Roc": [
+      "1.0 TSI",
+      "1.5 TSI",
+      "2.0 TDI",
+      "R-Line",
+      "R"
+    ],
+    "T-Cross": [
+      "1.0 TSI",
+      "1.5 TSI",
+      "R-Line"
+    ],
+    "Touareg": [
+      "3.0 TDI",
+      "eHybrid",
+      "R"
+    ],
+    "ID3": [
+      "Pro",
+      "Pro S",
+      "GTX"
+    ],
+    "ID4": [
+      "Pure",
+      "Pro",
+      "GTX"
+    ],
+    "ID5": [
+      "Pro",
+      "GTX"
+    ],
+    "ID7": [
+      "Pro",
+      "Tourer",
+      "GTX"
+    ]
+  },
+  "Vauxhall": {
+    "Corsa": [
+      "1.2",
+      "1.2 Turbo",
+      "Electric",
+      "Design",
+      "GS",
+      "Ultimate"
+    ],
+    "Astra": [
+      "1.2 Turbo",
+      "1.5 Turbo D",
+      "Hybrid",
+      "GSe",
+      "Design",
+      "GS",
+      "Ultimate"
+    ],
+    "Mokka": [
+      "1.2 Turbo",
+      "Electric",
+      "Design",
+      "GS",
+      "Ultimate"
+    ],
+    "Insignia": [
+      "Grand Sport",
+      "Sports Tourer",
+      "1.5 Turbo",
+      "2.0 Turbo D",
+      "SRi"
+    ],
+    "Crossland": [
+      "1.2",
+      "1.2 Turbo",
+      "Design",
+      "GS"
+    ],
+    "Grandland": [
+      "1.2 Turbo",
+      "Hybrid",
+      "GSe",
+      "Design",
+      "GS",
+      "Ultimate"
+    ]
+  }
+};
+
+export const vehicleModelDetailMeta = {
+  "BMW|1 Series|116i": {
+    "from": 2011
+  },
+  "BMW|1 Series|116d": {
+    "from": 2011
+  },
+  "BMW|1 Series|118i": {
+    "from": 2011
+  },
+  "BMW|1 Series|118i M Sport": {
+    "from": 2011
+  },
+  "BMW|1 Series|118d": {
+    "from": 2011
+  },
+  "BMW|1 Series|118d M Sport": {
+    "from": 2011
+  },
+  "BMW|1 Series|120i": {
+    "from": 2011
+  },
+  "BMW|1 Series|120d": {
+    "from": 2011
+  },
+  "BMW|1 Series|125i": {
+    "from": 2012,
+    "to": 2019
+  },
+  "BMW|1 Series|128ti": {
+    "from": 2020
+  },
+  "BMW|1 Series|M135i": {
+    "from": 2012
+  },
+  "BMW|1 Series|M140i": {
+    "from": 2016,
+    "to": 2019
+  },
+  "BMW|2 Series|218i": {
+    "from": 2014
+  },
+  "BMW|2 Series|218d": {
+    "from": 2014
+  },
+  "BMW|2 Series|220i": {
+    "from": 2014
+  },
+  "BMW|2 Series|220d": {
+    "from": 2014
+  },
+  "BMW|2 Series|225e": {
+    "from": 2021
+  },
+  "BMW|2 Series|225i": {
+    "from": 2014,
+    "to": 2021
+  },
+  "BMW|2 Series|228i": {
+    "from": 2014,
+    "to": 2016
+  },
+  "BMW|2 Series|230i": {
+    "from": 2016
+  },
+  "BMW|2 Series|M235i": {
+    "from": 2014
+  },
+  "BMW|2 Series|M240i": {
+    "from": 2016
+  },
+  "BMW|2 Series|M2": {
+    "from": 2016
+  },
+  "BMW|3 Series|316i": {
+    "from": 2012,
+    "to": 2019
+  },
+  "BMW|3 Series|316d": {
+    "from": 2012,
+    "to": 2019
+  },
+  "BMW|3 Series|318i": {
+    "from": 2012
+  },
+  "BMW|3 Series|318i M Sport": {
+    "from": 2012
+  },
+  "BMW|3 Series|318d": {
+    "from": 2012
+  },
+  "BMW|3 Series|318d M Sport": {
+    "from": 2012
+  },
+  "BMW|3 Series|320i": {
+    "from": 2012
+  },
+  "BMW|3 Series|320i M Sport": {
+    "from": 2012
+  },
+  "BMW|3 Series|320i xDrive": {
+    "from": 2012
+  },
+  "BMW|3 Series|320d": {
+    "from": 2012
+  },
+  "BMW|3 Series|320d M Sport": {
+    "from": 2012
+  },
+  "BMW|3 Series|320d xDrive": {
+    "from": 2012
+  },
+  "BMW|3 Series|325d": {
+    "from": 2012,
+    "to": 2019
+  },
+  "BMW|3 Series|328i": {
+    "from": 2012,
+    "to": 2016
+  },
+  "BMW|3 Series|330i": {
+    "from": 2015
+  },
+  "BMW|3 Series|330i M Sport": {
+    "from": 2015
+  },
+  "BMW|3 Series|330d": {
+    "from": 2012
+  },
+  "BMW|3 Series|330d M Sport": {
+    "from": 2012
+  },
+  "BMW|3 Series|330e": {
+    "from": 2016
+  },
+  "BMW|3 Series|330e M Sport": {
+    "from": 2016
+  },
+  "BMW|3 Series|335d": {
+    "from": 2012,
+    "to": 2019
+  },
+  "BMW|3 Series|335i": {
+    "from": 2012,
+    "to": 2015
+  },
+  "BMW|3 Series|340i": {
+    "from": 2015,
+    "to": 2019
+  },
+  "BMW|3 Series|M340i": {
+    "from": 2019
+  },
+  "BMW|3 Series|M340d": {
+    "from": 2019
+  },
+  "BMW|3 Series|M3": {
+    "from": 2014
+  },
+  "BMW|4 Series|418d": {
+    "from": 2014,
+    "to": 2020
+  },
+  "BMW|4 Series|420i": {
+    "from": 2014
+  },
+  "BMW|4 Series|420i M Sport": {
+    "from": 2014
+  },
+  "BMW|4 Series|420d": {
+    "from": 2013
+  },
+  "BMW|4 Series|420d M Sport": {
+    "from": 2013
+  },
+  "BMW|4 Series|420d xDrive": {
+    "from": 2013
+  },
+  "BMW|4 Series|425d": {
+    "from": 2014,
+    "to": 2020
+  },
+  "BMW|4 Series|428i": {
+    "from": 2013,
+    "to": 2016
+  },
+  "BMW|4 Series|428i Sport": {
+    "from": 2013,
+    "to": 2016
+  },
+  "BMW|4 Series|428i Luxury": {
+    "from": 2013,
+    "to": 2016
+  },
+  "BMW|4 Series|428i M Sport": {
+    "from": 2013,
+    "to": 2016
+  },
+  "BMW|4 Series|428i Coupe": {
+    "from": 2013,
+    "to": 2016
+  },
+  "BMW|4 Series|428i Convertible": {
+    "from": 2014,
+    "to": 2016
+  },
+  "BMW|4 Series|428i Gran Coupe": {
+    "from": 2014,
+    "to": 2016
+  },
+  "BMW|4 Series|430i": {
+    "from": 2016
+  },
+  "BMW|4 Series|430i M Sport": {
+    "from": 2016
+  },
+  "BMW|4 Series|430d": {
+    "from": 2013
+  },
+  "BMW|4 Series|430d M Sport": {
+    "from": 2013
+  },
+  "BMW|4 Series|435d": {
+    "from": 2013,
+    "to": 2020
+  },
+  "BMW|4 Series|435i": {
+    "from": 2013,
+    "to": 2016
+  },
+  "BMW|4 Series|440i": {
+    "from": 2016,
+    "to": 2020
+  },
+  "BMW|4 Series|M440i": {
+    "from": 2020
+  },
+  "BMW|4 Series|M440d": {
+    "from": 2021
+  },
+  "BMW|4 Series|M4": {
+    "from": 2014
+  },
+  "BMW|5 Series|520i": {
+    "from": 2010
+  },
+  "BMW|5 Series|520d": {
+    "from": 2010
+  },
+  "BMW|5 Series|523i": {
+    "from": 2010,
+    "to": 2012
+  },
+  "BMW|5 Series|525d": {
+    "from": 2010
+  },
+  "BMW|5 Series|528i": {
+    "from": 2010,
+    "to": 2016
+  },
+  "BMW|5 Series|530i": {
+    "from": 2016
+  },
+  "BMW|5 Series|530d": {
+    "from": 2010
+  },
+  "BMW|5 Series|530e": {
+    "from": 2017
+  },
+  "BMW|5 Series|535d": {
+    "from": 2010
+  },
+  "BMW|5 Series|535i": {
+    "from": 2010,
+    "to": 2016
+  },
+  "BMW|5 Series|540i": {
+    "from": 2016
+  },
+  "BMW|5 Series|545e": {
+    "from": 2020,
+    "to": 2023
+  },
+  "BMW|5 Series|550e": {
+    "from": 2023
+  },
+  "BMW|5 Series|M550i": {
+    "from": 2017
+  },
+  "BMW|5 Series|M5": {
+    "from": 2011
+  },
+  "BMW|6 Series|620d": {
+    "from": 2017,
+    "to": 2023
+  },
+  "BMW|6 Series|630i": {
+    "from": 2017,
+    "to": 2023
+  },
+  "BMW|6 Series|630d": {
+    "from": 2011,
+    "to": 2023
+  },
+  "BMW|6 Series|635d": {
+    "from": 2007,
+    "to": 2011
+  },
+  "BMW|6 Series|640i": {
+    "from": 2011,
+    "to": 2018
+  },
+  "BMW|6 Series|640i M Sport": {
+    "from": 2011,
+    "to": 2018
+  },
+  "BMW|6 Series|640d": {
+    "from": 2011,
+    "to": 2018
+  },
+  "BMW|6 Series|640d M Sport": {
+    "from": 2011,
+    "to": 2018
+  },
+  "BMW|6 Series|650i": {
+    "from": 2011,
+    "to": 2018
+  },
+  "BMW|6 Series|M6": {
+    "from": 2012,
+    "to": 2018
+  },
+  "BMW|7 Series|730d": {
+    "from": 2008
+  },
+  "BMW|7 Series|740d": {
+    "from": 2008
+  },
+  "BMW|7 Series|740i": {
+    "from": 2008
+  },
+  "BMW|7 Series|745e": {
+    "from": 2019,
+    "to": 2022
+  },
+  "BMW|7 Series|750i": {
+    "from": 2008
+  },
+  "BMW|7 Series|760i": {
+    "from": 2008
+  },
+  "BMW|8 Series|840i": {
+    "from": 2018
+  },
+  "BMW|8 Series|840d": {
+    "from": 2018
+  },
+  "BMW|8 Series|M850i": {
+    "from": 2018
+  },
+  "BMW|8 Series|M8": {
+    "from": 2019
+  },
+  "BMW|X1|sDrive18i": {
+    "from": 2009
+  },
+  "BMW|X1|sDrive18d": {
+    "from": 2009
+  },
+  "BMW|X1|xDrive20d": {
+    "from": 2009
+  },
+  "BMW|X1|xDrive25e": {
+    "from": 2020
+  },
+  "BMW|X2|sDrive18i": {
+    "from": 2018
+  },
+  "BMW|X2|sDrive18d": {
+    "from": 2018
+  },
+  "BMW|X2|xDrive20d": {
+    "from": 2018
+  },
+  "BMW|X2|M35i": {
+    "from": 2018
+  },
+  "BMW|X3|xDrive20d": {
+    "from": 2010
+  },
+  "BMW|X3|xDrive30d": {
+    "from": 2010
+  },
+  "BMW|X3|xDrive30e": {
+    "from": 2020
+  },
+  "BMW|X3|M40i": {
+    "from": 2017
+  },
+  "BMW|X3|M40d": {
+    "from": 2018
+  },
+  "BMW|X3|X3 M": {
+    "from": 2019
+  },
+  "BMW|X4|xDrive20d": {
+    "from": 2014
+  },
+  "BMW|X4|xDrive30d": {
+    "from": 2014
+  },
+  "BMW|X4|M40i": {
+    "from": 2016
+  },
+  "BMW|X4|M40d": {
+    "from": 2018
+  },
+  "BMW|X4|X4 M": {
+    "from": 2019
+  },
+  "BMW|X5|xDrive30d": {
+    "from": 2010
+  },
+  "BMW|X5|xDrive40i": {
+    "from": 2018
+  },
+  "BMW|X5|xDrive45e": {
+    "from": 2019
+  },
+  "BMW|X5|xDrive50e": {
+    "from": 2023
+  },
+  "BMW|X5|M50d": {
+    "from": 2012,
+    "to": 2020
+  },
+  "BMW|X5|X5 M": {
+    "from": 2010
+  },
+  "BMW|X6|xDrive30d": {
+    "from": 2010
+  },
+  "BMW|X6|xDrive40i": {
+    "from": 2019
+  },
+  "BMW|X6|M50d": {
+    "from": 2012,
+    "to": 2020
+  },
+  "BMW|X6|X6 M": {
+    "from": 2010
+  },
+  "BMW|X7|xDrive30d": {
+    "from": 2019
+  },
+  "BMW|X7|xDrive40i": {
+    "from": 2019
+  },
+  "BMW|X7|M50i": {
+    "from": 2019
+  },
+  "BMW|X7|M60i": {
+    "from": 2022
+  },
+  "BMW|Z4|sDrive20i": {
+    "from": 2009
+  },
+  "BMW|Z4|sDrive28i": {
+    "from": 2011,
+    "to": 2016
+  },
+  "BMW|Z4|sDrive30i": {
+    "from": 2018
+  },
+  "BMW|Z4|M40i": {
+    "from": 2018
+  },
+  "BMW|i3|60Ah": {
+    "from": 2013,
+    "to": 2017
+  },
+  "BMW|i3|94Ah": {
+    "from": 2016,
+    "to": 2018
+  },
+  "BMW|i3|120Ah": {
+    "from": 2018,
+    "to": 2022
+  },
+  "BMW|i3|Range Extender": {
+    "from": 2013,
+    "to": 2018
+  },
+  "BMW|i4|eDrive35": {
+    "from": 2022
+  },
+  "BMW|i4|eDrive40": {
+    "from": 2021
+  },
+  "BMW|i4|M50": {
+    "from": 2021
+  },
+  "BMW|i5|eDrive40": {
+    "from": 2023
+  },
+  "BMW|i5|M60": {
+    "from": 2023
+  },
+  "BMW|i7|xDrive60": {
+    "from": 2022
+  },
+  "BMW|i7|M70": {
+    "from": 2023
+  },
+  "BMW|i8|Coupe": {
+    "from": 2014,
+    "to": 2020
+  },
+  "BMW|i8|Roadster": {
+    "from": 2018,
+    "to": 2020
+  },
+  "BMW|iX|xDrive40": {
+    "from": 2021
+  },
+  "BMW|iX|xDrive50": {
+    "from": 2021
+  },
+  "BMW|iX|M60": {
+    "from": 2022
+  }
+};
+
+const makeFamilyRules = {
+  BMW: [
+    { family: "1 Series", pattern: /^(1 Series|1[123][0-9][a-zA-Z]*|128ti|M135i|M140i)\b/i },
+    { family: "2 Series", pattern: /^(2 Series|2[123][0-9][a-zA-Z]*|M235i|M240i|M2)\b/i },
+    { family: "3 Series", pattern: /^(3 Series|3[1234][0-9][a-zA-Z]*|M340[di]?|M3)\b/i },
+    { family: "4 Series", pattern: /^(4 Series|4[1234][0-9][a-zA-Z]*|M440[di]?|M4)\b/i },
+    { family: "5 Series", pattern: /^(5 Series|5[12345][0-9][a-zA-Z]*|M550i|M5)\b/i },
+    { family: "6 Series", pattern: /^(6 Series|6[2345][0-9][a-zA-Z]*|M6)\b/i },
+    { family: "7 Series", pattern: /^(7 Series|7[3456][0-9][a-zA-Z]*)\b/i },
+    { family: "8 Series", pattern: /^(8 Series|8[45][0-9][a-zA-Z]*|M850i|M8)\b/i },
+    { family: "X1", pattern: /^X1\b/i }, { family: "X2", pattern: /^X2\b/i },
+    { family: "X3", pattern: /^X3\b/i }, { family: "X4", pattern: /^X4\b/i },
+    { family: "X5", pattern: /^X5\b/i }, { family: "X6", pattern: /^X6\b/i },
+    { family: "X7", pattern: /^X7\b/i }, { family: "Z4", pattern: /^Z4\b/i },
+    { family: "i3", pattern: /^i3\b/i }, { family: "i4", pattern: /^i4\b/i },
+    { family: "i5", pattern: /^i5\b/i }, { family: "i7", pattern: /^i7\b/i },
+    { family: "i8", pattern: /^i8\b/i }, { family: "iX", pattern: /^iX\b/i },
+  ],
+  Audi: [
+    { family: "Q4 e-tron", pattern: /^Q4\b.*e-tron/i }, { family: "e-tron GT", pattern: /^e-tron GT\b/i },
+    { family: "e-tron", pattern: /^e-tron\b/i }, { family: "A1", pattern: /^A1\b/i },
+    { family: "A2", pattern: /^A2\b/i }, { family: "A3", pattern: /^A3\b/i },
+    { family: "A4", pattern: /^A4\b/i }, { family: "A5", pattern: /^A5\b/i },
+    { family: "A6", pattern: /^A6\b/i }, { family: "A7", pattern: /^A7\b/i },
+    { family: "A8", pattern: /^A8\b/i }, { family: "Q2", pattern: /^Q2\b/i },
+    { family: "Q3", pattern: /^Q3\b/i }, { family: "Q5", pattern: /^Q5\b/i },
+    { family: "Q7", pattern: /^Q7\b/i }, { family: "Q8", pattern: /^Q8\b/i },
+    { family: "TT", pattern: /^TT\b/i }, { family: "R8", pattern: /^R8\b/i },
+  ],
+  "Mercedes-Benz": [
+    { family: "A-Class", pattern: /^(A-Class|A ?1[68]0|A ?200|A ?220|A ?250|A35|A45)\b/i },
+    { family: "B-Class", pattern: /^(B-Class|B ?180|B ?200|B ?250)\b/i },
+    { family: "C-Class", pattern: /^(C-Class|C ?180|C ?200|C ?220|C ?300|C ?350|C43|C63)\b/i },
+    { family: "E-Class", pattern: /^(E-Class|E ?200|E ?220|E ?300|E ?400|E53|E63)\b/i },
+    { family: "S-Class", pattern: /^(S-Class|S ?350|S ?400|S ?500|S ?580|S63)\b/i },
+    { family: "CLA", pattern: /^CLA\b/i }, { family: "GLA", pattern: /^GLA\b/i },
+    { family: "GLB", pattern: /^GLB\b/i }, { family: "GLC", pattern: /^GLC\b/i },
+    { family: "GLE", pattern: /^GLE\b/i }, { family: "GLS", pattern: /^GLS\b/i },
+    { family: "G", pattern: /^G( |-|$)/i }, { family: "EQA", pattern: /^EQA\b/i },
+    { family: "EQB", pattern: /^EQB\b/i }, { family: "EQC", pattern: /^EQC\b/i },
+    { family: "EQE", pattern: /^EQE\b/i }, { family: "EQS", pattern: /^EQS\b/i },
+  ],
+  "Land Rover": [
+    { family: "Range Rover Evoque", pattern: /^Range Rover Evoque\b/i }, { family: "Range Rover Sport", pattern: /^Range Rover Sport\b/i },
+    { family: "Range Rover Velar", pattern: /^Range Rover Velar\b/i }, { family: "Range Rover", pattern: /^Range Rover\b/i },
+    { family: "Discovery Sport", pattern: /^Discovery Sport\b/i }, { family: "Discovery", pattern: /^Discovery\b/i },
+    { family: "Defender", pattern: /^Defender\b/i }, { family: "Freelander", pattern: /^Freelander\b/i },
+  ],
+  Jaguar: [
+    { family: "XE", pattern: /^XE\b/i }, { family: "XF", pattern: /^XF\b/i }, { family: "XJ", pattern: /^XJ\b/i },
+    { family: "F-Pace", pattern: /^F-Pace\b/i }, { family: "E-Pace", pattern: /^E-Pace\b/i },
+    { family: "I-Pace", pattern: /^I-Pace\b/i }, { family: "F-Type", pattern: /^F-Type\b/i },
+  ],
+  Volkswagen: [
+    { family: "T-Cross", pattern: /^T-Cross\b/i }, { family: "T-Roc", pattern: /^T-Roc\b/i },
+    { family: "Golf", pattern: /^Golf\b/i }, { family: "Polo", pattern: /^Polo\b/i },
+    { family: "Passat", pattern: /^Passat\b/i }, { family: "Tiguan", pattern: /^Tiguan\b/i },
+    { family: "Touareg", pattern: /^Touareg\b/i }, { family: "ID3", pattern: /^ID\.?3\b/i },
+    { family: "ID4", pattern: /^ID\.?4\b/i }, { family: "ID5", pattern: /^ID\.?5\b/i },
+    { family: "ID7", pattern: /^ID\.?7\b/i },
+  ],
+};
+
+const trailingDescriptors = [
+  "2WD", "4WD", "AWD", "FWD", "RWD", "xDrive", "sDrive", "quattro", "4MATIC",
+  "Auto", "Automatic", "Manual", "MHT", "PHEV", "Hybrid", "Electric",
+  "Coupe", "Convertible", "Cabriolet", "Roadster", "Saloon", "Sedan", "Estate", "Touring", "Wagon",
+  "Hatchback", "Sportback", "Gran Coupe", "MPV", "SUV", "Van", "Pickup", "Crew Cab", "Double Cab", "LWB", "SWB",
+  "S line", "S-Line", "M Sport", "AMG Line", "ST-Line", "R-Line", "GT Line",
+  "Sport", "SE", "SEL", "S", "SXT", "Limited", "Luxury", "Premium", "Plus", "Pro",
+];
+
+function cleanText(value) {
+  return String(value || "").replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+}
+
+function naturalSort(items) {
+  return [...new Set(items.filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b, "en-GB", { numeric: true, sensitivity: "base" })
+  );
+}
+
+function stripTrailingDescriptors(value) {
+  let clean = cleanText(value);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    for (const descriptor of trailingDescriptors) {
+      const next = clean.replace(new RegExp("\\s+" + escapeRegExp(descriptor) + "$", "i"), "").trim();
+
+      if (next !== clean && next) {
+        clean = next;
+        changed = true;
+      }
+    }
+  }
+
+  return clean;
+}
+
+function getRuleFamily(make, rawModel) {
+  const rules = makeFamilyRules[make] || [];
+  const clean = cleanText(rawModel);
+  const match = rules.find((rule) => rule.pattern.test(clean));
+
+  return match?.family || "";
+}
+
+function getCuratedFamily(make, rawModel) {
+  const clean = cleanText(rawModel).toLowerCase();
+  const curatedModels = Object.keys(curatedVehicleModelDetails[make] || {}).sort((a, b) => b.length - a.length);
+
+  return curatedModels.find((model) => clean.startsWith(model.toLowerCase())) || "";
+}
+
+function getGenericFamily(rawModel) {
+  const clean = cleanText(rawModel);
+
+  if (!clean) return "";
+
+  const slashFamily = clean.split("/")[0]?.trim();
+  const stripped = stripTrailingDescriptors(slashFamily || clean);
+
+  return stripped || clean;
+}
+
+function getModelFamily(make, rawModel) {
+  return getRuleFamily(make, rawModel) || getCuratedFamily(make, rawModel) || getGenericFamily(rawModel);
+}
+
+function getVariantFromRaw(rawModel, family) {
+  const clean = cleanText(rawModel);
+
+  if (!clean || clean.toLowerCase() === String(family || "").toLowerCase()) return "";
+
+  const familyPattern = new RegExp("^" + escapeRegExp(family) + "\\s+", "i");
+  const variant = clean.replace(familyPattern, "").trim();
+
+  return variant && variant.toLowerCase() !== String(family || "").toLowerCase() ? variant : "";
+}
+
+function buildVehicleData() {
+  const modelsByMake = {};
+  const detailsByMake = {};
+
+  for (const make of Object.keys(rawVehicleMakes)) {
+    const modelSet = new Set();
+    const detailSets = {};
+
+    for (const model of Object.keys(curatedVehicleModelDetails[make] || {})) {
+      modelSet.add(model);
+      detailSets[model] = new Set(curatedVehicleModelDetails[make][model]);
+    }
+
+    for (const rawModel of rawVehicleMakes[make] || []) {
+      const family = getModelFamily(make, rawModel);
+
+      if (!family) continue;
+
+      modelSet.add(family);
+
+      const variant = getVariantFromRaw(rawModel, family);
+
+      if (variant) {
+        if (!detailSets[family]) detailSets[family] = new Set();
+        detailSets[family].add(variant);
+      }
+    }
+
+    modelsByMake[make] = naturalSort([...modelSet]);
+
+    const makeDetails = {};
+    for (const [model, details] of Object.entries(detailSets)) {
+      makeDetails[model] = naturalSort([...details]);
+    }
+    detailsByMake[make] = makeDetails;
+  }
+
+  return { modelsByMake, detailsByMake };
+}
+
+const builtVehicleData = buildVehicleData();
+
+export const vehicleMakes = builtVehicleData.modelsByMake;
+export const vehicleModelDetails = builtVehicleData.detailsByMake;
 export const vehicleMakeOptions = Object.keys(vehicleMakes);
 
+function metaKey(make, model, detail) {
+  return [make, model, detail].map((value) => String(value || "").trim()).join("|");
+}
+
+function getInheritedVariantMeta(make, model, detail) {
+  const detailText = String(detail || "").trim();
+  const makeDetails = vehicleModelDetails[make]?.[model] || [];
+  const baseDetail = makeDetails
+    .filter((option) => detailText.toLowerCase().startsWith(option.toLowerCase()))
+    .sort((a, b) => b.length - a.length)
+    .find((option) => vehicleModelDetailMeta[metaKey(make, model, option)]);
+
+  return baseDetail ? vehicleModelDetailMeta[metaKey(make, model, baseDetail)] : null;
+}
+
+export function getVehicleModelDetailMeta({ make, model, detail } = {}) {
+  return (
+    vehicleModelDetailMeta[metaKey(make, model, detail)] ||
+    getInheritedVariantMeta(make, model, detail) ||
+    null
+  );
+}
+
+export function isVehicleModelDetailYearCompatible({ make, model, detail, year } = {}) {
+  const numericYear = Number(year);
+  const meta = getVehicleModelDetailMeta({ make, model, detail });
+
+  if (!meta || !Number.isFinite(numericYear) || !numericYear) return true;
+  if (meta.from && numericYear < meta.from) return false;
+  if (meta.to && numericYear > meta.to) return false;
+
+  return true;
+}
+
+export function getVehicleModelDetailYears({ make, model, detail } = {}) {
+  const meta = getVehicleModelDetailMeta({ make, model, detail });
+
+  if (!meta) return "";
+  if (meta.from && meta.to) return String(meta.from) + "-" + String(meta.to);
+  if (meta.from) return String(meta.from) + " onwards";
+  if (meta.to) return "up to " + String(meta.to);
+
+  return "";
+}
+
+export function getVehicleModelDetailOptions({ make, model, year } = {}) {
+  const details = vehicleModelDetails[make]?.[model] || [];
+
+  return details.filter((detail) => isVehicleModelDetailYearCompatible({ make, model, detail, year }));
+}
+
 export const bodyTypeOptions = [
-  "Hatchback",
-  "Saloon",
-  "Estate",
-  "SUV",
-  "Coupe",
-  "Convertible",
-  "MPV",
-  "Pickup",
-  "Van",
-  "4x4",
-  "Camper",
-  "Chassis Cab",
-  "Combi Van",
-  "Limousine",
-  "Minibus",
-  "People Carrier",
-  "Sports",
-  "Wheelchair Accessible",
-  "Other"
+  "Hatchback", "Saloon", "Estate", "SUV", "Coupe", "Convertible", "MPV", "Pickup", "Van", "4x4", "Camper", "Chassis Cab", "Combi Van", "Limousine", "Minibus", "People Carrier", "Sports", "Wheelchair Accessible", "Other"
 ];
 
 export const conditionOptions = ["New", "Used"];
