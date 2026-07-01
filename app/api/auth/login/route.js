@@ -1,66 +1,49 @@
+import { randomBytes } from "crypto";
+import bcrypt from "bcryptjs";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <hello@kerbcar.co.uk>";
 
 const supabase =
   supabaseUrl && serviceRoleKey
     ? createClient(supabaseUrl, serviceRoleKey)
     : null;
 
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
-
-function clean(value) {
+function cleanEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+function createSessionToken() {
+  return randomBytes(48).toString("hex");
 }
 
-function createLoginEmailHtml(code) {
-  return `
-    <div style="font-family: Arial, sans-serif; background:#f6f8fc; padding:28px;">
-      <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:18px; padding:30px; border:1px solid #e5eaf4;">
-        <h1 style="margin:0 0 12px; color:#071126; font-size:28px;">Your Kerb login code</h1>
+async function createSession(account) {
+  const sessionToken = createSessionToken();
 
-        <p style="margin:0 0 20px; color:#59657a; line-height:1.6;">
-          Enter this code on Kerb to sign in to your account.
-        </p>
+  const expiresAt = new Date(
+    Date.now() + 365 * 24 * 60 * 60 * 1000
+  ).toISOString();
 
-        <div style="background:#eef3ff; border:1px solid #d7e4ff; border-radius:16px; padding:22px; text-align:center; margin:22px 0;">
-          <div style="font-size:42px; font-weight:900; letter-spacing:8px; color:#0048ff;">
-            ${code}
-          </div>
-        </div>
+  const { error } = await supabase.from("kerb_account_sessions").insert({
+    account_id: account.id,
+    email: account.email,
+    session_token: sessionToken,
+    expires_at: expiresAt,
+  });
 
-        <p style="margin:0; color:#59657a; line-height:1.6;">
-          This code expires in 10 minutes. If you didn’t request this, you can ignore this email.
-        </p>
+  if (error) {
+    throw new Error(error.message);
+  }
 
-        <p style="margin:24px 0 0; color:#7a8499; font-size:13px;">
-          Thanks for using Kerb.
-        </p>
-      </div>
-    </div>
-  `;
+  return sessionToken;
 }
 
 export async function POST(request) {
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase server client is not configured." },
-      { status: 500 }
-    );
-  }
-
-  if (!resend) {
-    return NextResponse.json(
-      { error: "RESEND_API_KEY is missing in Vercel environment variables." },
       { status: 500 }
     );
   }
@@ -76,7 +59,8 @@ export async function POST(request) {
     );
   }
 
-  const email = clean(body.email);
+  const email = cleanEmail(body.email);
+  const password = String(body.password || "");
 
   if (!email || !email.includes("@")) {
     return NextResponse.json(
@@ -85,46 +69,70 @@ export async function POST(request) {
     );
   }
 
-  const code = generateCode();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-  await supabase
-    .from("kerb_login_codes")
-    .update({ used: true })
-    .eq("email", email)
-    .eq("used", false);
-
-  const { error: insertError } = await supabase
-    .from("kerb_login_codes")
-    .insert({
-      email,
-      code,
-      expires_at: expiresAt,
-      used: false,
-    });
-
-  if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
-  }
-
-  try {
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: "Your Kerb login code",
-      html: createLoginEmailHtml(code),
-    });
-  } catch (error) {
-    console.error("Kerb login email error:", error);
-
+  if (!password) {
     return NextResponse.json(
-      { error: error?.message || "Could not send login code." },
-      { status: 500 }
+      { error: "Enter your password." },
+      { status: 400 }
     );
   }
 
-  return NextResponse.json({
-    success: true,
-    message: "Login code sent.",
-  });
+  const { data: account, error: accountError } = await supabase
+    .from("kerb_accounts")
+    .select("*")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (accountError) {
+    return NextResponse.json({ error: accountError.message }, { status: 500 });
+  }
+
+  if (!account) {
+    return NextResponse.json(
+      { error: "No account found with this email. Please create an account." },
+      { status: 404 }
+    );
+  }
+
+  if (!account.password_hash) {
+    return NextResponse.json(
+      {
+        error:
+          "This account does not have a password yet. Use email code login, then add a password later.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const passwordMatches = await bcrypt.compare(password, account.password_hash);
+
+  if (!passwordMatches) {
+    return NextResponse.json(
+      { error: "Incorrect password." },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const sessionToken = await createSession(account);
+
+    return NextResponse.json({
+      success: true,
+      account: {
+        id: account.id,
+        email: account.email,
+        full_name: account.full_name,
+        phone: account.phone,
+        profile_photo_url: account.profile_photo_url,
+        default_show_seller_name: account.default_show_seller_name,
+        default_show_seller_phone: account.default_show_seller_phone,
+        created_at: account.created_at,
+      },
+      session_token: sessionToken,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error.message || "Could not create session." },
+      { status: 500 }
+    );
+  }
 }
