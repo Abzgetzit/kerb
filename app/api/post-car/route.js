@@ -8,6 +8,8 @@ import {
 
 export const runtime = "nodejs";
 
+const MAX_LISTING_PHOTOS = 30;
+
 function cleanText(value) {
   if (value === null || value === undefined) return null;
 
@@ -210,7 +212,7 @@ export async function POST(request) {
     const photos = formData
       .getAll("photos")
       .filter((photo) => photo && typeof photo !== "string" && photo.size > 0)
-      .slice(0, 12);
+      .slice(0, MAX_LISTING_PHOTOS);
 
     const photoUrls = [];
 
@@ -286,7 +288,7 @@ export async function POST(request) {
       );
     }
 
-    const title = [year, make, model].filter(Boolean).join(" ");
+    const title = [year, make, model, modelDetail].filter(Boolean).join(" ");
 
     const listing = {
       status: "approved",
