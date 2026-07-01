@@ -94,7 +94,10 @@ function formatMileageOption(value) {
 function getTitle(car) {
   if (car.title) return car.title;
 
-  const title = [car.make, car.model].filter(Boolean).join(" ").trim();
+  const title = [car.make, car.model, car.model_detail]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
   return title || "Car listing";
 }
