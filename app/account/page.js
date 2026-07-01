@@ -43,10 +43,9 @@ function getListingStatusInfo(status) {
   const statuses = {
     pending: {
       className: "pending",
-      label: "Pending review",
-      short: "Waiting for approval",
-      message:
-        "This listing is saved but not live yet. Kerb will review it before buyers can see it.",
+      label: "Not live",
+      short: "Hidden from buyers",
+      message: "This listing is saved but is not currently live on Kerb.",
     },
     approved: {
       className: "approved",
@@ -73,10 +72,9 @@ function getListingStatusInfo(status) {
   return (
     statuses[cleanStatus] || {
       className: "pending",
-      label: "Pending review",
-      short: "Waiting for approval",
-      message:
-        "This listing is saved but not live yet. Kerb will review it before buyers can see it.",
+      label: "Not live",
+      short: "Hidden from buyers",
+      message: "This listing is saved but is not currently live on Kerb.",
     }
   );
 }
@@ -307,6 +305,7 @@ function createKerbUserFromAccount(result) {
       "",
     full_name: account.full_name || result?.full_name || "",
     phone: account.phone || result?.phone || "",
+    profile_photo_url: account.profile_photo_url || result?.profile_photo_url || "",
     default_show_seller_name: account.default_show_seller_name !== false,
     default_show_seller_phone: account.default_show_seller_phone === true,
     created_at: account.created_at || result?.created_at || "",
@@ -398,6 +397,10 @@ export default function AccountPage() {
   const [settingsForm, setSettingsForm] = useState({
     full_name: "",
     phone: "",
+    profile_photo_url: "",
+    profile_photo_file: null,
+    profile_photo_preview: "",
+    remove_profile_photo: false,
     default_show_seller_name: true,
     default_show_seller_phone: false,
   });
@@ -449,6 +452,10 @@ export default function AccountPage() {
       setSettingsForm({
         full_name: result?.account?.full_name || result?.account?.name || "",
         phone: result?.account?.phone || "",
+        profile_photo_url: result?.account?.profile_photo_url || "",
+        profile_photo_file: null,
+        profile_photo_preview: "",
+        remove_profile_photo: false,
         default_show_seller_name: result?.account?.default_show_seller_name !== false,
         default_show_seller_phone: result?.account?.default_show_seller_phone === true,
       });
@@ -471,6 +478,14 @@ export default function AccountPage() {
     loadAccount();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (settingsForm.profile_photo_preview) {
+        URL.revokeObjectURL(settingsForm.profile_photo_preview);
+      }
+    };
+  }, [settingsForm.profile_photo_preview]);
+
   function logout() {
     localStorage.removeItem("kerbSessionToken");
     localStorage.removeItem("kerbAccountEmail");
@@ -485,6 +500,43 @@ export default function AccountPage() {
     }
 
     window.location.href = "/post-car";
+  }
+
+  function updateProfilePhoto(event) {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+
+    setSettingsForm((current) => {
+      if (current.profile_photo_preview) {
+        URL.revokeObjectURL(current.profile_photo_preview);
+      }
+
+      return {
+        ...current,
+        profile_photo_file: file,
+        profile_photo_preview: previewUrl,
+        remove_profile_photo: false,
+      };
+    });
+  }
+
+  function clearProfilePhoto() {
+    setSettingsForm((current) => {
+      if (current.profile_photo_preview) {
+        URL.revokeObjectURL(current.profile_photo_preview);
+      }
+
+      return {
+        ...current,
+        profile_photo_url: "",
+        profile_photo_file: null,
+        profile_photo_preview: "",
+        remove_profile_photo: true,
+      };
+    });
   }
 
   async function saveAccountSettings(event) {
@@ -502,13 +554,33 @@ export default function AccountPage() {
     setSettingsError("");
 
     try {
+      const formData = new FormData();
+
+      formData.set("full_name", settingsForm.full_name);
+      formData.set("phone", settingsForm.phone);
+      formData.set(
+        "default_show_seller_name",
+        settingsForm.default_show_seller_name ? "true" : "false"
+      );
+      formData.set(
+        "default_show_seller_phone",
+        settingsForm.default_show_seller_phone ? "true" : "false"
+      );
+      formData.set(
+        "remove_profile_photo",
+        settingsForm.remove_profile_photo ? "true" : "false"
+      );
+
+      if (settingsForm.profile_photo_file) {
+        formData.set("profile_photo", settingsForm.profile_photo_file);
+      }
+
       const response = await fetch("/api/account/settings", {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
           "x-kerb-session-token": token,
         },
-        body: JSON.stringify(settingsForm),
+        body: formData,
       });
 
       const result = await response.json();
@@ -522,6 +594,19 @@ export default function AccountPage() {
         account: result.account,
         email: result.account?.email || current?.email,
       }));
+      setSettingsForm((current) => {
+        if (current.profile_photo_preview) {
+          URL.revokeObjectURL(current.profile_photo_preview);
+        }
+
+        return {
+          ...current,
+          profile_photo_url: result.account?.profile_photo_url || "",
+          profile_photo_file: null,
+          profile_photo_preview: "",
+          remove_profile_photo: false,
+        };
+      });
       syncKerbUser({
         ...accountData,
         account: result.account,
@@ -613,6 +698,8 @@ export default function AccountPage() {
   const heroListingStatus = heroListing
     ? getListingStatusInfo(heroListing.status)
     : null;
+  const profilePhotoSrc =
+    settingsForm.profile_photo_preview || settingsForm.profile_photo_url;
 
   if (isLoading) {
     return (
@@ -807,7 +894,7 @@ export default function AccountPage() {
       {stats.listings > 0 && (
         <section className="statusSummary" aria-label="Listing status summary">
           {[
-            ["pending", "Pending review"],
+            ["pending", "Not live"],
             ["approved", "Live"],
             ["rejected", "Needs changes"],
             ["sold", "Sold"],
@@ -888,7 +975,7 @@ export default function AccountPage() {
               <p>
                 Boosting moves your car into Kerb’s priority listing positions
                 so it has a better chance of being seen near the top of Browse
-                Cars and Featured Cars. Buyers do not see a public boosted badge.
+                Cars and Featured Cars.
               </p>
             </div>
 
@@ -898,8 +985,8 @@ export default function AccountPage() {
                 <span>Priority chance to appear above normal listings.</span>
               </div>
               <div>
-                <strong>Fair rotation</strong>
-                <span>Boosted cars rotate with other boosted cars.</span>
+                <strong>More visibility</strong>
+                <span>Priority placement can help more buyers see your listing.</span>
               </div>
               <div>
                 <strong>No guarantee</strong>
@@ -1027,7 +1114,7 @@ export default function AccountPage() {
 
             {latestListings.length === 0 ? (
               <div className="softEmpty">
-                <p>Post a car and it will appear here for review and editing.</p>
+                <p>Post a car and it will appear here for editing and tracking.</p>
                 <button type="button" onClick={goToPostCar}>
                   Post your car
                 </button>
@@ -1385,6 +1472,42 @@ export default function AccountPage() {
           </div>
 
           <form className="settingsForm" onSubmit={saveAccountSettings}>
+            <div className="profilePhotoBox">
+              <div className="profilePhotoPreview">
+                {profilePhotoSrc ? (
+                  <img src={profilePhotoSrc} alt="Account profile" />
+                ) : (
+                  <span>{getAccountName(accountData).charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+
+              <div className="profilePhotoControls">
+                <span className="sectionKicker">Profile picture</span>
+                <h3>Account profile photo</h3>
+                <p>
+                  Add a clear photo for your account. Your listing contact
+                  privacy settings still control what buyers can see.
+                </p>
+
+                <div className="profilePhotoActions">
+                  <label className="photoInputButton">
+                    Upload photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={updateProfilePhoto}
+                    />
+                  </label>
+
+                  {profilePhotoSrc && (
+                    <button type="button" onClick={clearProfilePhoto}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="settingsGrid">
               <label>
                 Full name
@@ -2859,6 +2982,83 @@ const styles = `
     gap: 18px;
   }
 
+  .profilePhotoBox {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+    border: 1px solid #dfe8fb;
+    border-radius: 22px;
+    background: #f7faff;
+    padding: 18px;
+  }
+
+  .profilePhotoPreview {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #eef3ff;
+    color: #0048ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-weight: 950;
+    border: 1px solid #d7e4ff;
+  }
+
+  .profilePhotoPreview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .profilePhotoControls {
+    min-width: 0;
+  }
+
+  .profilePhotoControls h3 {
+    margin-bottom: 6px;
+  }
+
+  .profilePhotoControls p {
+    font-size: 13px;
+  }
+
+  .profilePhotoActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .photoInputButton,
+  .profilePhotoActions button {
+    border: none;
+    border-radius: 13px;
+    background: #0048ff;
+    color: white;
+    padding: 12px 15px;
+    font-weight: 950;
+    cursor: pointer;
+  }
+
+  .photoInputButton {
+    display: inline-flex;
+    width: fit-content;
+  }
+
+  .photoInputButton input {
+    display: none;
+  }
+
+  .profilePhotoActions button {
+    background: #eef3ff;
+    color: #0048ff;
+  }
+
   .settingsGrid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3071,6 +3271,7 @@ const styles = `
     .detailsGrid,
     .heroListingCard,
     .heroListingStats,
+    .profilePhotoBox,
     .settingsGrid,
     .boostHistoryMeta {
       grid-template-columns: 1fr;
@@ -3078,6 +3279,11 @@ const styles = `
 
     .heroListingImage {
       min-height: 190px;
+    }
+
+    .profilePhotoPreview {
+      width: 96px;
+      height: 96px;
     }
 
     .panelHeader {
