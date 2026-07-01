@@ -27,6 +27,74 @@ function cleanBoolean(value, fallback = false) {
   return fallback;
 }
 
+function getFileExtension(fileName = "") {
+  const extension = String(fileName).split(".").pop();
+
+  if (!extension || extension === fileName) return "jpg";
+
+  return extension.toLowerCase();
+}
+
+function getStoragePathFromPublicUrl(url) {
+  const marker = "/storage/v1/object/public/kerb-account-photos/";
+  const text = cleanText(url);
+  const markerIndex = text.indexOf(marker);
+
+  if (markerIndex === -1) return "";
+
+  return decodeURIComponent(text.slice(markerIndex + marker.length));
+}
+
+async function uploadProfilePhoto({ accountId, file }) {
+  if (!file || typeof file === "string" || file.size <= 0) return "";
+
+  if (!String(file.type || "").startsWith("image/")) {
+    throw new Error("Profile photo must be an image file.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Please keep your profile photo under 5MB.");
+  }
+
+  const fileExt = getFileExtension(file.name);
+  const fileName = `${crypto.randomUUID()}.${fileExt}`;
+  const filePath = `accounts/${accountId}/${fileName}`;
+  const arrayBuffer = await file.arrayBuffer();
+  const fileBuffer = Buffer.from(arrayBuffer);
+
+  const { error: uploadError } = await supabase.storage
+    .from("kerb-account-photos")
+    .upload(filePath, fileBuffer, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || "image/jpeg",
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("kerb-account-photos")
+    .getPublicUrl(filePath);
+
+  return publicUrlData?.publicUrl || "";
+}
+
+async function removeProfilePhoto(url) {
+  const path = getStoragePathFromPublicUrl(url);
+
+  if (!path) return;
+
+  const { error } = await supabase.storage
+    .from("kerb-account-photos")
+    .remove([path]);
+
+  if (error) {
+    console.error("Kerb profile photo delete error:", error);
+  }
+}
+
 async function getSignedInAccount(request) {
   const token = cleanText(request.headers.get("x-kerb-session-token"));
 
@@ -83,10 +151,34 @@ export async function PATCH(request) {
     );
   }
 
+  const contentType = request.headers.get("content-type") || "";
   let body;
+  let profilePhoto = null;
 
   try {
-    body = await request.json();
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+
+      body = {
+        full_name: formData.get("full_name"),
+        phone: formData.get("phone"),
+        default_show_seller_name: formData.get("default_show_seller_name"),
+        default_show_seller_phone: formData.get("default_show_seller_phone"),
+        remove_profile_photo: formData.get("remove_profile_photo"),
+      };
+
+      const uploadedPhoto = formData.get("profile_photo");
+
+      if (
+        uploadedPhoto &&
+        typeof uploadedPhoto !== "string" &&
+        uploadedPhoto.size > 0
+      ) {
+        profilePhoto = uploadedPhoto;
+      }
+    } else {
+      body = await request.json();
+    }
   } catch {
     return NextResponse.json(
       { error: "Invalid request body." },
@@ -126,6 +218,27 @@ export async function PATCH(request) {
     );
   }
 
+  const removeProfilePhotoRequest = cleanBoolean(body.remove_profile_photo);
+  const existingProfilePhotoUrl = cleanText(signedIn.account.profile_photo_url);
+  let uploadedProfilePhotoUrl = "";
+  let profilePhotoUrl = removeProfilePhotoRequest ? "" : existingProfilePhotoUrl;
+
+  try {
+    uploadedProfilePhotoUrl = await uploadProfilePhoto({
+      accountId: signedIn.account.id,
+      file: profilePhoto,
+    });
+
+    if (uploadedProfilePhotoUrl) {
+      profilePhotoUrl = uploadedProfilePhotoUrl;
+    }
+  } catch (error) {
+    return NextResponse.json(
+      { error: error.message || "Could not upload profile photo." },
+      { status: 400 }
+    );
+  }
+
   const { data: account, error } = await supabase
     .from("kerb_accounts")
     .update({
@@ -133,6 +246,7 @@ export async function PATCH(request) {
       phone: phone || null,
       default_show_seller_name: defaultShowSellerName,
       default_show_seller_phone: defaultShowSellerPhone && Boolean(phone),
+      profile_photo_url: profilePhotoUrl || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", signedIn.account.id)
@@ -140,7 +254,19 @@ export async function PATCH(request) {
     .single();
 
   if (error) {
+    if (uploadedProfilePhotoUrl) {
+      await removeProfilePhoto(uploadedProfilePhotoUrl);
+    }
+
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (
+    existingProfilePhotoUrl &&
+    existingProfilePhotoUrl !== profilePhotoUrl &&
+    (uploadedProfilePhotoUrl || removeProfilePhotoRequest)
+  ) {
+    await removeProfilePhoto(existingProfilePhotoUrl);
   }
 
   return NextResponse.json({
