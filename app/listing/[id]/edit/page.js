@@ -85,7 +85,7 @@ function formatNumber(value) {
 function getTitle(car) {
   if (!car) return "Edit listing";
 
-  const fallback = [car.year, car.make, car.model]
+  const fallback = [car.year, car.make, car.model, car.model_detail]
     .filter(Boolean)
     .join(" ")
     .trim();
