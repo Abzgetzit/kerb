@@ -1019,7 +1019,7 @@ export default function HomePage() {
           <Link href="/browse" className="guideCard">
             <Icon name="shield" />
             <h3>Buying safely</h3>
-            <p>Browse approved listings and contact sellers directly.</p>
+            <p>Browse live listings and contact sellers directly.</p>
           </Link>
 
           <Link href="/browse?category=electric-hybrid" className="guideCard">
@@ -1036,6 +1036,8 @@ export default function HomePage() {
           <Link href="/privacy">Privacy</Link>
           <Link href="/cookies">Cookies</Link>
           <Link href="/safety">Safety</Link>
+          <Link href="/contact">Contact</Link>
+          <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>
         </div>
       </footer>
 
