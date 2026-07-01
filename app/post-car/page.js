@@ -5,71 +5,13 @@ import SiteMenu from "../components/SiteMenu";
 import {
   bodyTypeOptions,
   conditionOptions,
+  getVehicleModelDetailOptions,
+  getVehicleModelDetailYears,
+  isVehicleModelDetailYearCompatible,
   vehicleMakes,
 } from "../lib/vehicle-data";
 
 const MAX_LISTING_PHOTOS = 30;
-
-const modelDetails = {
-  Audi: {
-    A3: ["30 TFSI", "35 TFSI", "35 TDI", "40 TFSI e", "S3", "RS3"],
-    A4: ["35 TFSI", "40 TFSI", "35 TDI", "40 TDI", "S4", "RS4"],
-    A5: ["35 TFSI", "40 TFSI", "35 TDI", "S5", "RS5"],
-    Q5: ["40 TDI", "45 TFSI", "50 TFSI e", "SQ5"],
-  },
-  BMW: {
-    "1 Series": ["116i", "118i", "118d", "120i", "120d", "128ti", "M135i"],
-    "2 Series": ["218i", "220i", "220d", "225e", "M235i", "M240i"],
-    "3 Series": [
-      "318i",
-      "318i M Sport",
-      "318d",
-      "318d M Sport",
-      "320i",
-      "320i M Sport",
-      "320d",
-      "320d M Sport",
-      "330i",
-      "330i M Sport",
-      "330d",
-      "330d M Sport",
-      "330e",
-      "330e M Sport",
-      "335d",
-      "335i",
-      "M340i",
-      "M340d",
-      "M3",
-    ],
-    "4 Series": ["420i", "420d", "430i", "430d", "435d", "M440i", "M440d", "M4"],
-    "5 Series": ["520i", "520d", "530i", "530d", "530e", "540i", "M550i", "M5"],
-    X3: ["xDrive20d", "xDrive30e", "xDrive30d", "M40i", "M40d", "X3 M"],
-    X5: ["xDrive30d", "xDrive40i", "xDrive45e", "xDrive50e", "M50d", "X5 M"],
-  },
-  Ford: {
-    Fiesta: ["1.0 EcoBoost", "1.5 TDCi", "ST-Line", "ST"],
-    Focus: ["1.0 EcoBoost", "1.5 EcoBlue", "ST-Line", "ST", "RS"],
-    Kuga: ["EcoBoost", "EcoBlue", "PHEV", "ST-Line"],
-  },
-  "Mercedes-Benz": {
-    "A-Class": ["A180", "A200", "A220", "A250e", "A35 AMG", "A45 AMG"],
-    "C-Class": ["C180", "C200", "C220d", "C300", "C300e", "C43 AMG", "C63 AMG"],
-    "E-Class": ["E220d", "E300", "E300e", "E400d", "E53 AMG", "E63 AMG"],
-    GLC: ["GLC 220d", "GLC 300", "GLC 300e", "GLC 43 AMG", "GLC 63 AMG"],
-  },
-  Tesla: {
-    "Model 3": ["Rear-Wheel Drive", "Long Range", "Performance"],
-    "Model Y": ["Rear-Wheel Drive", "Long Range", "Performance"],
-    "Model S": ["Long Range", "Plaid"],
-    "Model X": ["Long Range", "Plaid"],
-  },
-  Volkswagen: {
-    Golf: ["1.0 TSI", "1.5 TSI", "2.0 TDI", "GTE", "GTI", "GTD", "R"],
-    Passat: ["1.5 TSI", "2.0 TDI", "GTE", "R-Line"],
-    Polo: ["1.0 MPI", "1.0 TSI", "GTI"],
-    Tiguan: ["1.5 TSI", "2.0 TDI", "eHybrid", "R-Line", "R"],
-  },
-};
 
 const makeFallbackGuide = {
   Abarth: 22000,
@@ -153,19 +95,19 @@ const boostPlanOptions = [
   {
     value: "7-days",
     label: "1 week",
-    price: "£7.99",
+    price: "\u00a37.99",
     description: "Priority placement for 7 days.",
   },
   {
     value: "14-days",
     label: "2 weeks",
-    price: "£13.99",
+    price: "\u00a313.99",
     description: "Priority placement for 14 days.",
   },
   {
     value: "30-days",
     label: "1 month",
-    price: "£19.99",
+    price: "\u00a319.99",
     description: "Priority placement for 30 days.",
   },
 ];
@@ -234,6 +176,73 @@ const modelDetailValueGuide = {
   "Volkswagen|Golf|R": 50000,
 };
 
+const marketValueAnchors = [
+  {
+    make: "BMW",
+    model: "4 Series",
+    detailIncludes: "428i",
+    yearFrom: 2013,
+    yearTo: 2016,
+    baseYear: 2015,
+    baseMileage: 45000,
+    low: 11000,
+    high: 14000,
+    mileageRate: 0.08,
+  },
+  {
+    make: "BMW",
+    model: "3 Series",
+    detailIncludes: "320i",
+    yearFrom: 2019,
+    yearTo: 2022,
+    baseYear: 2021,
+    baseMileage: 45000,
+    low: 17500,
+    high: 22200,
+    mileageRate: 0.1,
+  },
+  {
+    make: "BMW",
+    model: "3 Series",
+    detailIncludes: "330e",
+    yearFrom: 2019,
+    yearTo: 2022,
+    baseYear: 2021,
+    baseMileage: 45000,
+    low: 16000,
+    high: 21000,
+    mileageRate: 0.1,
+  },
+  {
+    make: "BMW",
+    model: "4 Series",
+    detailIncludes: "430i",
+    yearFrom: 2020,
+    yearTo: 2024,
+    baseYear: 2021,
+    baseMileage: 45000,
+    low: 21000,
+    high: 27000,
+    mileageRate: 0.12,
+  },
+  {
+    make: "BMW",
+    model: "4 Series",
+    detailIncludes: "420i",
+    yearFrom: 2020,
+    yearTo: 2024,
+    baseYear: 2021,
+    baseMileage: 45000,
+    low: 19000,
+    high: 24000,
+    mileageRate: 0.1,
+  },
+];
+
+function normaliseMarketText(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
 function normaliseModelDetail(value) {
   return String(value || "")
     .replace(/\s+(M Sport|AMG Line|S Line|S-Line|ST-Line|ST Line|R-Line|R Line|GT Line|Titanium|Vignale|Black Edition)$/i, "")
@@ -274,6 +283,70 @@ function getGuidePrice({ make, model, modelDetail }) {
   return roundToNearestHundred(baseGuide * getTrimMultiplier(modelDetail));
 }
 
+function getMarketAnchor({ make, model, modelDetail, year }) {
+  const numericYear = Number(year);
+  const detailKey = normaliseMarketText(modelDetail || model);
+
+  return marketValueAnchors
+    .filter((anchor) => {
+      if (anchor.make !== make || anchor.model !== model) return false;
+      if (anchor.yearFrom && numericYear < anchor.yearFrom) return false;
+      if (anchor.yearTo && numericYear > anchor.yearTo) return false;
+
+      return detailKey.includes(normaliseMarketText(anchor.detailIncludes));
+    })
+    .sort(
+      (a, b) =>
+        normaliseMarketText(b.detailIncludes).length -
+        normaliseMarketText(a.detailIncludes).length
+    )[0];
+}
+
+function getMarketEstimate({ make, model, modelDetail, year, mileage, bodyType, gearbox }) {
+  const anchor = getMarketAnchor({ make, model, modelDetail, year });
+
+  if (!anchor) return null;
+
+  const numericYear = Number(year);
+  const mileageNumber = cleanNumber(mileage);
+  const yearDelta = numericYear - anchor.baseYear;
+  const yearFactor =
+    yearDelta >= 0
+      ? Math.pow(1.06, yearDelta)
+      : Math.pow(0.92, Math.abs(yearDelta));
+  const mileageDelta = mileageNumber - anchor.baseMileage;
+  const mileageAdjustment = mileageDelta * (anchor.mileageRate || 0.09);
+  const detailText = `${modelDetail} ${bodyType}`.toLowerCase();
+  let bodyFactor = 1;
+
+  if (detailText.includes("convertible")) bodyFactor = 1.08;
+  if (detailText.includes("coupe")) bodyFactor = Math.max(bodyFactor, 1.03);
+  if (detailText.includes("gran coupe")) bodyFactor = 0.99;
+  if (String(gearbox || "").toLowerCase() === "manual") bodyFactor *= 0.97;
+
+  const low = anchor.low * yearFactor * bodyFactor - mileageAdjustment;
+  const high = anchor.high * yearFactor * bodyFactor - mileageAdjustment;
+
+  return {
+    low: roundToNearestHundred(Math.max(low, 1000)),
+    high: roundToNearestHundred(Math.max(high, low + 700)),
+  };
+}
+
+function constrainFallbackEstimate(range, askingPrice) {
+  const askingPriceNumber = cleanNumber(askingPrice);
+
+  if (!range || askingPriceNumber <= 0) return range;
+
+  const low = Math.max(range.low, roundToNearestHundred(askingPriceNumber * 0.65));
+  const high = Math.min(range.high, roundToNearestHundred(askingPriceNumber * 1.15));
+
+  return {
+    low: Math.min(low, high),
+    high: Math.max(high, low),
+  };
+}
+
 function cleanNumber(value) {
   const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
 
@@ -287,26 +360,26 @@ function roundToNearestHundred(value) {
 function getAgeFactor(age) {
   const factors = [
     0.92,
-    0.78,
-    0.68,
-    0.6,
-    0.53,
-    0.46,
-    0.39,
-    0.32,
-    0.26,
-    0.21,
+    0.82,
+    0.74,
+    0.66,
+    0.58,
+    0.5,
+    0.44,
+    0.38,
+    0.33,
+    0.29,
+    0.25,
+    0.22,
+    0.19,
     0.17,
-    0.135,
-    0.105,
-    0.085,
-    0.07,
-    0.06,
+    0.15,
+    0.13,
   ];
 
   if (age < factors.length) return factors[age];
 
-  return Math.max(0.04, 0.06 * Math.pow(0.9, age - 15));
+  return Math.max(0.1, 0.13 * Math.pow(0.94, age - 15));
 }
 
 export default function PostCarPage() {
@@ -368,16 +441,33 @@ export default function PostCarPage() {
   }, []);
 
   const availableModels = make ? vehicleMakes[make] || [] : [];
+  const selectedModel = model === "Other" ? customModel.trim() : model;
   const availableModelDetails =
-    make && model ? modelDetails[make]?.[model] || [] : [];
+    make && selectedModel && model !== "Other"
+      ? getVehicleModelDetailOptions({ make, model: selectedModel, year })
+      : [];
+  const selectedVariantYears = modelDetail
+    ? getVehicleModelDetailYears({ make, model: selectedModel, detail: modelDetail })
+    : "";
+  const variantYearError =
+    modelDetail &&
+    year &&
+    !isVehicleModelDetailYearCompatible({
+      make,
+      model: selectedModel,
+      detail: modelDetail,
+      year,
+    })
+      ? `${modelDetail} does not match ${year}${
+          selectedVariantYears ? ` (${selectedVariantYears})` : ""
+        }. Choose a matching year or variant.`
+      : "";
 
   const finalModel =
-    model === "Other"
-      ? customModel
-      : [model, modelDetail].filter(Boolean).join(" ") || customModel;
+    model === "Other" ? customModel.trim() : selectedModel || customModel.trim();
 
   const valuation = useMemo(() => {
-    if (!make || !year || !mileage) return null;
+    if (!make || !finalModel || !year || !mileage || variantYearError) return null;
 
     const carAge = new Date().getFullYear() - Number(year);
     const mileageNumber = cleanNumber(mileage);
@@ -386,7 +476,27 @@ export default function PostCarPage() {
     if (!Number.isFinite(carAge) || !Number.isFinite(mileageNumber)) return null;
 
     const cleanAge = Math.max(carAge, 0);
-    const guidePrice = getGuidePrice({ make, model, modelDetail });
+
+    if (condition === "New" && askingPriceNumber > 0) {
+      return {
+        low: roundToNearestHundred(askingPriceNumber * 0.97),
+        high: roundToNearestHundred(askingPriceNumber * 1.02),
+      };
+    }
+
+    const marketEstimate = getMarketEstimate({
+      make,
+      model: finalModel,
+      modelDetail,
+      year,
+      mileage,
+      bodyType,
+      gearbox,
+    });
+
+    if (marketEstimate) return marketEstimate;
+
+    const guidePrice = getGuidePrice({ make, model: finalModel, modelDetail });
     const depreciationFactor = getAgeFactor(cleanAge);
     const expectedMileage = Math.max(cleanAge, 1) * 9000;
     const mileageDelta = mileageNumber - expectedMileage;
@@ -398,7 +508,6 @@ export default function PostCarPage() {
     if (fuel === "Hybrid") estimate *= 1.04;
     if (fuel === "Diesel" && cleanAge >= 8) estimate *= 0.94;
     if (gearbox === "Automatic") estimate *= 1.02;
-    if (condition === "New") estimate = guidePrice * 0.95;
 
     if (askingPriceNumber > 0 && estimate > askingPriceNumber * 1.35) {
       estimate = askingPriceNumber * 0.98;
@@ -406,20 +515,23 @@ export default function PostCarPage() {
 
     estimate = Math.max(estimate, 1200);
 
-    return {
+    return constrainFallbackEstimate({
       low: roundToNearestHundred(estimate * 0.92),
       high: roundToNearestHundred(estimate * 1.08),
-    };
+    }, askingPrice);
   }, [
     make,
     model,
     modelDetail,
+    finalModel,
     year,
     mileage,
     askingPrice,
     fuel,
     gearbox,
+    bodyType,
     condition,
+    variantYearError,
   ]);
 
   function handleLogout() {
@@ -515,6 +627,12 @@ export default function PostCarPage() {
     setIsSubmitting(true);
     setErrorMessage("");
     setBoostCheckoutError("");
+
+    if (variantYearError) {
+      setErrorMessage(variantYearError);
+      setIsSubmitting(false);
+      return;
+    }
 
     const token = localStorage.getItem("kerbSessionToken");
 
@@ -639,7 +757,14 @@ export default function PostCarPage() {
           {submittedListing && (
             <div className="listingSummary">
               <strong>
-                {submittedListing.year} {submittedListing.make} {submittedListing.model}
+                {[
+                  submittedListing.year,
+                  submittedListing.make,
+                  submittedListing.model,
+                  submittedListing.model_detail,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               </strong>
               <span>{submittedListing.location}</span>
             </div>
@@ -774,20 +899,37 @@ export default function PostCarPage() {
               <input type="hidden" name="model" value={finalModel} />
             </label>
 
-            {availableModelDetails.length > 0 && (
+            {(availableModelDetails.length > 0 || modelDetail) && (
               <label>
-                Model detail
+                Variant
                 <select
                   value={modelDetail}
                   onChange={(e) => setModelDetail(e.target.value)}
                 >
-                  <option value="">I am not sure / standard model</option>
-                  {availableModelDetails.map((detail) => (
-                    <option key={detail} value={detail}>
-                      {detail}
-                    </option>
-                  ))}
+                  <option value="">I am not sure / standard variant</option>
+                  {modelDetail &&
+                    !availableModelDetails.includes(modelDetail) && (
+                      <option value={modelDetail}>{modelDetail}</option>
+                    )}
+                  {availableModelDetails.map((detail) => {
+                    const years = getVehicleModelDetailYears({
+                      make,
+                      model: selectedModel,
+                      detail,
+                    });
+
+                    return (
+                      <option key={detail} value={detail}>
+                        {years ? `${detail} (${years})` : detail}
+                      </option>
+                    );
+                  })}
                 </select>
+                {variantYearError && (
+                  <small className="fieldNotice errorNotice">
+                    {variantYearError}
+                  </small>
+                )}
               </label>
             )}
 
@@ -879,7 +1021,7 @@ export default function PostCarPage() {
                 name="asking_price"
                 value={askingPrice}
                 onChange={(e) => setAskingPrice(e.target.value)}
-                placeholder="£12,995"
+                placeholder={"\u00a312,995"}
                 required
               />
             </label>
@@ -931,7 +1073,9 @@ export default function PostCarPage() {
               <div>
                 <span>Rough guide price</span>
                 <strong>
-                  £{valuation.low.toLocaleString()} - £{valuation.high.toLocaleString()}
+                  {"\u00a3"}
+                  {valuation.low.toLocaleString()} - {"\u00a3"}
+                  {valuation.high.toLocaleString()}
                 </strong>
               </div>
               <p>
@@ -1097,7 +1241,7 @@ export default function PostCarPage() {
               <span className="boostKicker">Optional listing boost</span>
               <h2>Choose visibility before submitting</h2>
               <p>
-                Boost your listing to give it higher placement in Kerb’s
+                Boost your listing to give it higher placement in Kerb's
                 priority listing positions across Browse Cars and Featured Cars.
                 Boosting increases visibility but does not guarantee enquiries
                 or a sale.
@@ -1146,11 +1290,11 @@ export default function PostCarPage() {
                 required
               />
               <span>
-                <strong>I agree to Kerb’s Terms and Conditions</strong>
+                <strong>I agree to Kerb's Terms and Conditions</strong>
                 <em>
                   I understand Kerb is a marketplace, not a direct car seller,
                   and I am responsible for making sure my listing is accurate,
-                  honest and allowed under Kerb’s rules.
+                  honest and allowed under Kerb's rules.
                 </em>
                 <a href="/terms" target="_blank" rel="noreferrer">
                   Read Terms and Conditions
@@ -1385,6 +1529,17 @@ const styles = `
 
   .manualInput {
     margin-top: 8px;
+  }
+
+  .fieldNotice {
+    color: #657189;
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1.45;
+  }
+
+  .errorNotice {
+    color: #b42318;
   }
 
   textarea {
