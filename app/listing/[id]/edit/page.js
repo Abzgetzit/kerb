@@ -4,6 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import SiteMenu from "../../../components/SiteMenu";
+import {
+  bodyTypeOptions,
+  conditionOptions,
+} from "../../../lib/vehicle-data";
+
+const MAX_LISTING_PHOTOS = 30;
 
 const carFeatureOptions = [
   "Apple CarPlay",
@@ -30,36 +36,13 @@ const carFeatureOptions = [
   "Blind spot monitoring",
 ];
 
-const bodyTypeOptions = [
-  "Hatchback",
-  "Saloon",
-  "Estate",
-  "SUV",
-  "Coupe",
-  "Convertible",
-  "MPV",
-  "Pickup",
-  "Van",
-  "Other",
-];
-
-const conditionOptions = [
-  "New",
-  "Nearly new",
-  "Used",
-  "Excellent",
-  "Good",
-  "Fair",
-  "Needs work",
-];
-
 const fuelOptions = ["Petrol", "Diesel", "Hybrid", "Electric"];
 const gearboxOptions = ["Manual", "Automatic"];
 const listingCategoryOptions = [
   { value: "general", label: "General listing" },
   { value: "first-car", label: "First car" },
   { value: "performance", label: "Performance" },
-  { value: "family-suv", label: "Family SUV" },
+  { value: "family-suv", label: "Family SUVs" },
   { value: "electric-hybrid", label: "Electric or hybrid" },
   { value: "newer-car", label: "Newer car" },
 ];
@@ -116,7 +99,7 @@ function normaliseStatus(status) {
 
 function getStatusLabel(status) {
   const labels = {
-    pending: "Pending review",
+    pending: "Not live",
     approved: "Live",
     rejected: "Not approved",
     sold: "Sold",
@@ -233,7 +216,7 @@ export default function EditListingPage() {
 
   const title = useMemo(() => getTitle(listing), [listing]);
   const totalPhotoCount = existingPhotos.length + newPhotos.length;
-  const remainingPhotoSlots = Math.max(12 - totalPhotoCount, 0);
+  const remainingPhotoSlots = Math.max(MAX_LISTING_PHOTOS - totalPhotoCount, 0);
 
   useEffect(() => {
     const user = createKerbUserFromStorage();
@@ -355,7 +338,7 @@ export default function EditListingPage() {
     });
 
     setNewPhotos((currentPhotos) =>
-      [...currentPhotos, ...previews].slice(0, 12 - existingPhotos.length)
+      [...currentPhotos, ...previews].slice(0, MAX_LISTING_PHOTOS - existingPhotos.length)
     );
 
     event.target.value = "";
@@ -660,11 +643,11 @@ export default function EditListingPage() {
             <div>
               <h2>Photos</h2>
               <p>
-                Keep up to 12 photos. Remove individual images or add new ones.
+                Keep up to {MAX_LISTING_PHOTOS} photos. Remove individual images or add new ones.
               </p>
             </div>
 
-            <span>{totalPhotoCount}/12 photos</span>
+            <span>{totalPhotoCount}/{MAX_LISTING_PHOTOS} photos</span>
           </div>
 
           <label className="photoUpload">
