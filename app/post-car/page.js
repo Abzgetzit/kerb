@@ -2,45 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import SiteMenu from "../components/SiteMenu";
+import {
+  bodyTypeOptions,
+  conditionOptions,
+  vehicleMakes,
+} from "../lib/vehicle-data";
 
-const carMakes = {
-  Abarth: ["595", "695", "124 Spider"],
-  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "Tonale"],
-  Audi: ["A1", "A3", "A4", "A5", "A6", "A7", "Q2", "Q3", "Q5", "Q7", "Q8", "TT", "e-tron"],
-  BMW: ["1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "7 Series", "X1", "X2", "X3", "X5", "X6", "i3", "i4", "iX"],
-  Citroen: ["C1", "C3", "C4", "C5 Aircross", "Berlingo"],
-  Cupra: ["Born", "Formentor", "Leon", "Ateca"],
-  Dacia: ["Sandero", "Duster", "Jogger"],
-  DS: ["DS 3", "DS 4", "DS 7"],
-  Fiat: ["500", "500X", "Panda", "Tipo"],
-  Ford: ["Fiesta", "Focus", "Kuga", "Puma", "Mondeo", "Mustang", "Transit", "Ranger"],
-  Honda: ["Civic", "Jazz", "CR-V", "HR-V", "e"],
-  Hyundai: ["i10", "i20", "i30", "Tucson", "Kona", "Ioniq", "Ioniq 5", "Santa Fe"],
-  Jaguar: ["XE", "XF", "F-Pace", "E-Pace", "I-Pace", "F-Type"],
-  Jeep: ["Renegade", "Compass", "Wrangler", "Grand Cherokee"],
-  Kia: ["Picanto", "Rio", "Ceed", "Sportage", "Niro", "Sorento", "EV6", "EV9"],
-  "Land Rover": ["Range Rover Evoque", "Discovery Sport", "Range Rover Sport", "Range Rover", "Defender", "Discovery"],
-  Lexus: ["CT", "IS", "ES", "NX", "RX", "UX"],
-  Mazda: ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-30", "CX-5", "MX-5"],
-  Mercedes: ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "CLA", "GLA", "GLB", "GLC", "GLE", "EQC", "EQA"],
-  MINI: ["Hatch", "Clubman", "Countryman", "Convertible", "Electric"],
-  Nissan: ["Micra", "Juke", "Qashqai", "X-Trail", "Leaf", "Ariya"],
-  Peugeot: ["108", "208", "308", "508", "2008", "3008", "5008", "Rifter"],
-  Polestar: ["Polestar 2", "Polestar 3"],
-  Porsche: ["Boxster", "Cayman", "911", "Macan", "Cayenne", "Panamera", "Taycan"],
-  Renault: ["Clio", "Megane", "Captur", "Kadjar", "Arkana", "Zoe"],
-  SEAT: ["Ibiza", "Leon", "Ateca", "Arona", "Tarraco"],
-  Skoda: ["Fabia", "Octavia", "Superb", "Kamiq", "Karoq", "Kodiaq", "Enyaq"],
-  Smart: ["ForTwo", "ForFour", "#1"],
-  Subaru: ["Impreza", "Forester", "Outback", "XV", "BRZ"],
-  Suzuki: ["Swift", "Vitara", "S-Cross", "Ignis", "Jimny"],
-  Tesla: ["Model 3", "Model Y", "Model S", "Model X"],
-  Toyota: ["Aygo", "Yaris", "Corolla", "Auris", "C-HR", "RAV4", "Prius", "Hilux", "Land Cruiser"],
-  Vauxhall: ["Adam", "Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Vivaro"],
-  Volkswagen: ["Up", "Polo", "Golf", "Passat", "Arteon", "Tiguan", "T-Roc", "Touareg", "ID.3", "ID.4", "Transporter"],
-  Volvo: ["V40", "V60", "V90", "S60", "S90", "XC40", "XC60", "XC90", "EX30"],
-  Other: [],
-};
+const MAX_LISTING_PHOTOS = 30;
 
 const modelDetails = {
   Audi: {
@@ -83,7 +51,7 @@ const modelDetails = {
     Focus: ["1.0 EcoBoost", "1.5 EcoBlue", "ST-Line", "ST", "RS"],
     Kuga: ["EcoBoost", "EcoBlue", "PHEV", "ST-Line"],
   },
-  Mercedes: {
+  "Mercedes-Benz": {
     "A-Class": ["A180", "A200", "A220", "A250e", "A35 AMG", "A45 AMG"],
     "C-Class": ["C180", "C200", "C220d", "C300", "C300e", "C43 AMG", "C63 AMG"],
     "E-Class": ["E220d", "E300", "E300e", "E400d", "E53 AMG", "E63 AMG"],
@@ -122,7 +90,7 @@ const makeFallbackGuide = {
   "Land Rover": 56000,
   Lexus: 43000,
   Mazda: 28000,
-  Mercedes: 40000,
+  "Mercedes-Benz": 40000,
   MINI: 27000,
   Nissan: 27000,
   Peugeot: 26000,
@@ -170,7 +138,7 @@ const listingCategoryOptions = [
   { value: "general", label: "General listing" },
   { value: "first-car", label: "First car" },
   { value: "performance", label: "Performance" },
-  { value: "family-suv", label: "Family SUV" },
+  { value: "family-suv", label: "Family SUVs" },
   { value: "electric-hybrid", label: "Electric or hybrid" },
   { value: "newer-car", label: "Newer car" },
 ];
@@ -217,10 +185,10 @@ const modelValueGuide = {
   "Ford|Fiesta": 21000,
   "Ford|Focus": 26000,
   "Ford|Kuga": 33000,
-  "Mercedes|A-Class": 34000,
-  "Mercedes|C-Class": 47000,
-  "Mercedes|E-Class": 56000,
-  "Mercedes|GLC": 57000,
+  "Mercedes-Benz|A-Class": 34000,
+  "Mercedes-Benz|C-Class": 47000,
+  "Mercedes-Benz|E-Class": 56000,
+  "Mercedes-Benz|GLC": 57000,
   "Tesla|Model 3": 43000,
   "Tesla|Model Y": 46000,
   "Volkswagen|Golf": 30000,
@@ -256,9 +224,9 @@ const modelDetailValueGuide = {
   "Audi|A5|RS5": 82000,
   "Ford|Focus|ST": 36000,
   "Ford|Focus|RS": 43000,
-  "Mercedes|A-Class|A35 AMG": 46000,
-  "Mercedes|A-Class|A45 AMG": 64000,
-  "Mercedes|C-Class|C63 AMG": 91000,
+  "Mercedes-Benz|A-Class|A35 AMG": 46000,
+  "Mercedes-Benz|A-Class|A45 AMG": 64000,
+  "Mercedes-Benz|C-Class|C63 AMG": 91000,
   "Tesla|Model 3|Performance": 56000,
   "Tesla|Model Y|Performance": 60000,
   "Volkswagen|Golf|GTI": 39000,
@@ -399,7 +367,7 @@ export default function PostCarPage() {
     window.location.href = "/login";
   }, []);
 
-  const availableModels = make ? carMakes[make] || [] : [];
+  const availableModels = make ? vehicleMakes[make] || [] : [];
   const availableModelDetails =
     make && model ? modelDetails[make]?.[model] || [] : [];
 
@@ -431,11 +399,6 @@ export default function PostCarPage() {
     if (fuel === "Diesel" && cleanAge >= 8) estimate *= 0.94;
     if (gearbox === "Automatic") estimate *= 1.02;
     if (condition === "New") estimate = guidePrice * 0.95;
-    if (condition === "Nearly new") estimate = Math.max(estimate, guidePrice * 0.78);
-    if (condition === "Excellent") estimate *= 1.05;
-    if (condition === "Good") estimate *= 1;
-    if (condition === "Fair") estimate *= 0.9;
-    if (condition === "Needs work") estimate *= 0.72;
 
     if (askingPriceNumber > 0 && estimate > askingPriceNumber * 1.35) {
       estimate = askingPriceNumber * 0.98;
@@ -489,7 +452,7 @@ export default function PostCarPage() {
     });
 
     setPhotos((currentPhotos) => {
-      const nextPhotos = [...currentPhotos, ...previews].slice(0, 12);
+      const nextPhotos = [...currentPhotos, ...previews].slice(0, MAX_LISTING_PHOTOS);
       const keptUrls = new Set(nextPhotos.map((photo) => photo.url));
 
       photoUrlsRef.current = photoUrlsRef.current.filter((url) => {
@@ -759,7 +722,7 @@ export default function PostCarPage() {
                 }}
               >
                 <option value="">Select make</option>
-                {Object.keys(carMakes).map((makeName) => (
+                {Object.keys(vehicleMakes).map((makeName) => (
                   <option key={makeName} value={makeName}>
                     {makeName}
                   </option>
@@ -859,16 +822,9 @@ export default function PostCarPage() {
                 required
               >
                 <option value="">Select body type</option>
-                <option>Hatchback</option>
-                <option>Saloon</option>
-                <option>Estate</option>
-                <option>SUV</option>
-                <option>Coupe</option>
-                <option>Convertible</option>
-                <option>MPV</option>
-                <option>Pickup</option>
-                <option>Van</option>
-                <option>Other</option>
+                {bodyTypeOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
               </select>
             </label>
 
@@ -881,13 +837,9 @@ export default function PostCarPage() {
                 required
               >
                 <option value="">Select condition</option>
-                <option>New</option>
-                <option>Nearly new</option>
-                <option>Used</option>
-                <option>Excellent</option>
-                <option>Good</option>
-                <option>Fair</option>
-                <option>Needs work</option>
+                {conditionOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
               </select>
             </label>
 
@@ -1020,7 +972,7 @@ export default function PostCarPage() {
           <div className="photoSection">
             <div>
               <h2>Photos</h2>
-              <p>Add up to 12 photos. Clear photos help buyers trust the listing.</p>
+              <p>Add up to {MAX_LISTING_PHOTOS} photos. Clear photos help buyers trust the listing.</p>
             </div>
 
             <label className="uploadBox">
@@ -1147,10 +1099,8 @@ export default function PostCarPage() {
               <p>
                 Boost your listing to give it higher placement in Kerb’s
                 priority listing positions across Browse Cars and Featured Cars.
-                Boosted listings rotate fairly with other boosted cars, so the
-                same advert is not permanently pinned. Buyers will not see a
-                public boosted badge. Boosting increases visibility but does not
-                guarantee enquiries or a sale.
+                Boosting increases visibility but does not guarantee enquiries
+                or a sale.
               </p>
 
               <ul className="boostBenefits">
