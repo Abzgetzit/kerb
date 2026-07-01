@@ -83,7 +83,8 @@ function getTitle(car) {
   if (car.title) return car.title;
 
   return (
-    [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing"
+    [car.year, car.make, car.model, car.model_detail].filter(Boolean).join(" ") ||
+    "Car listing"
   );
 }
 
@@ -352,7 +353,9 @@ function getBoostListingTitle(boost) {
   return (
     boost?.listing_title ||
     listing.title ||
-    [listing.year, listing.make, listing.model].filter(Boolean).join(" ") ||
+    [listing.year, listing.make, listing.model, listing.model_detail]
+      .filter(Boolean)
+      .join(" ") ||
     "Kerb listing"
   );
 }
