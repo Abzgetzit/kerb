@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import SiteMenu from "../components/SiteMenu";
 import {
   bodyTypeOptions,
+  getVehicleModelDetailOptions,
   vehicleMakeOptions,
   vehicleMakes,
 } from "../lib/vehicle-data";
@@ -24,6 +25,7 @@ const defaultFilters = {
   location: "",
   make: "",
   model: "",
+  modelDetail: "",
   priceMin: "",
   priceMax: "",
   mileageMin: "",
@@ -673,6 +675,103 @@ function SvgIcon({ name }) {
   );
 }
 
+function getRootModelForOption(make, value) {
+  const option = String(value || "").trim();
+
+  if (!option) return "";
+
+  const knownModels = vehicleMakes[make] || [];
+  const lowerOption = option.toLowerCase();
+
+  const prefixKnown = [...knownModels]
+    .sort((a, b) => b.length - a.length)
+    .find((model) => lowerOption.startsWith(`${model.toLowerCase()} `));
+
+  if (prefixKnown) return prefixKnown;
+
+  if (make === "BMW") {
+    const bmwRules = [
+      { family: "1 Series", pattern: /^(1 series|11[68][id]?|12[058][id]?|128ti|m135i|m140i)\b/i },
+      { family: "2 Series", pattern: /^(2 series|21[68][id]?|220[di]?|225[ei]?|228i|230i|m235i|m240i|m2)\b/i },
+      { family: "3 Series", pattern: /^(3 series|31[68][id]?|320[di]?|325d|328i|330[deix]?|335[di]|340i|m340[di]?|m3)\b/i },
+      { family: "4 Series", pattern: /^(4 series|418d|420[di]?|425d|428i|430[di]?|435[di]|440i|m440[di]?|m4)\b/i },
+      { family: "5 Series", pattern: /^(5 series|520[di]?|523i|525d|528i|530[dei]?|535[di]|540i|545e|550e|m550i|m5)\b/i },
+      { family: "6 Series", pattern: /^(6 series|620d|630[di]|635d|640[di]|650i|m6)\b/i },
+      { family: "7 Series", pattern: /^(7 series|730d|740[di]|745e|750i|760i)\b/i },
+      { family: "8 Series", pattern: /^(8 series|840[di]|m850i|m8)\b/i },
+    ];
+
+    const bmwMatch = bmwRules.find((rule) => rule.pattern.test(option));
+
+    if (bmwMatch) return bmwMatch.family;
+  }
+
+  const directKnown = knownModels.find(
+    (model) => model.toLowerCase() === lowerOption
+  );
+
+  if (directKnown) return directKnown;
+
+  return option;
+}
+
+function getModelOptionsForBrowse(make, cars) {
+  if (!make) return [];
+
+  const selectedMake = String(make).trim().toLowerCase();
+  const knownModels = vehicleMakes[make] || [];
+  const rawOptions = [
+    ...knownModels,
+    ...cars
+      .filter((car) => String(car.make || "").trim().toLowerCase() === selectedMake)
+      .flatMap((car) => [car.model, car.model_family])
+      .filter(Boolean),
+  ];
+
+  return [
+    ...new Set(
+      rawOptions
+        .map((option) => getRootModelForOption(make, option))
+        .filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b, "en-GB", { numeric: true }));
+}
+
+function getTypeOptionsForBrowse({ make, model, cars }) {
+  if (!make || !model) return [];
+
+  const selectedMake = String(make).trim().toLowerCase();
+  const selectedModel = String(model).trim().toLowerCase();
+
+  const fromVehicleData = getVehicleModelDetailOptions({ make, model }) || [];
+  const fromListings = cars
+    .filter((car) => {
+      const carMake = String(car.make || "").trim().toLowerCase();
+      const carModel = getRootModelForOption(make, car.model || "").toLowerCase();
+
+      return carMake === selectedMake && carModel === selectedModel;
+    })
+    .flatMap((car) => [car.model_detail, car.variant])
+    .filter(Boolean);
+
+  return [...new Set([...fromVehicleData, ...fromListings])]
+    .filter((option) => option.toLowerCase() !== selectedModel)
+    .sort((a, b) => a.localeCompare(b, "en-GB", { numeric: true }));
+}
+
+function carMatchesModelFilter(car, make, model) {
+  if (!model) return true;
+
+  const selectedModel = String(model || "").toLowerCase();
+  const carModel = getRootModelForOption(make, car.model || "").toLowerCase();
+  const carText = [car.model, car.model_detail, car.variant, car.title]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return carModel === selectedModel || carText.includes(selectedModel);
+}
+
 export default function BrowsePage() {
   const [cars, setCars] = useState([]);
   const [search, setSearch] = useState("");
@@ -697,6 +796,11 @@ export default function BrowsePage() {
         location: params.get("location") || "",
         make: params.get("make") || "",
         model: params.get("model") || "",
+        modelDetail:
+          params.get("model_detail") ||
+          params.get("modelDetail") ||
+          params.get("type") ||
+          "",
         priceMin: params.get("priceMin") || "",
         priceMax: params.get("priceMax") || "",
         mileageMin: params.get("mileageMin") || "",
@@ -884,6 +988,7 @@ export default function BrowsePage() {
     if (nextFilters.location) params.set("location", nextFilters.location);
     if (nextFilters.make) params.set("make", nextFilters.make);
     if (nextFilters.model) params.set("model", nextFilters.model);
+    if (nextFilters.modelDetail) params.set("model_detail", nextFilters.modelDetail);
     if (nextFilters.priceMin) params.set("priceMin", nextFilters.priceMin);
     if (nextFilters.priceMax) params.set("priceMax", nextFilters.priceMax);
     if (nextFilters.mileageMin) params.set("mileageMin", nextFilters.mileageMin);
@@ -914,6 +1019,11 @@ export default function BrowsePage() {
 
     if (key === "make") {
       nextFilters.model = "";
+      nextFilters.modelDetail = "";
+    }
+
+    if (key === "model") {
+      nextFilters.modelDetail = "";
     }
 
     setFilters(nextFilters);
@@ -965,6 +1075,10 @@ export default function BrowsePage() {
     } else if (key === "make") {
       nextFilters.make = "";
       nextFilters.model = "";
+      nextFilters.modelDetail = "";
+    } else if (key === "model") {
+      nextFilters.model = "";
+      nextFilters.modelDetail = "";
     } else {
       nextFilters[key] = "";
     }
@@ -977,6 +1091,7 @@ export default function BrowsePage() {
     const parts = [
       filters.make,
       filters.model,
+      filters.modelDetail,
       filters.location,
       getCategoryLabel(filters.category),
       search.trim(),
@@ -1141,27 +1256,20 @@ export default function BrowsePage() {
     ].sort((a, b) => a.localeCompare(b));
   }, [cars]);
 
-  const availableModels = useMemo(() => {
-    if (!filters.make) return [];
+  const availableModels = useMemo(
+    () => getModelOptionsForBrowse(filters.make, cars),
+    [cars, filters.make]
+  );
 
-    const selectedMake = String(filters.make).trim().toLowerCase();
-    const knownModels = vehicleMakes[filters.make] || [];
-
-    return [
-      ...new Set(
-        [
-          ...knownModels,
-          ...cars
-            .filter(
-              (car) =>
-                String(car.make || "").trim().toLowerCase() === selectedMake
-            )
-            .map((car) => car.model)
-            .filter(Boolean),
-        ]
-      ),
-    ].sort((a, b) => a.localeCompare(b));
-  }, [cars, filters.make]);
+  const availableModelDetails = useMemo(
+    () =>
+      getTypeOptionsForBrowse({
+        make: filters.make,
+        model: filters.model,
+        cars,
+      }),
+    [cars, filters.make, filters.model]
+  );
 
   const visibleCars = useMemo(() => {
     let list = [...cars];
@@ -1216,11 +1324,15 @@ export default function BrowsePage() {
         return false;
       }
 
+      if (filters.model && !carMatchesModelFilter(car, filters.make, filters.model)) {
+        return false;
+      }
+
       if (
-        filters.model &&
+        filters.modelDetail &&
         !includesText(
-          [car.model, car.model_detail, car.variant].filter(Boolean).join(" "),
-          filters.model
+          [car.model_detail, car.variant, car.title].filter(Boolean).join(" "),
+          filters.modelDetail
         )
       ) {
         return false;
@@ -1343,6 +1455,10 @@ export default function BrowsePage() {
 
     if (filters.model) {
       chips.push({ key: "model", label: `Model: ${filters.model}` });
+    }
+
+    if (filters.modelDetail) {
+      chips.push({ key: "modelDetail", label: `Type: ${filters.modelDetail}` });
     }
 
     if (filters.priceMin || filters.priceMax) {
@@ -1582,6 +1698,28 @@ export default function BrowsePage() {
                       {availableModels.map((model) => (
                         <option key={model} value={model}>
                           {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              )}
+
+              {filters.make && filters.model && availableModelDetails.length > 0 && (
+                <label className="filter-card">
+                  <SvgIcon name="sliders" />
+                  <div>
+                    <p>Type</p>
+                    <select
+                      value={filters.modelDetail}
+                      onChange={(event) =>
+                        setFilter("modelDetail", event.target.value)
+                      }
+                    >
+                      <option value="">Any type</option>
+                      {availableModelDetails.map((detail) => (
+                        <option key={detail} value={detail}>
+                          {detail}
                         </option>
                       ))}
                     </select>
@@ -1948,6 +2086,28 @@ export default function BrowsePage() {
                       {availableModels.map((model) => (
                         <option key={model} value={model}>
                           {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              )}
+
+              {filters.make && filters.model && availableModelDetails.length > 0 && (
+                <label className="filter-card">
+                  <SvgIcon name="sliders" />
+                  <div>
+                    <p>Type</p>
+                    <select
+                      value={filters.modelDetail}
+                      onChange={(event) =>
+                        setFilter("modelDetail", event.target.value)
+                      }
+                    >
+                      <option value="">Any type</option>
+                      {availableModelDetails.map((detail) => (
+                        <option key={detail} value={detail}>
+                          {detail}
                         </option>
                       ))}
                     </select>
