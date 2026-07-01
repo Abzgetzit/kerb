@@ -333,7 +333,8 @@ function formatMileage(value) {
 
 function carTitle(car) {
   return (
-    [car.year, car.make, car.model].filter(Boolean).join(" ") || "Car listing"
+    [car.year, car.make, car.model, car.model_detail].filter(Boolean).join(" ") ||
+    "Car listing"
   );
 }
 
