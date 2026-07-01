@@ -18,6 +18,10 @@ function normaliseRole(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function normaliseEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function getEnquiryActivityDate(enquiry) {
   return enquiry?.last_message_at || enquiry?.created_at || "";
 }
@@ -165,21 +169,33 @@ export async function GET(request) {
     (enquiry) => enquiry.is_unread
   ).length;
 
-  const messageThreadsById = new Map();
+  const messageThreadsByConversation = new Map();
 
-  [...receivedWithListings, ...sentWithListings].forEach((enquiry) => {
-    const enquiryId = String(enquiry.id || "");
+  [...receivedWithListings, ...sentWithListings]
+    .sort(
+      (a, b) =>
+        new Date(getEnquiryActivityDate(b)) -
+        new Date(getEnquiryActivityDate(a))
+    )
+    .forEach((enquiry) => {
+      const enquiryId = String(enquiry.id || "");
+      const conversationKey = [
+        enquiry.participant_role || "",
+        enquiry.listing_id || "",
+        normaliseEmail(enquiry.buyer_email),
+        normaliseEmail(enquiry.seller_email),
+      ].join("|");
 
-    if (!enquiryId || messageThreadsById.has(enquiryId)) return;
+      if (!enquiryId || messageThreadsByConversation.has(conversationKey)) return;
 
-    messageThreadsById.set(enquiryId, {
-      ...enquiry,
-      conversation_mode:
-        enquiry.participant_role === "seller" ? "received" : "sent",
+      messageThreadsByConversation.set(conversationKey, {
+        ...enquiry,
+        conversation_mode:
+          enquiry.participant_role === "seller" ? "received" : "sent",
+      });
     });
-  });
 
-  const messageThreads = [...messageThreadsById.values()]
+  const messageThreads = [...messageThreadsByConversation.values()]
     .sort(
       (a, b) =>
         new Date(getEnquiryActivityDate(b)) -
@@ -285,7 +301,18 @@ export async function GET(request) {
       if (!listingId) return groups;
 
       const currentGroup = groups.get(listingId) || [];
-      currentGroup.push(enquiry);
+      const buyerKey = normaliseEmail(enquiry.buyer_email) || String(enquiry.id || "");
+
+      if (
+        !currentGroup.some(
+          (currentEnquiry) =>
+            (normaliseEmail(currentEnquiry.buyer_email) ||
+              String(currentEnquiry.id || "")) === buyerKey
+        )
+      ) {
+        currentGroup.push(enquiry);
+      }
+
       groups.set(listingId, currentGroup);
 
       return groups;
