@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <onboarding@resend.dev>";
+const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <hello@kerbcar.co.uk>";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
@@ -16,9 +16,10 @@ export function escapeHtml(value) {
 
 export function getSiteUrl(request) {
   const origin = request?.headers?.get("origin");
-  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_KERB_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
 
-  return String(configuredUrl || origin || "https://kerb-ten.vercel.app")
+  return String(configuredUrl || origin || "https://kerbcar.co.uk")
     .trim()
     .replace(/\/$/, "");
 }
@@ -80,7 +81,7 @@ function emailShell({ title, body, buttonText, buttonUrl, footnote }) {
             : ""
         }
         <p style="margin:24px 0 0; color:#7a8499; font-size:13px; line-height:1.5;">
-          ${escapeHtml(footnote || "Thanks for using Kerb.")}
+          ${escapeHtml(footnote || "Thanks for using Kerb. Need help? Email hello@kerbcar.co.uk.")}
         </p>
       </div>
     </div>
@@ -109,8 +110,8 @@ export function createListingSubmittedEmail({ listing, siteUrl }) {
     title: "Your listing has been received",
     body: `
       <p style="margin:0 0 14px;">We have saved your listing for <strong>${title}</strong>.</p>
-      <p style="margin:0 0 14px;">It is currently pending review. Once it is approved, it will appear publicly on Kerb.</p>
-      <p style="margin:0;">You can view and manage your listings from your account dashboard.</p>
+      <p style="margin:0 0 14px;">You can view and manage it from your Kerb account.</p>
+      <p style="margin:0;">If the listing needs a safety or quality review, Kerb may restrict or remove it.</p>
     `,
     buttonText: "Open my account",
     buttonUrl: `${siteUrl}/account`,
@@ -124,7 +125,7 @@ export function createListingLiveEmail({ listing, siteUrl }) {
   return emailShell({
     title: "Your listing is now live",
     body: `
-      <p style="margin:0 0 14px;">Good news. Your listing for <strong>${listingTitle}</strong> has been approved and is now live on Kerb.</p>
+      <p style="margin:0 0 14px;">Good news. Your listing for <strong>${listingTitle}</strong> is now live on Kerb.</p>
       <p style="margin:0;">Buyers can now view the car and send enquiries directly to you.</p>
     `,
     buttonText: "View listing",
@@ -141,14 +142,14 @@ export function createListingRejectedEmail({ listing, siteUrl, reason, note }) {
   return emailShell({
     title: "Your listing needs a quick update",
     body: `
-      <p style="margin:0 0 14px;">Your listing for <strong>${listingTitle}</strong> was reviewed and needs changes before it can go live on Kerb.</p>
+      <p style="margin:0 0 14px;">Your listing for <strong>${listingTitle}</strong> was reviewed and needs changes before it can stay live on Kerb.</p>
       <p style="margin:0 0 10px;"><strong>Reason:</strong> ${cleanReason}</p>
       ${
         cleanNote
           ? `<p style="margin:0 0 14px;"><strong>Admin note:</strong> ${cleanNote}</p>`
           : ""
       }
-      <p style="margin:0;">You can edit the listing from your Kerb account and resubmit it for review.</p>
+      <p style="margin:0;">You can edit the listing from your Kerb account.</p>
     `,
     buttonText: "Open my listings",
     buttonUrl: accountUrl,
