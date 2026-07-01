@@ -28,22 +28,10 @@ export default function CookiesPage() {
           marketplace features. This may include:
         </p>
         <ul>
-          <li>
-            <strong>kerbSessionToken:</strong> keeps you signed in and lets Kerb
-            load your account securely.
-          </li>
-          <li>
-            <strong>kerbAccountEmail:</strong> remembers the email address linked
-            to the current account session.
-          </li>
-          <li>
-            <strong>kerbUser:</strong> stores basic account display information
-            for the website interface.
-          </li>
-          <li>
-            <strong>Saved preferences:</strong> may remember recent browsing,
-            filters, saved cars, saved searches or UI state.
-          </li>
+          <li><strong>kerbSessionToken:</strong> keeps you signed in and lets Kerb load your account securely.</li>
+          <li><strong>kerbAccountEmail:</strong> remembers the email address linked to the current account session.</li>
+          <li><strong>kerbUser:</strong> stores basic account display information for the website interface.</li>
+          <li><strong>Saved preferences:</strong> may remember recent browsing, filters, saved cars, saved searches or UI state.</li>
         </ul>
         <p>
           These are used because the website needs them to provide requested
@@ -72,6 +60,9 @@ export default function CookiesPage() {
           You can clear cookies and local storage in your browser settings. If
           you clear essential Kerb storage, you may be signed out and some saved
           preferences may be removed.
+        </p>
+        <p>
+          For cookie questions, contact <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 
