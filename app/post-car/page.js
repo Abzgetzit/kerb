@@ -11,45 +11,12 @@ import {
   vehicleMakes,
 } from "../lib/vehicle-data";
 
-const MAX_LISTING_PHOTOS = 30;
+import {
+  calculateKerbMarketGuide,
+  getKerbPricePosition,
+} from "../lib/kerb-valuation";
 
-const makeFallbackGuide = {
-  Abarth: 22000,
-  "Alfa Romeo": 30000,
-  Audi: 36000,
-  BMW: 38000,
-  Citroen: 21000,
-  Cupra: 34000,
-  Dacia: 17000,
-  DS: 31000,
-  Fiat: 18000,
-  Ford: 26000,
-  Honda: 28000,
-  Hyundai: 28000,
-  Jaguar: 45000,
-  Jeep: 36000,
-  Kia: 29000,
-  "Land Rover": 56000,
-  Lexus: 43000,
-  Mazda: 28000,
-  "Mercedes-Benz": 40000,
-  MINI: 27000,
-  Nissan: 27000,
-  Peugeot: 26000,
-  Polestar: 48000,
-  Porsche: 72000,
-  Renault: 24000,
-  SEAT: 24000,
-  Skoda: 28000,
-  Smart: 21000,
-  Subaru: 33000,
-  Suzuki: 21000,
-  Tesla: 46000,
-  Toyota: 29000,
-  Vauxhall: 23000,
-  Volkswagen: 30000,
-  Volvo: 44000,
-};
+const MAX_LISTING_PHOTOS = 30;
 
 const carFeatureOptions = [
   "Apple CarPlay",
@@ -111,276 +78,6 @@ const boostPlanOptions = [
     description: "Priority placement for 30 days.",
   },
 ];
-
-const modelValueGuide = {
-  "BMW|1 Series": 31000,
-  "BMW|2 Series": 34000,
-  "BMW|3 Series": 39000,
-  "BMW|4 Series": 45000,
-  "BMW|5 Series": 51000,
-  "BMW|X3": 51000,
-  "BMW|X5": 72000,
-  "Audi|A3": 33000,
-  "Audi|A4": 39000,
-  "Audi|A5": 46000,
-  "Audi|Q5": 53000,
-  "Ford|Fiesta": 21000,
-  "Ford|Focus": 26000,
-  "Ford|Kuga": 33000,
-  "Mercedes-Benz|A-Class": 34000,
-  "Mercedes-Benz|C-Class": 47000,
-  "Mercedes-Benz|E-Class": 56000,
-  "Mercedes-Benz|GLC": 57000,
-  "Tesla|Model 3": 43000,
-  "Tesla|Model Y": 46000,
-  "Volkswagen|Golf": 30000,
-  "Volkswagen|Passat": 36000,
-  "Volkswagen|Polo": 21000,
-  "Volkswagen|Tiguan": 38000,
-};
-
-const modelDetailValueGuide = {
-  "BMW|3 Series|318i": 36000,
-  "BMW|3 Series|318i M Sport": 38500,
-  "BMW|3 Series|318d": 35000,
-  "BMW|3 Series|318d M Sport": 37500,
-  "BMW|3 Series|320d": 36000,
-  "BMW|3 Series|320d M Sport": 41000,
-  "BMW|3 Series|320i": 39000,
-  "BMW|3 Series|320i M Sport": 41500,
-  "BMW|3 Series|330i M Sport": 50000,
-  "BMW|3 Series|330e": 47000,
-  "BMW|3 Series|330e M Sport": 50000,
-  "BMW|3 Series|330d": 48000,
-  "BMW|3 Series|330d M Sport": 51000,
-  "BMW|3 Series|335d": 50000,
-  "BMW|3 Series|335i": 47000,
-  "BMW|3 Series|M340i": 58000,
-  "BMW|3 Series|M340d": 57000,
-  "BMW|3 Series|M3": 82000,
-  "BMW|4 Series|M4": 85000,
-  "BMW|5 Series|M5": 112000,
-  "Audi|A3|S3": 46000,
-  "Audi|A3|RS3": 62000,
-  "Audi|A4|RS4": 78000,
-  "Audi|A5|RS5": 82000,
-  "Ford|Focus|ST": 36000,
-  "Ford|Focus|RS": 43000,
-  "Mercedes-Benz|A-Class|A35 AMG": 46000,
-  "Mercedes-Benz|A-Class|A45 AMG": 64000,
-  "Mercedes-Benz|C-Class|C63 AMG": 91000,
-  "Tesla|Model 3|Performance": 56000,
-  "Tesla|Model Y|Performance": 60000,
-  "Volkswagen|Golf|GTI": 39000,
-  "Volkswagen|Golf|GTD": 37000,
-  "Volkswagen|Golf|R": 50000,
-};
-
-const marketValueAnchors = [
-  {
-    make: "BMW",
-    model: "4 Series",
-    detailIncludes: "428i",
-    yearFrom: 2013,
-    yearTo: 2016,
-    baseYear: 2015,
-    baseMileage: 45000,
-    low: 11000,
-    high: 14000,
-    mileageRate: 0.08,
-  },
-  {
-    make: "BMW",
-    model: "3 Series",
-    detailIncludes: "320i",
-    yearFrom: 2019,
-    yearTo: 2022,
-    baseYear: 2021,
-    baseMileage: 45000,
-    low: 17500,
-    high: 22200,
-    mileageRate: 0.1,
-  },
-  {
-    make: "BMW",
-    model: "3 Series",
-    detailIncludes: "330e",
-    yearFrom: 2019,
-    yearTo: 2022,
-    baseYear: 2021,
-    baseMileage: 45000,
-    low: 16000,
-    high: 21000,
-    mileageRate: 0.1,
-  },
-  {
-    make: "BMW",
-    model: "4 Series",
-    detailIncludes: "430i",
-    yearFrom: 2020,
-    yearTo: 2024,
-    baseYear: 2021,
-    baseMileage: 45000,
-    low: 21000,
-    high: 27000,
-    mileageRate: 0.12,
-  },
-  {
-    make: "BMW",
-    model: "4 Series",
-    detailIncludes: "420i",
-    yearFrom: 2020,
-    yearTo: 2024,
-    baseYear: 2021,
-    baseMileage: 45000,
-    low: 19000,
-    high: 24000,
-    mileageRate: 0.1,
-  },
-];
-
-function normaliseMarketText(value) {
-  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-function normaliseModelDetail(value) {
-  return String(value || "")
-    .replace(/\s+(M Sport|AMG Line|S Line|S-Line|ST-Line|ST Line|R-Line|R Line|GT Line|Titanium|Vignale|Black Edition)$/i, "")
-    .trim();
-}
-
-function getTrimMultiplier(value) {
-  const detail = String(value || "").toLowerCase();
-
-  if (detail.includes("black edition")) return 1.08;
-  if (detail.includes("m sport")) return 1.07;
-  if (detail.includes("amg line")) return 1.07;
-  if (detail.includes("s line") || detail.includes("s-line")) return 1.06;
-  if (detail.includes("r line") || detail.includes("r-line")) return 1.05;
-  if (detail.includes("st line") || detail.includes("st-line")) return 1.04;
-  if (detail.includes("gt line")) return 1.04;
-  if (detail.includes("titanium")) return 1.03;
-  if (detail.includes("vignale")) return 1.05;
-
-  return 1;
-}
-
-function getGuidePrice({ make, model, modelDetail }) {
-  const detailKey = `${make}|${model}|${modelDetail}`;
-  const modelKey = `${make}|${model}`;
-  const exactDetailGuide = modelDetailValueGuide[detailKey];
-
-  if (exactDetailGuide) return exactDetailGuide;
-
-  const normalisedDetail = normaliseModelDetail(modelDetail);
-  const normalisedDetailKey = `${make}|${model}|${normalisedDetail}`;
-  const baseGuide =
-    modelDetailValueGuide[normalisedDetailKey] ||
-    modelValueGuide[modelKey] ||
-    makeFallbackGuide[make] ||
-    22000;
-
-  return roundToNearestHundred(baseGuide * getTrimMultiplier(modelDetail));
-}
-
-function getMarketAnchor({ make, model, modelDetail, year }) {
-  const numericYear = Number(year);
-  const detailKey = normaliseMarketText(modelDetail || model);
-
-  return marketValueAnchors
-    .filter((anchor) => {
-      if (anchor.make !== make || anchor.model !== model) return false;
-      if (anchor.yearFrom && numericYear < anchor.yearFrom) return false;
-      if (anchor.yearTo && numericYear > anchor.yearTo) return false;
-
-      return detailKey.includes(normaliseMarketText(anchor.detailIncludes));
-    })
-    .sort(
-      (a, b) =>
-        normaliseMarketText(b.detailIncludes).length -
-        normaliseMarketText(a.detailIncludes).length
-    )[0];
-}
-
-function getMarketEstimate({ make, model, modelDetail, year, mileage, bodyType, gearbox }) {
-  const anchor = getMarketAnchor({ make, model, modelDetail, year });
-
-  if (!anchor) return null;
-
-  const numericYear = Number(year);
-  const mileageNumber = cleanNumber(mileage);
-  const yearDelta = numericYear - anchor.baseYear;
-  const yearFactor =
-    yearDelta >= 0
-      ? Math.pow(1.06, yearDelta)
-      : Math.pow(0.92, Math.abs(yearDelta));
-  const mileageDelta = mileageNumber - anchor.baseMileage;
-  const mileageAdjustment = mileageDelta * (anchor.mileageRate || 0.09);
-  const detailText = `${modelDetail} ${bodyType}`.toLowerCase();
-  let bodyFactor = 1;
-
-  if (detailText.includes("convertible")) bodyFactor = 1.08;
-  if (detailText.includes("coupe")) bodyFactor = Math.max(bodyFactor, 1.03);
-  if (detailText.includes("gran coupe")) bodyFactor = 0.99;
-  if (String(gearbox || "").toLowerCase() === "manual") bodyFactor *= 0.97;
-
-  const low = anchor.low * yearFactor * bodyFactor - mileageAdjustment;
-  const high = anchor.high * yearFactor * bodyFactor - mileageAdjustment;
-
-  return {
-    low: roundToNearestHundred(Math.max(low, 1000)),
-    high: roundToNearestHundred(Math.max(high, low + 700)),
-  };
-}
-
-function constrainFallbackEstimate(range, askingPrice) {
-  const askingPriceNumber = cleanNumber(askingPrice);
-
-  if (!range || askingPriceNumber <= 0) return range;
-
-  const low = Math.max(range.low, roundToNearestHundred(askingPriceNumber * 0.65));
-  const high = Math.min(range.high, roundToNearestHundred(askingPriceNumber * 1.15));
-
-  return {
-    low: Math.min(low, high),
-    high: Math.max(high, low),
-  };
-}
-
-function cleanNumber(value) {
-  const number = Number(String(value || "").replace(/[^0-9.]/g, ""));
-
-  return Number.isFinite(number) ? number : 0;
-}
-
-function roundToNearestHundred(value) {
-  return Math.round(value / 100) * 100;
-}
-
-function getAgeFactor(age) {
-  const factors = [
-    0.92,
-    0.82,
-    0.74,
-    0.66,
-    0.58,
-    0.5,
-    0.44,
-    0.38,
-    0.33,
-    0.29,
-    0.25,
-    0.22,
-    0.19,
-    0.17,
-    0.15,
-    0.13,
-  ];
-
-  if (age < factors.length) return factors[age];
-
-  return Math.max(0.1, 0.13 * Math.pow(0.94, age - 15));
-}
 
 export default function PostCarPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -469,70 +166,38 @@ export default function PostCarPage() {
   const valuation = useMemo(() => {
     if (!make || !finalModel || !year || !mileage || variantYearError) return null;
 
-    const carAge = new Date().getFullYear() - Number(year);
-    const mileageNumber = cleanNumber(mileage);
-    const askingPriceNumber = cleanNumber(askingPrice);
-
-    if (!Number.isFinite(carAge) || !Number.isFinite(mileageNumber)) return null;
-
-    const cleanAge = Math.max(carAge, 0);
-
-    if (condition === "New" && askingPriceNumber > 0) {
-      return {
-        low: roundToNearestHundred(askingPriceNumber * 0.97),
-        high: roundToNearestHundred(askingPriceNumber * 1.02),
-      };
-    }
-
-    const marketEstimate = getMarketEstimate({
+    return calculateKerbMarketGuide({
       make,
       model: finalModel,
       modelDetail,
       year,
       mileage,
-      bodyType,
+      fuelType: fuel,
       gearbox,
+      bodyType,
+      condition,
     });
-
-    if (marketEstimate) return marketEstimate;
-
-    const guidePrice = getGuidePrice({ make, model: finalModel, modelDetail });
-    const depreciationFactor = getAgeFactor(cleanAge);
-    const expectedMileage = Math.max(cleanAge, 1) * 9000;
-    const mileageDelta = mileageNumber - expectedMileage;
-    const mileageRate = guidePrice >= 50000 ? 0.035 : 0.02;
-
-    let estimate = guidePrice * depreciationFactor - mileageDelta * mileageRate;
-
-    if (fuel === "Electric") estimate *= 1.06;
-    if (fuel === "Hybrid") estimate *= 1.04;
-    if (fuel === "Diesel" && cleanAge >= 8) estimate *= 0.94;
-    if (gearbox === "Automatic") estimate *= 1.02;
-
-    if (askingPriceNumber > 0 && estimate > askingPriceNumber * 1.35) {
-      estimate = askingPriceNumber * 0.98;
-    }
-
-    estimate = Math.max(estimate, 1200);
-
-    return constrainFallbackEstimate({
-      low: roundToNearestHundred(estimate * 0.92),
-      high: roundToNearestHundred(estimate * 1.08),
-    }, askingPrice);
   }, [
     make,
-    model,
-    modelDetail,
     finalModel,
+    modelDetail,
     year,
     mileage,
-    askingPrice,
     fuel,
     gearbox,
     bodyType,
     condition,
     variantYearError,
   ]);
+
+  const pricePosition = useMemo(
+    () =>
+      getKerbPricePosition({
+        askingPrice,
+        valuation,
+      }),
+    [askingPrice, valuation]
+  );
 
   function handleLogout() {
     localStorage.removeItem("kerbSessionToken");
@@ -808,7 +473,7 @@ export default function PostCarPage() {
           <h1>Post your car on Kerb</h1>
           <p>
             Create your car listing with vehicle details, photos, seller
-            information and a basic guide price estimate.
+            information and a Kerb Market Guide estimate.
           </p>
         </div>
 
@@ -1071,18 +736,28 @@ export default function PostCarPage() {
           {valuation && (
             <div className="valuationBox">
               <div>
-                <span>Rough guide price</span>
+                <span>Kerb Market Guide</span>
                 <strong>
                   {"\u00a3"}
                   {valuation.low.toLocaleString()} - {"\u00a3"}
                   {valuation.high.toLocaleString()}
                 </strong>
+                {valuation.mid && (
+                  <small>Mid guide: {"\u00a3"}{valuation.mid.toLocaleString()}</small>
+                )}
               </div>
+
               <p>
-                This is a conservative Kerb estimate using make, model, version,
-                age, mileage, fuel, condition and your asking price. It is not a
-                guaranteed sale price.
+                We only show an estimate. This is a guide, not a guaranteed sale
+                price.
               </p>
+
+              {pricePosition && (
+                <div className={`valuationStatus ${pricePosition.tone}`}>
+                  <b>{pricePosition.label}</b>
+                  <span>{pricePosition.text}</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -1602,9 +1277,52 @@ const styles = `
     letter-spacing: -1px;
   }
 
+  .valuationBox small {
+    display: block;
+    color: #465269;
+    font-size: 13px;
+    font-weight: 900;
+    margin-top: 3px;
+  }
+
   .valuationBox p {
     font-size: 13px;
     color: #657189;
+  }
+
+  .valuationStatus {
+    display: grid;
+    gap: 3px;
+    background: #ffffff;
+    border: 1px solid #dce8ff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .valuationStatus b {
+    color: #071126;
+  }
+
+  .valuationStatus span {
+    color: #657189;
+    line-height: 1.45;
+  }
+
+  .valuationStatus.good {
+    border-color: #bde8cf;
+    background: #f3fff7;
+  }
+
+  .valuationStatus.fair {
+    border-color: #cbdcff;
+    background: #f8fbff;
+  }
+
+  .valuationStatus.watch,
+  .valuationStatus.high {
+    border-color: #ffe0aa;
+    background: #fffaf0;
   }
 
   .featuresSection {
