@@ -42,8 +42,7 @@ export default function TermsPage() {
         <p>
           You are responsible for keeping your sign-in details and device secure.
           If you believe someone has accessed your Kerb account without
-          permission, stop using the account and tell Kerb through the available
-          in-product support or reporting routes.
+          permission, contact Kerb at <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 
@@ -72,10 +71,10 @@ export default function TermsPage() {
           <li>You must not list prohibited, illegal or unsafe items.</li>
         </ul>
         <p>
-          Kerb may manually review listings before they appear publicly. Kerb may
-          approve, reject, edit, hide, mark as sold or remove listings if they
-          appear inaccurate, unsafe, suspicious, duplicated, poor quality or in
-          breach of these terms.
+          Kerb may review listings and reports. Kerb may approve, reject, edit,
+          hide, mark as sold or remove listings if they appear inaccurate,
+          unsafe, suspicious, duplicated, poor quality or in breach of these
+          terms.
         </p>
       </section>
 
@@ -180,10 +179,10 @@ export default function TermsPage() {
       <section>
         <h2>13. Contact details</h2>
         <p className={styles.note}>
-          Kerb does not yet publish a dedicated business email, phone number or
-          postal address. These details should be added before a full public
-          launch. Until then, users should use the account, message and report
-          tools available on the website.
+          For Kerb support, account questions, listing issues, safety concerns
+          or general enquiries, contact <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
+          You can also use the account, message and report tools available on
+          the website.
         </p>
       </section>
     </LegalPage>
