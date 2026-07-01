@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { calculateKerbMarketGuide } from "../../lib/kerb-valuation";
 import {
   createListingLiveEmail,
   getListingTitle,
@@ -101,28 +102,51 @@ async function getSignedInAccount(supabase, request) {
   };
 }
 
-function roundToNearestHundred(value) {
-  return Math.round(value / 100) * 100;
-}
+function getSafeValuation({
+  make,
+  model,
+  modelDetail,
+  year,
+  mileage,
+  bodyType,
+  condition,
+  fuelType,
+  gearbox,
+  submittedLow,
+  submittedHigh,
+}) {
+  const calculatedGuide = calculateKerbMarketGuide({
+    make,
+    model,
+    modelDetail,
+    year,
+    mileage,
+    bodyType,
+    condition,
+    fuelType,
+    gearbox,
+  });
 
-function getSafeValuation({ low, high, askingPrice }) {
-  if (!low || !high) {
+  if (calculatedGuide?.low && calculatedGuide?.high) {
     return {
-      low,
-      high,
+      low: calculatedGuide.low,
+      high: calculatedGuide.high,
     };
   }
 
-  if (askingPrice && high > askingPrice * 1.35) {
+  if (!submittedLow || !submittedHigh) {
     return {
-      low: roundToNearestHundred(askingPrice * 0.9),
-      high: roundToNearestHundred(askingPrice * 1.08),
+      low: null,
+      high: null,
     };
   }
+
+  const safeLow = Math.min(submittedLow, submittedHigh);
+  const safeHigh = Math.max(submittedLow, submittedHigh);
 
   return {
-    low,
-    high,
+    low: safeLow,
+    high: safeHigh,
   };
 }
 
@@ -272,9 +296,17 @@ export async function POST(request) {
     const location = cleanText(formData.get("location"));
     const financeAvailable = cleanBoolean(formData.get("finance_available"));
     const valuation = getSafeValuation({
-      low: cleanNumber(formData.get("valuation_low")),
-      high: cleanNumber(formData.get("valuation_high")),
-      askingPrice,
+      make,
+      model,
+      modelDetail,
+      year,
+      mileage,
+      bodyType,
+      condition,
+      fuelType,
+      gearbox,
+      submittedLow: cleanNumber(formData.get("valuation_low")),
+      submittedHigh: cleanNumber(formData.get("valuation_high")),
     });
     const features = cleanFeatures(formData);
     const listingCategory = cleanListingCategory(formData.get("listing_category"));
