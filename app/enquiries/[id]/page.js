@@ -42,7 +42,7 @@ function getTitle(listing, enquiry) {
   if (listing?.title) return listing.title;
 
   return (
-    [listing?.year, listing?.make, listing?.model]
+    [listing?.year, listing?.make, listing?.model, listing?.model_detail]
       .filter(Boolean)
       .join(" ")
       .trim() || "Kerb listing"
