@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import SiteMenu from "../components/SiteMenu";
+import {
+  bodyTypeOptions,
+  vehicleMakeOptions,
+  vehicleMakes,
+} from "../lib/vehicle-data";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -1125,25 +1130,34 @@ export default function BrowsePage() {
   }
 
   const availableMakes = useMemo(() => {
-    return [...new Set(cars.map((car) => car.make).filter(Boolean))].sort();
+    return [
+      ...new Set([
+        ...vehicleMakeOptions,
+        ...cars.map((car) => car.make).filter(Boolean),
+      ]),
+    ].sort((a, b) => a.localeCompare(b));
   }, [cars]);
 
   const availableModels = useMemo(() => {
     if (!filters.make) return [];
 
     const selectedMake = String(filters.make).trim().toLowerCase();
+    const knownModels = vehicleMakes[filters.make] || [];
 
     return [
       ...new Set(
-        cars
-          .filter(
-            (car) =>
-              String(car.make || "").trim().toLowerCase() === selectedMake
-          )
-          .map((car) => car.model)
-          .filter(Boolean)
+        [
+          ...knownModels,
+          ...cars
+            .filter(
+              (car) =>
+                String(car.make || "").trim().toLowerCase() === selectedMake
+            )
+            .map((car) => car.model)
+            .filter(Boolean),
+        ]
       ),
-    ].sort();
+    ].sort((a, b) => a.localeCompare(b));
   }, [cars, filters.make]);
 
   const visibleCars = useMemo(() => {
@@ -1665,12 +1679,11 @@ export default function BrowsePage() {
                     }
                   >
                     <option value="">Any body</option>
-                    <option value="SUV">SUV</option>
-                    <option value="Hatchback">Hatchback</option>
-                    <option value="Saloon">Saloon</option>
-                    <option value="Estate">Estate</option>
-                    <option value="Coupe">Coupe</option>
-                    <option value="Convertible">Convertible</option>
+                    {bodyTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </label>
@@ -1717,11 +1730,11 @@ export default function BrowsePage() {
                 type="button"
                 onClick={() => {
                   updateUrl();
-                  setIsFilterPanelOpen(false);
+                  setIsFilterPanelOpen(true);
                 }}
               >
                 <SvgIcon name="sliders" />
-                Filter
+                Filters
               </button>
             </div>
 
@@ -2032,12 +2045,11 @@ export default function BrowsePage() {
                     }
                   >
                     <option value="">Any body</option>
-                    <option value="SUV">SUV</option>
-                    <option value="Hatchback">Hatchback</option>
-                    <option value="Saloon">Saloon</option>
-                    <option value="Estate">Estate</option>
-                    <option value="Coupe">Coupe</option>
-                    <option value="Convertible">Convertible</option>
+                    {bodyTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </label>
@@ -2219,7 +2231,7 @@ export default function BrowsePage() {
             <div className="empty-box">
               <h2>No cars found</h2>
               <p>
-                Try clearing your filters or post a new listing for review.
+                Try clearing your filters or post a new listing.
               </p>
               <div className="empty-actions">
                 <button type="button" onClick={clearFilters}>
