@@ -51,6 +51,9 @@ export default function SafetyPage() {
           use the report option on the listing page. Kerb may review reports and
           remove or restrict listings where needed.
         </p>
+        <p>
+          For urgent safety concerns, email <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
+        </p>
       </section>
 
       <section>
