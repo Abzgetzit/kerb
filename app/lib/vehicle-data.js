@@ -6111,1616 +6111,2908 @@ const rawVehicleMakes = {
   "Zenos": []
 };
 
-const curatedVehicleModelDetails = {
-  "BMW": {
-    "1 Series": [
-      "116i",
-      "116d",
-      "118i",
-      "118i M Sport",
-      "118d",
-      "118d M Sport",
-      "120i",
-      "120d",
-      "125i",
-      "128ti",
-      "M135i",
-      "M140i"
-    ],
-    "2 Series": [
-      "218i",
-      "218d",
-      "220i",
-      "220d",
-      "225e",
-      "225i",
-      "228i",
-      "230i",
-      "M235i",
-      "M240i",
-      "M2"
-    ],
-    "3 Series": [
-      "316i",
-      "316d",
-      "318i",
-      "318i M Sport",
-      "318d",
-      "318d M Sport",
-      "320i",
-      "320i M Sport",
-      "320i xDrive",
-      "320d",
-      "320d M Sport",
-      "320d xDrive",
-      "325d",
-      "328i",
-      "330i",
-      "330i M Sport",
-      "330d",
-      "330d M Sport",
-      "330e",
-      "330e M Sport",
-      "335d",
-      "335i",
-      "340i",
-      "M340i",
-      "M340d",
-      "M3"
-    ],
-    "4 Series": [
-      "418d",
-      "420i",
-      "420i M Sport",
-      "420d",
-      "420d M Sport",
-      "420d xDrive",
-      "425d",
-      "428i",
-      "428i Sport",
-      "428i Luxury",
-      "428i M Sport",
-      "428i Coupe",
-      "428i Convertible",
-      "428i Gran Coupe",
-      "430i",
-      "430i M Sport",
-      "430d",
-      "430d M Sport",
-      "435d",
-      "435i",
-      "440i",
-      "M440i",
-      "M440d",
-      "M4"
-    ],
-    "5 Series": [
-      "520i",
-      "520d",
-      "523i",
-      "525d",
-      "528i",
-      "530i",
-      "530d",
-      "530e",
-      "535d",
-      "535i",
-      "540i",
-      "545e",
-      "550e",
-      "M550i",
-      "M5"
-    ],
-    "6 Series": [
-      "620d",
-      "630i",
-      "630d",
-      "635d",
-      "640i",
-      "640i M Sport",
-      "640d",
-      "640d M Sport",
-      "650i",
-      "M6"
-    ],
-    "7 Series": [
-      "730d",
-      "740d",
-      "740i",
-      "745e",
-      "750i",
-      "760i"
-    ],
-    "8 Series": [
-      "840i",
-      "840d",
-      "M850i",
-      "M8"
-    ],
-    "X1": [
-      "sDrive18i",
-      "sDrive18d",
-      "xDrive20d",
-      "xDrive25e"
-    ],
-    "X2": [
-      "sDrive18i",
-      "sDrive18d",
-      "xDrive20d",
-      "M35i"
-    ],
-    "X3": [
-      "xDrive20d",
-      "xDrive30d",
-      "xDrive30e",
-      "M40i",
-      "M40d",
-      "X3 M"
-    ],
-    "X4": [
-      "xDrive20d",
-      "xDrive30d",
-      "M40i",
-      "M40d",
-      "X4 M"
-    ],
-    "X5": [
-      "xDrive30d",
-      "xDrive40i",
-      "xDrive45e",
-      "xDrive50e",
-      "M50d",
-      "X5 M"
-    ],
-    "X6": [
-      "xDrive30d",
-      "xDrive40i",
-      "M50d",
-      "X6 M"
-    ],
-    "X7": [
-      "xDrive30d",
-      "xDrive40i",
-      "M50i",
-      "M60i"
-    ],
-    "Z4": [
-      "sDrive20i",
-      "sDrive28i",
-      "sDrive30i",
-      "M40i"
-    ],
-    "i3": [
-      "60Ah",
-      "94Ah",
-      "120Ah",
-      "Range Extender"
-    ],
-    "i4": [
-      "eDrive35",
-      "eDrive40",
-      "M50"
-    ],
-    "i5": [
-      "eDrive40",
-      "M60"
-    ],
-    "i7": [
-      "xDrive60",
-      "M70"
-    ],
-    "i8": [
-      "Coupe",
-      "Roadster"
-    ],
-    "iX": [
-      "xDrive40",
-      "xDrive50",
-      "M60"
-    ]
-  },
-  "Audi": {
-    "A1": [
-      "25 TFSI",
-      "30 TFSI",
-      "35 TFSI",
-      "S line"
-    ],
-    "A3": [
-      "30 TFSI",
-      "35 TFSI",
-      "35 TDI",
-      "40 TFSI e",
-      "S line",
-      "S3",
-      "RS3"
-    ],
-    "A4": [
-      "35 TFSI",
-      "40 TFSI",
-      "35 TDI",
-      "40 TDI",
-      "S line",
-      "S4",
-      "RS4"
-    ],
-    "A5": [
-      "35 TFSI",
-      "40 TFSI",
-      "35 TDI",
-      "S line",
-      "S5",
-      "RS5"
-    ],
-    "A6": [
-      "40 TDI",
-      "45 TFSI",
-      "50 TFSI e",
-      "S line",
-      "S6",
-      "RS6"
-    ],
-    "A7": [
-      "45 TFSI",
-      "50 TDI",
-      "55 TFSI e",
-      "S7",
-      "RS7"
-    ],
-    "A8": [
-      "50 TDI",
-      "55 TFSI",
-      "60 TFSI e",
-      "S8"
-    ],
-    "Q2": [
-      "30 TFSI",
-      "35 TFSI",
-      "35 TDI",
-      "S line"
-    ],
-    "Q3": [
-      "35 TFSI",
-      "35 TDI",
-      "40 TFSI e",
-      "S line",
-      "RS Q3"
-    ],
-    "Q5": [
-      "40 TDI",
-      "45 TFSI",
-      "50 TFSI e",
-      "S line",
-      "SQ5"
-    ],
-    "Q7": [
-      "45 TDI",
-      "50 TDI",
-      "55 TFSI",
-      "S line",
-      "SQ7"
-    ],
-    "Q8": [
-      "50 TDI",
-      "55 TFSI",
-      "55 TFSI e",
-      "SQ8",
-      "RS Q8"
-    ],
-    "TT": [
-      "40 TFSI",
-      "45 TFSI",
-      "TTS",
-      "TT RS"
-    ],
-    "R8": [
-      "V10",
-      "V10 Performance"
-    ],
-    "e-tron": [
-      "50 quattro",
-      "55 quattro",
-      "S quattro"
-    ],
-    "Q4 e-tron": [
-      "35",
-      "40",
-      "45",
-      "50 quattro"
-    ],
-    "e-tron GT": [
-      "quattro",
-      "RS"
-    ]
-  },
-  "Mercedes-Benz": {
-    "A-Class": [
-      "A180",
-      "A200",
-      "A220",
-      "A250e",
-      "A35 AMG",
-      "A45 AMG"
-    ],
-    "B-Class": [
-      "B180",
-      "B200",
-      "B250e"
-    ],
-    "C-Class": [
-      "C180",
-      "C200",
-      "C220d",
-      "C300",
-      "C300e",
-      "C43 AMG",
-      "C63 AMG"
-    ],
-    "E-Class": [
-      "E200",
-      "E220d",
-      "E300",
-      "E300e",
-      "E400d",
-      "E53 AMG",
-      "E63 AMG"
-    ],
-    "S-Class": [
-      "S350d",
-      "S400d",
-      "S500",
-      "S580e",
-      "S63 AMG"
-    ],
-    "CLA": [
-      "CLA180",
-      "CLA200",
-      "CLA220d",
-      "CLA250e",
-      "CLA35 AMG",
-      "CLA45 AMG"
-    ],
-    "GLA": [
-      "GLA180",
-      "GLA200",
-      "GLA220d",
-      "GLA250e",
-      "GLA35 AMG",
-      "GLA45 AMG"
-    ],
-    "GLB": [
-      "GLB200",
-      "GLB200d",
-      "GLB220d",
-      "GLB35 AMG"
-    ],
-    "GLC": [
-      "GLC 220d",
-      "GLC 300",
-      "GLC 300e",
-      "GLC 43 AMG",
-      "GLC 63 AMG"
-    ],
-    "GLE": [
-      "GLE 300d",
-      "GLE 350de",
-      "GLE 450",
-      "GLE 53 AMG",
-      "GLE 63 AMG"
-    ],
-    "G": [
-      "G 400d",
-      "G 500",
-      "G 63 AMG"
-    ],
-    "EQA": [
-      "EQA 250",
-      "EQA 300",
-      "EQA 350"
-    ],
-    "EQB": [
-      "EQB 250",
-      "EQB 300",
-      "EQB 350"
-    ],
-    "EQC": [
-      "EQC 400"
-    ],
-    "EQE": [
-      "EQE 300",
-      "EQE 350",
-      "EQE 53 AMG"
-    ],
-    "EQS": [
-      "EQS 450",
-      "EQS 580",
-      "EQS 53 AMG"
-    ]
-  },
-  "Ford": {
-    "Fiesta": [
-      "1.0 EcoBoost",
-      "1.25",
-      "1.5 TDCi",
-      "Titanium",
-      "ST-Line",
-      "ST"
-    ],
-    "Focus": [
-      "1.0 EcoBoost",
-      "1.5 EcoBoost",
-      "1.5 EcoBlue",
-      "Titanium",
-      "ST-Line",
-      "ST",
-      "RS"
-    ],
-    "Puma": [
-      "1.0 EcoBoost",
-      "mHEV",
-      "ST-Line",
-      "ST"
-    ],
-    "Kuga": [
-      "EcoBoost",
-      "EcoBlue",
-      "PHEV",
-      "ST-Line",
-      "Vignale"
-    ],
-    "Mondeo": [
-      "EcoBoost",
-      "TDCi",
-      "Hybrid",
-      "Titanium",
-      "Vignale"
-    ],
-    "Mustang": [
-      "2.3 EcoBoost",
-      "5.0 V8 GT",
-      "Mach 1"
-    ],
-    "Ranger": [
-      "Wildtrak",
-      "Raptor",
-      "Limited"
-    ]
-  },
-  "Volkswagen": {
-    "Golf": [
-      "1.0 TSI",
-      "1.5 TSI",
-      "2.0 TDI",
-      "eTSI",
-      "GTE",
-      "GTI",
-      "GTD",
-      "R"
-    ],
-    "Polo": [
-      "1.0 MPI",
-      "1.0 TSI",
-      "Style",
-      "R-Line",
-      "GTI"
-    ],
-    "Passat": [
-      "1.5 TSI",
-      "2.0 TDI",
-      "GTE",
-      "R-Line"
-    ],
-    "Tiguan": [
-      "1.5 TSI",
-      "2.0 TDI",
-      "eHybrid",
-      "R-Line",
-      "R"
-    ],
-    "T-Roc": [
-      "1.0 TSI",
-      "1.5 TSI",
-      "2.0 TDI",
-      "R-Line",
-      "R"
-    ],
-    "T-Cross": [
-      "1.0 TSI",
-      "1.5 TSI",
-      "R-Line"
-    ],
-    "Touareg": [
-      "3.0 TDI",
-      "eHybrid",
-      "R"
-    ],
-    "ID3": [
-      "Pro",
-      "Pro S",
-      "GTX"
-    ],
-    "ID4": [
-      "Pure",
-      "Pro",
-      "GTX"
-    ],
-    "ID5": [
-      "Pro",
-      "GTX"
-    ],
-    "ID7": [
-      "Pro",
-      "Tourer",
-      "GTX"
-    ]
-  },
-  "Vauxhall": {
-    "Corsa": [
-      "1.2",
-      "1.2 Turbo",
-      "Electric",
-      "Design",
-      "GS",
-      "Ultimate"
-    ],
-    "Astra": [
-      "1.2 Turbo",
-      "1.5 Turbo D",
-      "Hybrid",
-      "GSe",
-      "Design",
-      "GS",
-      "Ultimate"
-    ],
-    "Mokka": [
-      "1.2 Turbo",
-      "Electric",
-      "Design",
-      "GS",
-      "Ultimate"
-    ],
-    "Insignia": [
-      "Grand Sport",
-      "Sports Tourer",
-      "1.5 Turbo",
-      "2.0 Turbo D",
-      "SRi"
-    ],
-    "Crossland": [
-      "1.2",
-      "1.2 Turbo",
-      "Design",
-      "GS"
-    ],
-    "Grandland": [
-      "1.2 Turbo",
-      "Hybrid",
-      "GSe",
-      "Design",
-      "GS",
-      "Ultimate"
-    ]
-  }
-};
-
-
-// Kerb UK-cleaned model data.
-// The raw list above is intentionally broad, but many entries are US-market engine/version names.
-// These overrides keep the main dropdown fast and UK-market focused: Make -> Model line -> Type / variant.
-const kerbUkVehicleModelOverrides = {
+const curatedVehicleCatalog = {
   "Abarth": {
-    "500": ["1.4 T-Jet", "595", "695", "Competizione", "Turismo"],
-    "595": ["Turismo", "Competizione", "Esseesse"],
-    "695": ["Turismo", "Competizione", "Biposto"]
+    "models": [
+      "500",
+      "595",
+      "695",
+      "124 Spider",
+      "500e"
+    ],
+    "types": {
+      "500": [
+        "1.2",
+        "1.4 T-Jet"
+      ],
+      "595": [
+        "1.4 T-Jet"
+      ],
+      "695": [
+        "1.4 T-Jet"
+      ],
+      "124 Spider": [
+        "1.4 MultiAir"
+      ],
+      "500e": [
+        "Electric"
+      ]
+    },
+    "specs": [
+      "Trofeo",
+      "Turismo",
+      "Competizione",
+      "Esseesse",
+      "Scorpioneoro"
+    ]
   },
   "Alfa Romeo": {
-    "Giulia": ["2.0 Turbo", "Veloce", "Quadrifoglio"],
-    "Giulietta": ["1.4 TB", "2.0 JTDM", "Veloce", "Quadrifoglio Verde"],
-    "MiTo": ["1.4", "TwinAir", "Veloce", "Quadrifoglio Verde"],
-    "Stelvio": ["2.0 Turbo", "2.2 Diesel", "Veloce", "Quadrifoglio"],
-    "Tonale": ["Hybrid", "Plug-in Hybrid", "Veloce"]
+    "models": [
+      "MiTo",
+      "Giulietta",
+      "Giulia",
+      "Stelvio",
+      "Tonale",
+      "4C",
+      "Spider",
+      "Brera"
+    ],
+    "types": {
+      "Giulia": [
+        "2.0 TB",
+        "2.2 Diesel",
+        "Veloce",
+        "Quadrifoglio"
+      ],
+      "Stelvio": [
+        "2.0 TB",
+        "2.2 Diesel",
+        "Veloce",
+        "Quadrifoglio"
+      ],
+      "Tonale": [
+        "1.5 Hybrid",
+        "1.6 Diesel",
+        "Plug-in Hybrid Q4"
+      ],
+      "Giulietta": [
+        "1.4 TB",
+        "1.6 JTDM",
+        "2.0 JTDM",
+        "Cloverleaf"
+      ],
+      "MiTo": [
+        "0.9 TwinAir",
+        "1.4 TB",
+        "1.3 JTDM"
+      ]
+    },
+    "specs": [
+      "Sprint",
+      "Super",
+      "Speciale",
+      "Veloce",
+      "Lusso",
+      "Ti"
+    ]
+  },
+  "Alpine": {
+    "models": [
+      "A110"
+    ],
+    "types": {
+      "A110": [
+        "Pure",
+        "Legende",
+        "S",
+        "GT",
+        "R"
+      ]
+    },
+    "specs": [
+      "Premier Edition"
+    ]
+  },
+  "Aston Martin": {
+    "models": [
+      "DB7",
+      "DB9",
+      "DB11",
+      "DB12",
+      "DBS",
+      "Vantage",
+      "Vanquish",
+      "Virage",
+      "Rapide",
+      "DBX"
+    ],
+    "types": {
+      "Vantage": [
+        "V8",
+        "V12",
+        "S",
+        "F1 Edition"
+      ],
+      "DB11": [
+        "V8",
+        "V12",
+        "AMR"
+      ],
+      "DBS": [
+        "Superleggera"
+      ],
+      "DBX": [
+        "V8",
+        "707"
+      ],
+      "Rapide": [
+        "S"
+      ]
+    },
+    "specs": [
+      "Volante",
+      "Coupe",
+      "Roadster",
+      "Ultimate",
+      "AMR"
+    ]
   },
   "Audi": {
-    "A1": ["25 TFSI", "30 TFSI", "35 TFSI", "Sport", "S line", "Black Edition"],
-    "A3": ["30 TFSI", "35 TFSI", "35 TDI", "40 TFSI e", "Sport", "S line", "Black Edition", "S3", "RS3"],
-    "A4": ["35 TFSI", "40 TFSI", "35 TDI", "40 TDI", "S line", "Black Edition", "S4", "RS4"],
-    "A5": ["35 TFSI", "40 TFSI", "35 TDI", "40 TDI", "S line", "Black Edition", "S5", "RS5"],
-    "A6": ["40 TDI", "45 TFSI", "50 TFSI e", "S line", "Black Edition", "S6", "RS6"],
-    "A7": ["45 TFSI", "50 TDI", "55 TFSI e", "S line", "S7", "RS7"],
-    "A8": ["50 TDI", "55 TFSI", "60 TFSI e", "S line", "S8"],
-    "Q2": ["30 TFSI", "35 TFSI", "35 TDI", "Sport", "S line", "Black Edition"],
-    "Q3": ["35 TFSI", "35 TDI", "40 TFSI e", "Sport", "S line", "Black Edition", "RS Q3"],
-    "Q4 e-tron": ["35", "40", "45", "50 quattro", "Sportback", "S line", "Black Edition"],
-    "Q5": ["40 TDI", "45 TFSI", "50 TFSI e", "Sport", "S line", "Black Edition", "SQ5"],
-    "Q7": ["45 TDI", "50 TDI", "55 TFSI", "S line", "Black Edition", "SQ7"],
-    "Q8": ["50 TDI", "55 TFSI", "55 TFSI e", "S line", "Black Edition", "SQ8", "RS Q8"],
-    "TT": ["40 TFSI", "45 TFSI", "Black Edition", "TTS", "TT RS"],
-    "R8": ["V10", "V10 Performance", "RWD", "quattro"],
-    "e-tron": ["50 quattro", "55 quattro", "S quattro", "Sportback"],
-    "e-tron GT": ["quattro", "RS"]
+    "models": [
+      "A1",
+      "A2",
+      "A3",
+      "S3",
+      "RS3",
+      "A4",
+      "S4",
+      "RS4",
+      "A5",
+      "S5",
+      "RS5",
+      "A6",
+      "S6",
+      "RS6",
+      "A7",
+      "S7",
+      "RS7",
+      "A8",
+      "S8",
+      "Q2",
+      "SQ2",
+      "Q3",
+      "RS Q3",
+      "Q4 e-tron",
+      "Q5",
+      "SQ5",
+      "Q7",
+      "SQ7",
+      "Q8",
+      "SQ8",
+      "RS Q8",
+      "TT",
+      "TTS",
+      "TT RS",
+      "R8",
+      "e-tron",
+      "e-tron GT",
+      "RS e-tron GT"
+    ],
+    "types": {
+      "A1": [
+        "25 TFSI",
+        "30 TFSI",
+        "35 TFSI",
+        "40 TFSI"
+      ],
+      "A3": [
+        "30 TFSI",
+        "35 TFSI",
+        "40 TFSI",
+        "30 TDI",
+        "35 TDI",
+        "40 TDI",
+        "40 TFSI e",
+        "45 TFSI e",
+        "e-tron"
+      ],
+      "S3": [
+        "Sportback",
+        "Saloon",
+        "Cabriolet"
+      ],
+      "RS3": [
+        "Sportback",
+        "Saloon"
+      ],
+      "A4": [
+        "35 TFSI",
+        "40 TFSI",
+        "45 TFSI",
+        "30 TDI",
+        "35 TDI",
+        "40 TDI",
+        "45 TDI",
+        "Avant",
+        "Allroad"
+      ],
+      "S4": [
+        "TFSI",
+        "TDI",
+        "Avant",
+        "Saloon"
+      ],
+      "RS4": [
+        "Avant"
+      ],
+      "A5": [
+        "35 TFSI",
+        "40 TFSI",
+        "45 TFSI",
+        "35 TDI",
+        "40 TDI",
+        "Coupe",
+        "Sportback",
+        "Cabriolet"
+      ],
+      "S5": [
+        "Coupe",
+        "Sportback",
+        "Cabriolet",
+        "TDI",
+        "TFSI"
+      ],
+      "RS5": [
+        "Coupe",
+        "Sportback"
+      ],
+      "Q3": [
+        "35 TFSI",
+        "40 TFSI",
+        "45 TFSI",
+        "35 TDI",
+        "40 TDI",
+        "Sportback"
+      ],
+      "Q5": [
+        "40 TDI",
+        "45 TFSI",
+        "50 TDI",
+        "55 TFSI e",
+        "Sportback"
+      ],
+      "TT": [
+        "40 TFSI",
+        "45 TFSI",
+        "Roadster",
+        "Coupe"
+      ]
+    },
+    "specs": [
+      "Technik",
+      "Sport",
+      "S line",
+      "Black Edition",
+      "Vorsprung",
+      "Edition 1",
+      "Carbon Black",
+      "Comfort and Sound Pack"
+    ]
   },
   "Bentley": {
-    "Bentayga": ["V8", "Hybrid", "Speed", "EWB"],
-    "Continental GT": ["V8", "W12", "Speed", "Mulliner"],
-    "Flying Spur": ["V8", "W12", "Hybrid", "Speed"],
-    "Mulsanne": ["V8", "Speed", "EWB"],
-    "Arnage": ["R", "T", "RL"]
+    "models": [
+      "Continental GT",
+      "Flying Spur",
+      "Bentayga",
+      "Mulsanne",
+      "Arnage",
+      "Azure",
+      "Brooklands"
+    ],
+    "types": {
+      "Continental GT": [
+        "V8",
+        "W12",
+        "Speed",
+        "Supersports",
+        "GTC"
+      ],
+      "Bentayga": [
+        "V8",
+        "Hybrid",
+        "Speed",
+        "EWB"
+      ],
+      "Flying Spur": [
+        "V8",
+        "W12",
+        "Hybrid",
+        "Speed"
+      ]
+    },
+    "specs": [
+      "Mulliner",
+      "Azure",
+      "S",
+      "First Edition"
+    ]
   },
   "BMW": {
-    "1 Series": ["116i", "116d", "118i", "118i M Sport", "118d", "118d M Sport", "120i", "120d", "125i", "128ti", "M135i", "M140i"],
-    "2 Series": ["218i", "218d", "220i", "220d", "225e", "225i", "228i", "230i", "M235i", "M240i", "M2"],
-    "3 Series": ["316i", "316d", "318i", "318i M Sport", "318d", "318d M Sport", "320i", "320i M Sport", "320i xDrive", "320d", "320d M Sport", "320d xDrive", "325d", "328i", "330i", "330i M Sport", "330d", "330d M Sport", "330e", "330e M Sport", "335d", "335i", "340i", "M340i", "M340d", "M3"],
-    "4 Series": ["418d", "420i", "420i M Sport", "420d", "420d M Sport", "420d xDrive", "425d", "428i", "428i Sport", "428i Luxury", "428i M Sport", "428i Coupe", "428i Convertible", "428i Gran Coupe", "430i", "430i M Sport", "430d", "430d M Sport", "435d", "435i", "440i", "M440i", "M440d", "M4"],
-    "5 Series": ["520i", "520d", "523i", "525d", "528i", "530i", "530d", "530e", "535d", "535i", "540i", "545e", "550e", "M550i", "M5"],
-    "6 Series": ["620d", "630i", "630d", "635d", "640i", "640i M Sport", "640d", "640d M Sport", "650i", "M6"],
-    "7 Series": ["730d", "740d", "740i", "745e", "750i", "760i"],
-    "8 Series": ["840i", "840d", "M850i", "M8"],
-    "X1": ["sDrive18i", "sDrive18d", "xDrive20d", "xDrive25e"],
-    "X2": ["sDrive18i", "sDrive18d", "xDrive20d", "M35i"],
-    "X3": ["xDrive20d", "xDrive30d", "xDrive30e", "M40i", "M40d", "X3 M"],
-    "X4": ["xDrive20d", "xDrive30d", "M40i", "M40d", "X4 M"],
-    "X5": ["xDrive30d", "xDrive40i", "xDrive45e", "xDrive50e", "M50d", "X5 M"],
-    "X6": ["xDrive30d", "xDrive40i", "M50d", "X6 M"],
-    "X7": ["xDrive30d", "xDrive40i", "M50i", "M60i"],
-    "Z4": ["sDrive20i", "sDrive28i", "sDrive30i", "M40i"],
-    "i3": ["60Ah", "94Ah", "120Ah", "Range Extender"],
-    "i4": ["eDrive35", "eDrive40", "M50"],
-    "i5": ["eDrive40", "M60"],
-    "i7": ["xDrive60", "M70"],
-    "i8": ["Coupe", "Roadster"],
-    "iX": ["xDrive40", "xDrive50", "M60"]
+    "models": [
+      "1 Series",
+      "2 Series",
+      "M2",
+      "3 Series",
+      "M3",
+      "4 Series",
+      "M4",
+      "5 Series",
+      "M5",
+      "6 Series",
+      "7 Series",
+      "8 Series",
+      "X1",
+      "X2",
+      "X3",
+      "X3 M",
+      "X4",
+      "X4 M",
+      "X5",
+      "X5 M",
+      "X6",
+      "X6 M",
+      "X7",
+      "XM",
+      "Z3",
+      "Z4",
+      "i3",
+      "i4",
+      "i5",
+      "i7",
+      "i8",
+      "iX",
+      "iX1",
+      "iX3"
+    ],
+    "types": {
+      "1 Series": [
+        "116i",
+        "116d",
+        "118i",
+        "118d",
+        "120i",
+        "120d",
+        "125i",
+        "125d",
+        "128ti",
+        "M135i",
+        "M140i"
+      ],
+      "2 Series": [
+        "216i",
+        "216d",
+        "218i",
+        "218d",
+        "220i",
+        "220d",
+        "225e",
+        "225xe",
+        "228i",
+        "230i",
+        "M235i",
+        "M240i"
+      ],
+      "M2": [
+        "Coupe",
+        "Competition",
+        "CS"
+      ],
+      "3 Series": [
+        "316i",
+        "316d",
+        "318i",
+        "318d",
+        "320i",
+        "320d",
+        "320d xDrive",
+        "325d",
+        "328i",
+        "330i",
+        "330d",
+        "330e",
+        "335d",
+        "335i",
+        "340i",
+        "M340i",
+        "M340d"
+      ],
+      "M3": [
+        "Saloon",
+        "Competition",
+        "xDrive",
+        "CS",
+        "Touring"
+      ],
+      "4 Series": [
+        "418d",
+        "420i",
+        "420d",
+        "420d xDrive",
+        "425d",
+        "428i",
+        "430i",
+        "430d",
+        "435d",
+        "435i",
+        "440i",
+        "M440i",
+        "M440d"
+      ],
+      "M4": [
+        "Coupe",
+        "Convertible",
+        "Competition",
+        "xDrive",
+        "CS",
+        "CSL"
+      ],
+      "5 Series": [
+        "520i",
+        "520d",
+        "523i",
+        "525d",
+        "528i",
+        "530i",
+        "530d",
+        "530e",
+        "535d",
+        "535i",
+        "540i",
+        "545e",
+        "550i",
+        "M550i"
+      ],
+      "M5": [
+        "Saloon",
+        "Competition",
+        "CS"
+      ],
+      "X3": [
+        "sDrive18d",
+        "xDrive20i",
+        "xDrive20d",
+        "xDrive30i",
+        "xDrive30d",
+        "xDrive30e",
+        "M40i",
+        "M40d"
+      ],
+      "X5": [
+        "xDrive25d",
+        "xDrive30d",
+        "xDrive40d",
+        "xDrive40i",
+        "xDrive45e",
+        "xDrive50e",
+        "M50d",
+        "M50i"
+      ],
+      "Z4": [
+        "sDrive20i",
+        "sDrive30i",
+        "M40i"
+      ],
+      "i4": [
+        "eDrive35",
+        "eDrive40",
+        "xDrive40",
+        "M50"
+      ],
+      "iX": [
+        "xDrive40",
+        "xDrive50",
+        "M60"
+      ]
+    },
+    "specs": [
+      "SE",
+      "Sport",
+      "Luxury",
+      "M Sport",
+      "M Sport Pro",
+      "Shadow Edition",
+      "Business Edition",
+      "Individual",
+      "Competition Pack",
+      "Technology Pack",
+      "Pro Pack"
+    ]
+  },
+  "BYD": {
+    "models": [
+      "Atto 3",
+      "Dolphin",
+      "Seal",
+      "Seal U",
+      "Tang",
+      "Han"
+    ],
+    "types": {
+      "Seal": [
+        "Design",
+        "Excellence AWD"
+      ],
+      "Atto 3": [
+        "Active",
+        "Comfort",
+        "Design"
+      ],
+      "Dolphin": [
+        "Active",
+        "Boost",
+        "Comfort",
+        "Design"
+      ]
+    },
+    "specs": [
+      "Active",
+      "Comfort",
+      "Design",
+      "Excellence"
+    ]
+  },
+  "Cadillac": {
+    "models": [
+      "ATS",
+      "CTS",
+      "Escalade",
+      "Seville",
+      "SRX",
+      "XT4",
+      "XT5",
+      "XT6"
+    ],
+    "types": {},
+    "specs": [
+      "Luxury",
+      "Premium",
+      "Sport",
+      "Platinum"
+    ]
+  },
+  "Chevrolet": {
+    "models": [
+      "Aveo",
+      "Camaro",
+      "Captiva",
+      "Corvette",
+      "Cruze",
+      "Matiz",
+      "Orlando",
+      "Spark",
+      "Trax",
+      "Volt"
+    ],
+    "types": {
+      "Corvette": [
+        "Stingray",
+        "Z06",
+        "ZR1"
+      ],
+      "Camaro": [
+        "V6",
+        "V8",
+        "SS",
+        "ZL1"
+      ]
+    },
+    "specs": [
+      "LS",
+      "LT",
+      "LTZ",
+      "Premier"
+    ]
+  },
+  "Chrysler": {
+    "models": [
+      "300C",
+      "Crossfire",
+      "Grand Voyager",
+      "PT Cruiser",
+      "Sebring",
+      "Ypsilon"
+    ],
+    "types": {
+      "300C": [
+        "3.0 CRD",
+        "3.5 V6",
+        "5.7 HEMI",
+        "SRT-8"
+      ],
+      "Grand Voyager": [
+        "2.8 CRD",
+        "3.3 V6"
+      ],
+      "Crossfire": [
+        "3.2 V6",
+        "SRT-6"
+      ]
+    },
+    "specs": [
+      "Limited",
+      "Touring",
+      "Executive",
+      "S"
+    ]
   },
   "Citroen": {
-    "C1": ["VT", "VTR", "Feel", "Flair"],
-    "C3": ["PureTech", "BlueHDi", "Feel", "Flair", "Shine"],
-    "C3 Aircross": ["PureTech", "BlueHDi", "Feel", "Flair", "Shine"],
-    "C4": ["PureTech", "BlueHDi", "Hybrid", "Electric", "Sense", "Shine"],
-    "C4 Cactus": ["PureTech", "BlueHDi", "Feel", "Flair"],
-    "C5 Aircross": ["PureTech", "BlueHDi", "Hybrid", "Shine", "Max"],
-    "Berlingo": ["M", "XL", "BlueHDi", "Electric"],
-    "Dispatch": ["M", "XL", "BlueHDi", "Electric"]
+    "models": [
+      "C1",
+      "C2",
+      "C3",
+      "C3 Aircross",
+      "C3 Picasso",
+      "C4",
+      "C4 Cactus",
+      "C4 Picasso",
+      "C4 SpaceTourer",
+      "C5",
+      "C5 Aircross",
+      "Berlingo",
+      "DS3",
+      "DS4",
+      "DS5",
+      "e-C4",
+      "Ami"
+    ],
+    "types": {
+      "C3": [
+        "PureTech 82",
+        "PureTech 110",
+        "BlueHDi 100"
+      ],
+      "C4": [
+        "PureTech 130",
+        "BlueHDi 130",
+        "Electric"
+      ],
+      "C5 Aircross": [
+        "PureTech 130",
+        "BlueHDi 130",
+        "Hybrid"
+      ]
+    },
+    "specs": [
+      "Touch",
+      "Feel",
+      "Flair",
+      "Shine",
+      "Sense",
+      "Max",
+      "Plus",
+      "Origins"
+    ]
   },
   "Cupra": {
-    "Ateca": ["TSI", "VZ1", "VZ2", "VZ3"],
-    "Born": ["V1", "V2", "V3", "e-Boost"],
-    "Formentor": ["TSI", "eHybrid", "V1", "V2", "VZ1", "VZ2", "VZ3", "VZ5"],
-    "Leon": ["TSI", "eHybrid", "V1", "V2", "VZ2", "VZ3"],
-    "Tavascan": ["V1", "V2", "VZ"]
+    "models": [
+      "Ateca",
+      "Born",
+      "Formentor",
+      "Leon",
+      "Tavascan"
+    ],
+    "types": {
+      "Formentor": [
+        "1.5 TSI",
+        "2.0 TSI",
+        "V1",
+        "V2",
+        "VZ1",
+        "VZ2",
+        "VZ3",
+        "eHybrid"
+      ],
+      "Born": [
+        "58kWh",
+        "77kWh",
+        "V1",
+        "V2",
+        "V3"
+      ]
+    },
+    "specs": [
+      "V1",
+      "V2",
+      "V3",
+      "VZ1",
+      "VZ2",
+      "VZ3"
+    ]
+  },
+  "CUPRA": {
+    "models": [
+      "Ateca",
+      "Born",
+      "Formentor",
+      "Leon",
+      "Tavascan"
+    ],
+    "types": {
+      "Formentor": [
+        "1.5 TSI",
+        "2.0 TSI",
+        "V1",
+        "V2",
+        "VZ1",
+        "VZ2",
+        "VZ3",
+        "eHybrid"
+      ],
+      "Born": [
+        "58kWh",
+        "77kWh",
+        "V1",
+        "V2",
+        "V3"
+      ]
+    },
+    "specs": [
+      "V1",
+      "V2",
+      "V3",
+      "VZ1",
+      "VZ2",
+      "VZ3"
+    ]
   },
   "Dacia": {
-    "Duster": ["Essential", "Expression", "Journey", "Prestige", "Extreme"],
-    "Sandero": ["Essential", "Expression", "Journey", "Stepway"],
-    "Jogger": ["Essential", "Expression", "Journey", "Hybrid"],
-    "Logan": ["MCV", "Laureate", "Ambiance"],
-    "Spring": ["Expression", "Extreme"]
+    "models": [
+      "Duster",
+      "Jogger",
+      "Logan",
+      "Sandero",
+      "Sandero Stepway",
+      "Spring"
+    ],
+    "types": {
+      "Duster": [
+        "TCe 90",
+        "TCe 100 Bi-Fuel",
+        "TCe 130",
+        "Blue dCi",
+        "Hybrid"
+      ],
+      "Sandero": [
+        "SCe 65",
+        "TCe 90",
+        "TCe 100 Bi-Fuel"
+      ]
+    },
+    "specs": [
+      "Access",
+      "Essential",
+      "Expression",
+      "Journey",
+      "Prestige",
+      "Extreme",
+      "Comfort",
+      "Laureate",
+      "Ambiance"
+    ]
+  },
+  "Dodge": {
+    "models": [
+      "Avenger",
+      "Caliber",
+      "Challenger",
+      "Charger",
+      "Durango",
+      "Journey",
+      "Nitro",
+      "Ram",
+      "Viper"
+    ],
+    "types": {
+      "Challenger": [
+        "SXT",
+        "R/T",
+        "Scat Pack",
+        "Hellcat"
+      ],
+      "Charger": [
+        "SXT",
+        "R/T",
+        "Scat Pack",
+        "Hellcat"
+      ],
+      "Ram": [
+        "1500",
+        "2500",
+        "3500"
+      ]
+    },
+    "specs": [
+      "SE",
+      "SXT",
+      "R/T",
+      "Limited",
+      "Sport"
+    ]
+  },
+  "DS": {
+    "models": [
+      "DS 3",
+      "DS 3 Crossback",
+      "DS 4",
+      "DS 5",
+      "DS 7",
+      "DS 9"
+    ],
+    "types": {
+      "DS 3": [
+        "PureTech",
+        "BlueHDi",
+        "E-Tense"
+      ],
+      "DS 7": [
+        "PureTech",
+        "BlueHDi",
+        "E-Tense"
+      ]
+    },
+    "specs": [
+      "Performance Line",
+      "Performance Line +",
+      "Rivoli",
+      "Opera",
+      "Prestige",
+      "Ultra Prestige"
+    ]
+  },
+  "Ferrari": {
+    "models": [
+      "296",
+      "360",
+      "430",
+      "458",
+      "488",
+      "599",
+      "612",
+      "812",
+      "California",
+      "F12",
+      "F8 Tributo",
+      "FF",
+      "GTC4Lusso",
+      "Portofino",
+      "Roma",
+      "SF90",
+      "Purosangue"
+    ],
+    "types": {},
+    "specs": [
+      "Spider",
+      "GTB",
+      "GTS",
+      "Speciale",
+      "Pista",
+      "Assetto Fiorano"
+    ]
   },
   "Fiat": {
-    "500": ["Pop", "Lounge", "Sport", "Dolcevita", "Hybrid", "Electric"],
-    "500X": ["Pop Star", "Cross", "Sport", "Dolcevita"],
-    "500L": ["Pop Star", "Lounge", "Cross"],
-    "Panda": ["Pop", "Easy", "Lounge", "Cross", "4x4"],
-    "Tipo": ["Easy", "Lounge", "Cross", "Sport"],
-    "Punto": ["Pop", "Easy", "Sporting"],
-    "Doblo": ["Cargo", "Multijet", "Maxi"],
-    "Ducato": ["Multijet", "Maxi", "Camper"]
+    "models": [
+      "500",
+      "500C",
+      "500e",
+      "500L",
+      "500X",
+      "Panda",
+      "Punto",
+      "Tipo",
+      "Doblo",
+      "Qubo",
+      "124 Spider"
+    ],
+    "types": {
+      "500": [
+        "1.2",
+        "0.9 TwinAir",
+        "1.0 Hybrid",
+        "Abarth"
+      ],
+      "Panda": [
+        "1.2",
+        "TwinAir",
+        "4x4",
+        "Hybrid"
+      ]
+    },
+    "specs": [
+      "Pop",
+      "Lounge",
+      "Sport",
+      "Dolcevita",
+      "Star",
+      "Rockstar",
+      "Cross",
+      "City Cross",
+      "Life"
+    ]
   },
   "Ford": {
-    "Fiesta": ["1.0 EcoBoost", "1.25", "1.5 TDCi", "Zetec", "Titanium", "ST-Line", "ST"],
-    "Focus": ["1.0 EcoBoost", "1.5 EcoBoost", "1.5 EcoBlue", "Zetec", "Titanium", "ST-Line", "ST", "RS"],
-    "Puma": ["1.0 EcoBoost", "mHEV", "Titanium", "ST-Line", "ST"],
-    "Kuga": ["EcoBoost", "EcoBlue", "Hybrid", "PHEV", "ST-Line", "Vignale"],
-    "Mondeo": ["EcoBoost", "TDCi", "Hybrid", "Titanium", "Vignale"],
-    "Mustang": ["2.3 EcoBoost", "5.0 V8 GT", "Mach 1"],
-    "EcoSport": ["EcoBoost", "Titanium", "ST-Line"],
-    "S-MAX": ["TDCi", "EcoBlue", "Titanium", "Vignale"],
-    "Galaxy": ["TDCi", "EcoBlue", "Titanium", "Zetec"],
-    "Ranger": ["Limited", "Wildtrak", "Platinum", "Raptor"],
-    "Transit Custom": ["Trend", "Limited", "Sport", "Trail"],
-    "Transit Connect": ["Trend", "Limited", "Sport"]
+    "models": [
+      "B-Max",
+      "C-Max",
+      "EcoSport",
+      "Edge",
+      "Fiesta",
+      "Focus",
+      "Galaxy",
+      "Grand C-Max",
+      "Ka",
+      "Ka+",
+      "Kuga",
+      "Mondeo",
+      "Mustang",
+      "Mustang Mach-E",
+      "Puma",
+      "Ranger",
+      "S-Max",
+      "Tourneo Connect",
+      "Tourneo Custom",
+      "Transit Connect",
+      "Transit Custom"
+    ],
+    "types": {
+      "Fiesta": [
+        "1.0 EcoBoost",
+        "1.25",
+        "1.5 TDCi",
+        "ST",
+        "ST-2",
+        "ST-3"
+      ],
+      "Focus": [
+        "1.0 EcoBoost",
+        "1.5 EcoBoost",
+        "1.5 TDCi",
+        "2.0 TDCi",
+        "ST",
+        "RS"
+      ],
+      "Kuga": [
+        "EcoBoost",
+        "TDCi",
+        "FHEV",
+        "PHEV"
+      ],
+      "Puma": [
+        "1.0 EcoBoost",
+        "mHEV",
+        "ST"
+      ],
+      "Ranger": [
+        "2.0 EcoBlue",
+        "3.0 V6",
+        "Raptor",
+        "Wildtrak"
+      ]
+    },
+    "specs": [
+      "Studio",
+      "Style",
+      "Zetec",
+      "Titanium",
+      "Titanium X",
+      "ST-Line",
+      "ST-Line X",
+      "Vignale",
+      "Active",
+      "Active X",
+      "Trend",
+      "Limited",
+      "Wildtrak"
+    ]
+  },
+  "Genesis": {
+    "models": [
+      "G70",
+      "G80",
+      "GV60",
+      "GV70",
+      "GV80"
+    ],
+    "types": {},
+    "specs": [
+      "Premium",
+      "Luxury",
+      "Sport",
+      "Ultimate"
+    ]
   },
   "Honda": {
-    "Jazz": ["i-VTEC", "Hybrid", "SE", "EX", "Crosstar"],
-    "Civic": ["i-VTEC", "VTEC Turbo", "e:HEV", "Sport", "EX", "Type R"],
-    "Accord": ["i-VTEC", "i-DTEC", "Type S", "EX"],
-    "CR-V": ["i-VTEC", "i-DTEC", "Hybrid", "EX", "SR"],
-    "HR-V": ["i-VTEC", "e:HEV", "SE", "Advance"],
-    "ZR-V": ["e:HEV", "Sport", "Advance"],
-    "e": ["Advance"],
-    "NSX": ["Hybrid"]
+    "models": [
+      "Accord",
+      "Civic",
+      "CR-V",
+      "CR-Z",
+      "e",
+      "HR-V",
+      "Jazz",
+      "NSX",
+      "S2000",
+      "ZR-V"
+    ],
+    "types": {
+      "Civic": [
+        "1.0 VTEC",
+        "1.5 VTEC",
+        "2.0 e:HEV",
+        "Type R"
+      ],
+      "Jazz": [
+        "i-VTEC",
+        "e:HEV"
+      ],
+      "CR-V": [
+        "i-VTEC",
+        "i-DTEC",
+        "Hybrid",
+        "e:PHEV"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "SR",
+      "EX",
+      "EX Style",
+      "Sport",
+      "Advance",
+      "Elegance"
+    ]
   },
   "Hyundai": {
-    "i10": ["SE", "Premium", "N Line"],
-    "i20": ["SE", "Premium", "N Line", "N"],
-    "i30": ["SE", "Premium", "N Line", "N"],
-    "IONIQ": ["Hybrid", "Plug-in Hybrid", "Electric"],
-    "IONIQ 5": ["Premium", "Ultimate", "N"],
-    "IONIQ 6": ["Premium", "Ultimate"],
-    "Kona": ["Petrol", "Hybrid", "Electric", "N Line", "N"],
-    "Tucson": ["Petrol", "Hybrid", "Plug-in Hybrid", "N Line", "Ultimate"],
-    "Santa Fe": ["CRDi", "Hybrid", "Plug-in Hybrid", "Premium", "Ultimate"],
-    "Bayon": ["SE Connect", "Premium", "Ultimate"]
+    "models": [
+      "Amica",
+      "Bayon",
+      "Coupe",
+      "i10",
+      "i20",
+      "i30",
+      "i40",
+      "IONIQ",
+      "IONIQ 5",
+      "IONIQ 6",
+      "Kona",
+      "Santa Fe",
+      "Tucson",
+      "Veloster"
+    ],
+    "types": {
+      "i20": [
+        "1.0 T-GDi",
+        "1.2",
+        "N"
+      ],
+      "i30": [
+        "1.0 T-GDi",
+        "1.5 T-GDi",
+        "1.6 CRDi",
+        "N"
+      ],
+      "Kona": [
+        "Petrol",
+        "Hybrid",
+        "Electric",
+        "N"
+      ],
+      "Tucson": [
+        "Petrol",
+        "Diesel",
+        "Hybrid",
+        "Plug-in Hybrid"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "SE Connect",
+      "Premium",
+      "Premium SE",
+      "Ultimate",
+      "N Line",
+      "N Line S"
+    ]
+  },
+  "Infiniti": {
+    "models": [
+      "EX",
+      "FX",
+      "G",
+      "M",
+      "Q30",
+      "Q50",
+      "Q60",
+      "Q70",
+      "QX30",
+      "QX50",
+      "QX70"
+    ],
+    "types": {},
+    "specs": [
+      "Premium",
+      "Sport",
+      "S",
+      "GT"
+    ]
   },
   "Jaguar": {
-    "XE": ["D180", "D200", "P250", "P300", "R-Dynamic", "Portfolio"],
-    "XF": ["D180", "D200", "P250", "P300", "R-Sport", "Portfolio", "Sportbrake"],
-    "XJ": ["3.0 V6", "5.0 V8", "Portfolio", "Autobiography", "XJR"],
-    "F-PACE": ["D180", "D200", "D300", "P250", "P400e", "R-Dynamic", "SVR"],
-    "E-PACE": ["D150", "D180", "D200", "P200", "P250", "P300e", "R-Dynamic"],
-    "I-PACE": ["EV400", "S", "SE", "HSE"],
-    "F-TYPE": ["P300", "P450", "P575", "V6", "V8", "R", "SVR"],
-    "XK": ["XK8", "XKR", "Portfolio"],
-    "S-Type": ["2.5 V6", "3.0 V6", "4.2 V8", "R"],
-    "X-Type": ["2.0D", "2.2D", "2.5 V6", "3.0 V6", "Sport", "Estate"]
+    "models": [
+      "XE",
+      "XF",
+      "XJ",
+      "XK",
+      "F-TYPE",
+      "E-PACE",
+      "F-PACE",
+      "I-PACE",
+      "S-TYPE",
+      "X-TYPE"
+    ],
+    "types": {
+      "XE": [
+        "D180",
+        "D200",
+        "P200",
+        "P250",
+        "P300"
+      ],
+      "XF": [
+        "D200",
+        "D240",
+        "D300",
+        "P250",
+        "P300"
+      ],
+      "F-PACE": [
+        "D180",
+        "D200",
+        "D240",
+        "D300",
+        "P250",
+        "P400e",
+        "SVR"
+      ],
+      "E-PACE": [
+        "D150",
+        "D180",
+        "D200",
+        "P200",
+        "P250",
+        "P300e"
+      ],
+      "F-TYPE": [
+        "P300",
+        "P380",
+        "P450",
+        "P575",
+        "R",
+        "SVR"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "HSE",
+      "R-Dynamic",
+      "R-Sport",
+      "Portfolio",
+      "Prestige",
+      "Chequered Flag",
+      "Black Edition"
+    ]
   },
   "Jeep": {
-    "Avenger": ["Electric", "e-Hybrid", "Altitude", "Summit"],
-    "Renegade": ["Longitude", "Limited", "Trailhawk", "4xe"],
-    "Compass": ["Longitude", "Limited", "Trailhawk", "4xe"],
-    "Cherokee": ["Limited", "Overland", "Trailhawk"],
-    "Grand Cherokee": ["Limited", "Overland", "Summit", "SRT", "Trackhawk", "4xe"],
-    "Wrangler": ["Sport", "Sahara", "Rubicon", "4xe"]
+    "models": [
+      "Avenger",
+      "Cherokee",
+      "Compass",
+      "Grand Cherokee",
+      "Renegade",
+      "Wrangler"
+    ],
+    "types": {
+      "Renegade": [
+        "1.0 GSE",
+        "1.3 GSE",
+        "4xe"
+      ],
+      "Compass": [
+        "e-Hybrid",
+        "4xe",
+        "Multijet"
+      ],
+      "Wrangler": [
+        "2.0",
+        "4xe",
+        "Rubicon"
+      ]
+    },
+    "specs": [
+      "Sport",
+      "Longitude",
+      "Limited",
+      "Overland",
+      "Trailhawk",
+      "Rubicon",
+      "Summit"
+    ]
   },
   "Kia": {
-    "Picanto": ["1", "2", "3", "GT-Line", "X-Line"],
-    "Rio": ["1", "2", "3", "GT-Line"],
-    "Ceed": ["2", "3", "GT-Line", "GT"],
-    "ProCeed": ["GT-Line", "GT"],
-    "XCeed": ["2", "3", "GT-Line", "PHEV"],
-    "Niro": ["Hybrid", "PHEV", "EV", "2", "3", "4"],
-    "Sportage": ["2", "3", "GT-Line", "Hybrid", "PHEV"],
-    "Sorento": ["2", "3", "4", "Hybrid", "PHEV"],
-    "Stonic": ["2", "3", "GT-Line"],
-    "EV6": ["Air", "GT-Line", "GT"],
-    "EV9": ["Air", "GT-Line", "GT-Line S"]
+    "models": [
+      "Ceed",
+      "EV3",
+      "EV6",
+      "EV9",
+      "Niro",
+      "Optima",
+      "Picanto",
+      "Proceed",
+      "Rio",
+      "Sorento",
+      "Soul",
+      "Sportage",
+      "Stinger",
+      "Stonic",
+      "Venga",
+      "XCeed"
+    ],
+    "types": {
+      "Sportage": [
+        "Petrol",
+        "Diesel",
+        "MHEV",
+        "Hybrid",
+        "Plug-in Hybrid"
+      ],
+      "Niro": [
+        "Hybrid",
+        "Plug-in Hybrid",
+        "EV"
+      ],
+      "Ceed": [
+        "1.0 T-GDi",
+        "1.5 T-GDi",
+        "1.6 CRDi",
+        "GT"
+      ],
+      "EV6": [
+        "Air",
+        "GT-Line",
+        "GT"
+      ]
+    },
+    "specs": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "GT-Line",
+      "GT-Line S",
+      "GT",
+      "First Edition"
+    ]
+  },
+  "Lamborghini": {
+    "models": [
+      "Aventador",
+      "Countach",
+      "Diablo",
+      "Gallardo",
+      "Huracan",
+      "Murcielago",
+      "Revuelto",
+      "Urus"
+    ],
+    "types": {
+      "Huracan": [
+        "LP 580-2",
+        "LP 610-4",
+        "Evo",
+        "Tecnica",
+        "STO",
+        "Performante",
+        "Spyder"
+      ],
+      "Aventador": [
+        "LP 700-4",
+        "S",
+        "SV",
+        "SVJ",
+        "Roadster"
+      ],
+      "Urus": [
+        "V8",
+        "S",
+        "Performante"
+      ]
+    },
+    "specs": [
+      "Coupe",
+      "Spyder",
+      "Roadster",
+      "Performante",
+      "Tecnica",
+      "STO"
+    ]
   },
   "Land Rover": {
-    "Defender": ["90", "110", "130", "D200", "D250", "D300", "P400e", "V8", "X-Dynamic", "X"],
-    "Discovery": ["SDV6", "D250", "D300", "HSE", "R-Dynamic"],
-    "Discovery Sport": ["TD4", "SD4", "D180", "D200", "P300e", "HSE", "R-Dynamic"],
-    "Range Rover": ["TDV6", "SDV8", "D300", "P400e", "P460e", "P530", "Vogue", "Autobiography", "SV"],
-    "Range Rover Sport": ["TDV6", "SDV6", "D300", "P400e", "P460e", "P530", "HSE", "Autobiography", "SVR"],
-    "Range Rover Velar": ["D180", "D240", "D300", "P250", "P400e", "R-Dynamic", "HSE"],
-    "Range Rover Evoque": ["eD4", "TD4", "D150", "D180", "P300e", "R-Dynamic", "HSE"],
-    "Freelander": ["TD4", "HSE", "Metropolis"]
+    "models": [
+      "Defender",
+      "Discovery",
+      "Discovery Sport",
+      "Freelander",
+      "Range Rover",
+      "Range Rover Evoque",
+      "Range Rover Sport",
+      "Range Rover Velar"
+    ],
+    "types": {
+      "Defender": [
+        "90",
+        "110",
+        "130",
+        "D200",
+        "D250",
+        "D300",
+        "P300",
+        "P400",
+        "P400e",
+        "V8"
+      ],
+      "Range Rover Evoque": [
+        "D150",
+        "D180",
+        "D200",
+        "P200",
+        "P250",
+        "P300e"
+      ],
+      "Range Rover Sport": [
+        "D300",
+        "P400e",
+        "P440e",
+        "P530",
+        "SVR"
+      ],
+      "Range Rover Velar": [
+        "D180",
+        "D200",
+        "D300",
+        "P250",
+        "P400e"
+      ],
+      "Discovery Sport": [
+        "D150",
+        "D180",
+        "D200",
+        "P200",
+        "P250",
+        "P300e"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "HSE",
+      "Autobiography",
+      "Dynamic",
+      "R-Dynamic",
+      "Vogue",
+      "Westminster",
+      "First Edition",
+      "Landmark",
+      "Urban Edition"
+    ]
   },
   "Lexus": {
-    "CT": ["CT 200h", "SE", "Luxury", "F Sport", "Premier"],
-    "ES": ["ES 300h", "Premium", "F Sport", "Takumi"],
-    "GS": ["GS 250", "GS 300h", "GS 450h", "F Sport", "Premier"],
-    "GS F": ["V8", "Carbon"],
-    "GX": ["GX 460", "GX 550"],
-    "IS": ["IS 200t", "IS 250", "IS 300", "IS 300h", "F Sport", "Premier"],
-    "IS F": ["V8"],
-    "LBX": ["Premium", "Premium Plus", "Takumi"],
-    "LC": ["LC 500", "LC 500h", "Sport+"],
-    "LM": ["LM 350h", "Takumi"],
-    "LS": ["LS 460", "LS 500", "LS 500h", "Premier", "Takumi"],
-    "LX": ["LX 450d", "LX 570", "LX 600"],
-    "NX": ["NX 200t", "NX 250", "NX 300", "NX 300h", "NX 350h", "NX 450h+", "F Sport", "Takumi"],
-    "RC": ["RC 200t", "RC 300h", "RC 350", "F Sport"],
-    "RC F": ["V8", "Track Edition"],
-    "RX": ["RX 300", "RX 350", "RX 400h", "RX 450h", "RX 450h+", "RX 500h", "F Sport", "Takumi"],
-    "RX L": ["RX 450h L", "Luxury", "Premier"],
-    "RZ": ["RZ 300e", "RZ 450e", "Takumi"],
-    "SC": ["SC 430"],
-    "UX": ["UX 250h", "UX 300e", "F Sport", "Takumi"]
+    "models": [
+      "CT",
+      "ES",
+      "GS",
+      "GS F",
+      "IS",
+      "IS F",
+      "LBX",
+      "LC",
+      "LFA",
+      "LS",
+      "LX",
+      "NX",
+      "RC",
+      "RC F",
+      "RX",
+      "RX L",
+      "RZ",
+      "SC",
+      "UX"
+    ],
+    "types": {
+      "CT": [
+        "CT 200h"
+      ],
+      "IS": [
+        "IS 200t",
+        "IS 220d",
+        "IS 250",
+        "IS 300h",
+        "IS 350"
+      ],
+      "NX": [
+        "NX 200t",
+        "NX 300",
+        "NX 300h",
+        "NX 350h",
+        "NX 450h+"
+      ],
+      "RX": [
+        "RX 300",
+        "RX 350",
+        "RX 400h",
+        "RX 450h",
+        "RX 500h"
+      ],
+      "UX": [
+        "UX 200",
+        "UX 250h",
+        "UX 300e"
+      ],
+      "ES": [
+        "ES 300h"
+      ],
+      "LC": [
+        "LC 500",
+        "LC 500h"
+      ],
+      "LS": [
+        "LS 460",
+        "LS 500",
+        "LS 500h"
+      ]
+    },
+    "specs": [
+      "SE",
+      "Luxury",
+      "Premium Pack",
+      "F Sport",
+      "Takumi",
+      "Premier",
+      "Sport"
+    ]
+  },
+  "Lotus": {
+    "models": [
+      "Elise",
+      "Emira",
+      "Esprit",
+      "Europa",
+      "Evora",
+      "Exige",
+      "Eletre",
+      "Emeya"
+    ],
+    "types": {
+      "Emira": [
+        "V6",
+        "i4",
+        "First Edition"
+      ],
+      "Evora": [
+        "400",
+        "410",
+        "GT410",
+        "S"
+      ],
+      "Exige": [
+        "S",
+        "Sport 350",
+        "Sport 410",
+        "Cup 430"
+      ]
+    },
+    "specs": [
+      "Touring",
+      "Sport",
+      "First Edition"
+    ]
+  },
+  "Maserati": {
+    "models": [
+      "Ghibli",
+      "GranCabrio",
+      "GranTurismo",
+      "Grecale",
+      "Levante",
+      "MC20",
+      "Quattroporte"
+    ],
+    "types": {
+      "Ghibli": [
+        "V6",
+        "Diesel",
+        "Hybrid",
+        "Trofeo"
+      ],
+      "Levante": [
+        "V6",
+        "Diesel",
+        "S",
+        "Trofeo"
+      ],
+      "Grecale": [
+        "GT",
+        "Modena",
+        "Trofeo",
+        "Folgore"
+      ]
+    },
+    "specs": [
+      "GT",
+      "Modena",
+      "Trofeo",
+      "GranSport",
+      "GranLusso",
+      "MC Edition"
+    ]
   },
   "Mazda": {
-    "Mazda2": ["SE-L", "Sport", "GT Sport", "Hybrid"],
-    "Mazda3": ["SE-L", "Sport", "GT Sport", "Skyactiv-X"],
-    "Mazda6": ["SE-L", "Sport", "GT Sport", "Tourer"],
-    "CX-3": ["SE-L", "Sport", "GT Sport"],
-    "CX-30": ["SE-L", "Sport", "GT Sport", "Skyactiv-X"],
-    "CX-5": ["SE-L", "Sport", "GT Sport", "Takumi"],
-    "CX-60": ["PHEV", "Homura", "Takumi"],
-    "MX-5": ["Roadster", "RF", "Sport", "GT Sport"],
-    "MX-30": ["Electric", "R-EV", "Makoto"],
-    "RX-8": ["192", "231", "R3"]
+    "models": [
+      "2",
+      "3",
+      "5",
+      "6",
+      "CX-3",
+      "CX-30",
+      "CX-5",
+      "CX-60",
+      "MX-30",
+      "MX-5",
+      "RX-8"
+    ],
+    "types": {
+      "MX-5": [
+        "1.5",
+        "2.0",
+        "RF"
+      ],
+      "3": [
+        "Skyactiv-G",
+        "Skyactiv-X",
+        "e-Skyactiv X"
+      ],
+      "CX-5": [
+        "Skyactiv-G",
+        "Skyactiv-D"
+      ],
+      "CX-60": [
+        "e-Skyactiv D",
+        "PHEV"
+      ]
+    },
+    "specs": [
+      "SE-L",
+      "Sport",
+      "Sport Nav",
+      "GT Sport",
+      "Homura",
+      "Takumi",
+      "Exclusive-Line",
+      "Centre-Line"
+    ]
+  },
+  "McLaren": {
+    "models": [
+      "540C",
+      "570S",
+      "600LT",
+      "620R",
+      "650S",
+      "675LT",
+      "720S",
+      "750S",
+      "765LT",
+      "Artura",
+      "GT",
+      "MP4-12C",
+      "P1",
+      "Senna"
+    ],
+    "types": {},
+    "specs": [
+      "Coupe",
+      "Spider",
+      "Luxury",
+      "Performance",
+      "LT"
+    ]
   },
   "Mercedes-Benz": {
-    "A-Class": ["A160", "A180", "A180d", "A200", "A200d", "A220", "A220d", "A250", "A250e", "AMG Line", "A35 AMG", "A45 AMG"],
-    "B-Class": ["B180", "B180d", "B200", "B200d", "B250e", "AMG Line"],
-    "C-Class": ["C180", "C200", "C220d", "C250d", "C300", "C300e", "C300d", "AMG Line", "C43 AMG", "C63 AMG"],
-    "E-Class": ["E200", "E220d", "E300", "E300e", "E300de", "E400d", "AMG Line", "E53 AMG", "E63 AMG"],
-    "S-Class": ["S350d", "S400d", "S500", "S580e", "S63 AMG", "Maybach"],
-    "CLA": ["CLA180", "CLA200", "CLA220d", "CLA250e", "AMG Line", "CLA35 AMG", "CLA45 AMG"],
-    "CLS": ["CLS220d", "CLS300d", "CLS350d", "CLS400d", "AMG Line", "CLS53 AMG"],
-    "CLE": ["CLE200", "CLE220d", "CLE300", "CLE450", "AMG Line"],
-    "GLA": ["GLA180", "GLA200", "GLA200d", "GLA220d", "GLA250e", "AMG Line", "GLA35 AMG", "GLA45 AMG"],
-    "GLB": ["GLB200", "GLB200d", "GLB220d", "AMG Line", "GLB35 AMG"],
-    "GLC": ["GLC220d", "GLC250d", "GLC300", "GLC300e", "GLC300d", "AMG Line", "GLC43 AMG", "GLC63 AMG"],
-    "GLE": ["GLE300d", "GLE350de", "GLE400d", "GLE450", "AMG Line", "GLE53 AMG", "GLE63 AMG"],
-    "GLS": ["GLS350d", "GLS400d", "GLS450", "GLS580", "GLS63 AMG", "Maybach"],
-    "G-Class": ["G350d", "G400d", "G500", "G63 AMG"],
-    "AMG GT": ["GT", "GT S", "GT C", "GT R", "4-Door Coupe"],
-    "SL": ["SL350", "SL400", "SL500", "SL55 AMG", "SL63 AMG"],
-    "SLC": ["SLC180", "SLC200", "SLC250d", "SLC43 AMG"],
-    "SLK": ["SLK200", "SLK250", "SLK350", "SLK55 AMG"],
-    "EQA": ["EQA250", "EQA300", "EQA350", "AMG Line"],
-    "EQB": ["EQB250", "EQB300", "EQB350", "AMG Line"],
-    "EQC": ["EQC400", "AMG Line"],
-    "EQE": ["EQE300", "EQE350", "EQE500", "EQE53 AMG"],
-    "EQS": ["EQS450", "EQS580", "EQS53 AMG"],
-    "EQV": ["EQV300"],
-    "V-Class": ["V220d", "V250d", "V300d", "AMG Line", "Marco Polo"],
-    "Vito": ["Tourer", "Panel Van", "Crew Van"],
-    "Citan": ["Panel Van", "Tourer"],
-    "Sprinter": ["Panel Van", "Crew Van", "Chassis Cab"]
+    "models": [
+      "A-Class",
+      "B-Class",
+      "C-Class",
+      "E-Class",
+      "S-Class",
+      "CLA",
+      "CLS",
+      "CLE",
+      "SL",
+      "SLC",
+      "SLK",
+      "AMG GT",
+      "GLA",
+      "GLB",
+      "GLC",
+      "GLE",
+      "GLS",
+      "G-Class",
+      "EQ A",
+      "EQ B",
+      "EQ C",
+      "EQ E",
+      "EQ S",
+      "EQ V",
+      "V-Class",
+      "X-Class",
+      "Maybach S-Class"
+    ],
+    "types": {
+      "A-Class": [
+        "A160",
+        "A180",
+        "A180d",
+        "A200",
+        "A200d",
+        "A220",
+        "A220d",
+        "A250",
+        "A250e",
+        "A35 AMG",
+        "A45 AMG"
+      ],
+      "B-Class": [
+        "B180",
+        "B180d",
+        "B200",
+        "B200d",
+        "B250e"
+      ],
+      "C-Class": [
+        "C180",
+        "C200",
+        "C220d",
+        "C250",
+        "C250d",
+        "C300",
+        "C300d",
+        "C300e",
+        "C350e",
+        "C43 AMG",
+        "C63 AMG"
+      ],
+      "E-Class": [
+        "E200",
+        "E220d",
+        "E300",
+        "E300de",
+        "E300e",
+        "E350d",
+        "E400d",
+        "E43 AMG",
+        "E53 AMG",
+        "E63 AMG"
+      ],
+      "S-Class": [
+        "S350d",
+        "S400d",
+        "S450",
+        "S500",
+        "S560",
+        "S580",
+        "S63 AMG",
+        "S65 AMG"
+      ],
+      "CLA": [
+        "CLA180",
+        "CLA200",
+        "CLA220d",
+        "CLA250",
+        "CLA35 AMG",
+        "CLA45 AMG"
+      ],
+      "GLA": [
+        "GLA180",
+        "GLA200",
+        "GLA220d",
+        "GLA250e",
+        "GLA35 AMG",
+        "GLA45 AMG"
+      ],
+      "GLC": [
+        "GLC200",
+        "GLC220d",
+        "GLC250d",
+        "GLC300",
+        "GLC300e",
+        "GLC350e",
+        "GLC43 AMG",
+        "GLC63 AMG"
+      ],
+      "GLE": [
+        "GLE250d",
+        "GLE300d",
+        "GLE350d",
+        "GLE350de",
+        "GLE400d",
+        "GLE450",
+        "GLE53 AMG",
+        "GLE63 AMG"
+      ],
+      "G-Class": [
+        "G350d",
+        "G400d",
+        "G500",
+        "G63 AMG"
+      ]
+    },
+    "specs": [
+      "SE",
+      "Sport",
+      "AMG Line",
+      "AMG Line Executive",
+      "AMG Line Premium",
+      "AMG Line Premium Plus",
+      "Night Edition",
+      "Edition 1",
+      "Premium",
+      "Premium Plus",
+      "Exclusive",
+      "Luxury",
+      "Avantgarde"
+    ]
   },
   "MG": {
-    "MG3": ["Excite", "Exclusive", "Hybrid+"],
-    "MG4": ["SE", "Trophy", "XPower"],
-    "MG5": ["SE", "Trophy", "Long Range"],
-    "ZS": ["Excite", "Exclusive", "EV", "Long Range"],
-    "HS": ["Excite", "Exclusive", "PHEV"],
-    "Marvel R": ["Luxury", "Performance"],
-    "Cyberster": ["Trophy", "GT"]
+    "models": [
+      "3",
+      "4",
+      "5",
+      "GS",
+      "HS",
+      "MG3",
+      "MG4",
+      "MG5",
+      "TF",
+      "ZS",
+      "Cyberster"
+    ],
+    "types": {
+      "4": [
+        "SE",
+        "Trophy",
+        "XPower",
+        "Long Range"
+      ],
+      "ZS": [
+        "1.0 T-GDi",
+        "1.5 VTi",
+        "EV"
+      ],
+      "HS": [
+        "Petrol",
+        "PHEV"
+      ]
+    },
+    "specs": [
+      "Excite",
+      "Exclusive",
+      "SE",
+      "Trophy",
+      "Trophy Connect",
+      "XPower"
+    ]
   },
   "MINI": {
-    "Hatch": ["One", "Cooper", "Cooper S", "John Cooper Works", "Electric"],
-    "Clubman": ["Cooper", "Cooper S", "John Cooper Works"],
-    "Countryman": ["Cooper", "Cooper S", "Plug-in Hybrid", "John Cooper Works", "Electric"],
-    "Convertible": ["Cooper", "Cooper S", "John Cooper Works"],
-    "Coupe": ["Cooper", "Cooper S", "John Cooper Works"],
-    "Roadster": ["Cooper", "Cooper S", "John Cooper Works"],
-    "Paceman": ["Cooper", "Cooper S", "John Cooper Works"],
-    "Aceman": ["E", "SE"]
+    "models": [
+      "Hatch",
+      "Convertible",
+      "Clubman",
+      "Countryman",
+      "Coupe",
+      "Roadster",
+      "Paceman",
+      "Electric",
+      "John Cooper Works"
+    ],
+    "types": {
+      "Hatch": [
+        "One",
+        "Cooper",
+        "Cooper S",
+        "Cooper D",
+        "Cooper SD",
+        "JCW"
+      ],
+      "Countryman": [
+        "Cooper",
+        "Cooper S",
+        "Cooper D",
+        "Cooper SD",
+        "Plug-in Hybrid",
+        "JCW"
+      ],
+      "Clubman": [
+        "Cooper",
+        "Cooper S",
+        "Cooper D",
+        "Cooper SD",
+        "JCW"
+      ]
+    },
+    "specs": [
+      "Classic",
+      "Sport",
+      "Exclusive",
+      "Level 1",
+      "Level 2",
+      "Level 3",
+      "Resolute",
+      "Shadow Edition",
+      "Chili Pack"
+    ]
+  },
+  "Mitsubishi": {
+    "models": [
+      "ASX",
+      "Colt",
+      "Eclipse Cross",
+      "L200",
+      "Lancer",
+      "Lancer Evolution",
+      "Mirage",
+      "Outlander",
+      "Shogun",
+      "Shogun Sport",
+      "Space Star"
+    ],
+    "types": {
+      "Outlander": [
+        "Petrol",
+        "Diesel",
+        "PHEV"
+      ],
+      "L200": [
+        "Double Cab",
+        "Barbarian",
+        "Warrior"
+      ],
+      "Lancer Evolution": [
+        "Evo VIII",
+        "Evo IX",
+        "Evo X"
+      ]
+    },
+    "specs": [
+      "Juro",
+      "Titan",
+      "Warrior",
+      "Barbarian",
+      "Elegance",
+      "Dynamic",
+      "Exceed"
+    ]
   },
   "Nissan": {
-    "Micra": ["Visia", "Acenta", "N-Connecta", "Tekna"],
-    "Note": ["Acenta", "Tekna"],
-    "Juke": ["Acenta", "N-Connecta", "Tekna", "Hybrid", "Nismo"],
-    "Qashqai": ["Acenta", "N-Connecta", "Tekna", "Tekna+", "e-POWER"],
-    "X-Trail": ["Acenta", "N-Connecta", "Tekna", "e-POWER", "e-4ORCE"],
-    "Leaf": ["24kWh", "30kWh", "40kWh", "62kWh", "Tekna", "e+"],
-    "Ariya": ["63kWh", "87kWh", "e-4ORCE", "Evolve"],
-    "Navara": ["Acenta", "Tekna", "N-Guard"],
-    "GT-R": ["Premium Edition", "Track Edition", "Nismo"]
+    "models": [
+      "350Z",
+      "370Z",
+      "Ariya",
+      "Cube",
+      "GT-R",
+      "Juke",
+      "Leaf",
+      "Micra",
+      "Murano",
+      "Navara",
+      "Note",
+      "NV200",
+      "Pathfinder",
+      "Primastar",
+      "Pulsar",
+      "Qashqai",
+      "X-Trail",
+      "Z"
+    ],
+    "types": {
+      "Qashqai": [
+        "1.2 DIG-T",
+        "1.3 DIG-T",
+        "1.5 dCi",
+        "1.6 dCi",
+        "e-Power"
+      ],
+      "Juke": [
+        "1.0 DIG-T",
+        "1.2 DIG-T",
+        "1.5 dCi",
+        "Hybrid",
+        "Nismo"
+      ],
+      "Leaf": [
+        "24kWh",
+        "30kWh",
+        "40kWh",
+        "62kWh",
+        "e+"
+      ],
+      "GT-R": [
+        "Premium",
+        "Track Edition",
+        "Nismo"
+      ]
+    },
+    "specs": [
+      "Visia",
+      "Acenta",
+      "Acenta Premium",
+      "N-Connecta",
+      "Tekna",
+      "Tekna+",
+      "Nismo",
+      "Bose Personal Edition"
+    ]
   },
   "Peugeot": {
-    "108": ["Active", "Allure", "GT Line"],
-    "208": ["Active", "Allure", "GT", "GT Line", "e-208"],
-    "308": ["Active", "Allure", "GT", "Hybrid", "SW"],
-    "508": ["Allure", "GT", "Hybrid", "SW", "PSE"],
-    "2008": ["Active", "Allure", "GT", "e-2008"],
-    "3008": ["Active", "Allure", "GT", "Hybrid"],
-    "5008": ["Active", "Allure", "GT"],
-    "Partner": ["Professional", "Asphalt", "Electric"],
-    "Expert": ["Professional", "Asphalt", "Electric"]
+    "models": [
+      "107",
+      "108",
+      "2008",
+      "207",
+      "208",
+      "3008",
+      "307",
+      "308",
+      "407",
+      "5008",
+      "508",
+      "Partner",
+      "RCZ",
+      "Rifter",
+      "Traveller"
+    ],
+    "types": {
+      "208": [
+        "PureTech 75",
+        "PureTech 100",
+        "BlueHDi",
+        "e-208"
+      ],
+      "3008": [
+        "PureTech 130",
+        "BlueHDi 130",
+        "Hybrid",
+        "Hybrid4"
+      ],
+      "308": [
+        "PureTech",
+        "BlueHDi",
+        "Hybrid",
+        "e-308"
+      ],
+      "2008": [
+        "PureTech",
+        "BlueHDi",
+        "e-2008"
+      ]
+    },
+    "specs": [
+      "Active",
+      "Allure",
+      "GT Line",
+      "GT",
+      "Feline",
+      "Tech Edition",
+      "Premium",
+      "Premium+",
+      "Style"
+    ]
+  },
+  "Polestar": {
+    "models": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "types": {
+      "2": [
+        "Standard Range Single Motor",
+        "Long Range Single Motor",
+        "Long Range Dual Motor",
+        "Performance Pack"
+      ]
+    },
+    "specs": [
+      "Pilot",
+      "Plus",
+      "Performance",
+      "BST Edition"
+    ]
   },
   "Porsche": {
-    "718": ["Boxster", "Cayman", "GTS", "GT4", "Spyder"],
-    "911": ["Carrera", "Carrera S", "Carrera 4S", "Targa", "GTS", "Turbo", "Turbo S", "GT3", "GT3 RS"],
-    "Boxster": ["2.7", "S", "GTS", "Spyder"],
-    "Cayman": ["2.7", "S", "GTS", "GT4"],
-    "Macan": ["2.0", "S", "GTS", "Turbo", "Electric"],
-    "Cayenne": ["Diesel", "S", "E-Hybrid", "GTS", "Turbo"],
-    "Panamera": ["4", "4S", "E-Hybrid", "GTS", "Turbo"],
-    "Taycan": ["4S", "GTS", "Turbo", "Turbo S", "Cross Turismo", "Sport Turismo"]
+    "models": [
+      "718 Boxster",
+      "718 Cayman",
+      "911",
+      "Boxster",
+      "Cayenne",
+      "Cayman",
+      "Macan",
+      "Panamera",
+      "Taycan"
+    ],
+    "types": {
+      "911": [
+        "Carrera",
+        "Carrera S",
+        "Carrera 4",
+        "Carrera 4S",
+        "GTS",
+        "Targa",
+        "Turbo",
+        "Turbo S",
+        "GT3",
+        "GT3 RS"
+      ],
+      "Macan": [
+        "Base",
+        "S",
+        "GTS",
+        "Turbo",
+        "T"
+      ],
+      "Cayenne": [
+        "Base",
+        "S",
+        "GTS",
+        "Turbo",
+        "E-Hybrid"
+      ],
+      "Taycan": [
+        "Base",
+        "4S",
+        "GTS",
+        "Turbo",
+        "Turbo S",
+        "Cross Turismo",
+        "Sport Turismo"
+      ]
+    },
+    "specs": [
+      "PDK",
+      "Manual",
+      "Platinum Edition",
+      "Black Edition",
+      "Sport Design",
+      "Weissach Pack"
+    ]
   },
   "Renault": {
-    "Clio": ["Expression", "Dynamique", "Iconic", "RS Line", "E-Tech", "Renaultsport"],
-    "Captur": ["Iconic", "S Edition", "RS Line", "E-Tech"],
-    "Megane": ["Dynamique", "GT Line", "RS", "E-Tech"],
-    "Kadjar": ["Dynamique", "Signature", "S Edition"],
-    "Scenic": ["Dynamique", "Signature"],
-    "Arkana": ["Iconic", "S Edition", "RS Line", "E-Tech"],
-    "Zoe": ["Expression", "Dynamique", "Iconic", "GT Line", "ZE50"],
-    "Trafic": ["Business", "Sport", "Crew Van"]
+    "models": [
+      "Arkana",
+      "Austral",
+      "Captur",
+      "Clio",
+      "Kadjar",
+      "Kangoo",
+      "Koleos",
+      "Megane",
+      "Scenic",
+      "Twingo",
+      "Zoe"
+    ],
+    "types": {
+      "Clio": [
+        "TCe 90",
+        "TCe 100",
+        "dCi",
+        "E-Tech Hybrid",
+        "RS"
+      ],
+      "Captur": [
+        "TCe",
+        "dCi",
+        "E-Tech Hybrid",
+        "E-Tech Plug-in"
+      ],
+      "Megane": [
+        "TCe",
+        "dCi",
+        "E-Tech",
+        "RS"
+      ]
+    },
+    "specs": [
+      "Expression",
+      "Dynamique",
+      "Iconic",
+      "S Edition",
+      "GT Line",
+      "RS Line",
+      "Techno",
+      "Evolution"
+    ]
+  },
+  "Rolls-Royce": {
+    "models": [
+      "Cullinan",
+      "Dawn",
+      "Ghost",
+      "Phantom",
+      "Silver Shadow",
+      "Silver Spirit",
+      "Spectre",
+      "Wraith"
+    ],
+    "types": {
+      "Ghost": [
+        "Standard",
+        "Extended",
+        "Black Badge"
+      ],
+      "Cullinan": [
+        "Standard",
+        "Black Badge"
+      ],
+      "Phantom": [
+        "Standard",
+        "EWB"
+      ],
+      "Spectre": [
+        "Electric",
+        "Black Badge"
+      ]
+    },
+    "specs": [
+      "Black Badge",
+      "Mansory",
+      "Mulliner-style Bespoke"
+    ]
+  },
+  "Saab": {
+    "models": [
+      "9-3",
+      "9-5",
+      "900",
+      "9000"
+    ],
+    "types": {
+      "9-3": [
+        "1.8t",
+        "2.0t",
+        "TiD",
+        "Turbo X",
+        "Aero"
+      ],
+      "9-5": [
+        "2.0t",
+        "2.3t",
+        "TiD",
+        "Aero"
+      ]
+    },
+    "specs": [
+      "Vector",
+      "Linear",
+      "Aero",
+      "Griffin"
+    ]
   },
   "SEAT": {
-    "Ibiza": ["SE", "FR", "Xcellence"],
-    "Leon": ["SE", "FR", "Xcellence", "Cupra"],
-    "Arona": ["SE", "FR", "Xperience"],
-    "Ateca": ["SE", "FR", "Xperience"],
-    "Tarraco": ["SE", "FR", "Xcellence"],
-    "Alhambra": ["SE", "Xcellence"]
+    "models": [
+      "Alhambra",
+      "Altea",
+      "Arona",
+      "Ateca",
+      "Exeo",
+      "Ibiza",
+      "Leon",
+      "Mii",
+      "Tarraco",
+      "Toledo"
+    ],
+    "types": {
+      "Ibiza": [
+        "1.0 MPI",
+        "1.0 TSI",
+        "1.2 TSI",
+        "1.4 TSI",
+        "1.6 TDI",
+        "Cupra"
+      ],
+      "Leon": [
+        "1.0 TSI",
+        "1.4 TSI",
+        "1.5 TSI",
+        "2.0 TDI",
+        "eHybrid",
+        "Cupra"
+      ],
+      "Ateca": [
+        "1.0 TSI",
+        "1.5 TSI",
+        "2.0 TDI"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "SE Technology",
+      "FR",
+      "FR Sport",
+      "Xcellence",
+      "Xperience",
+      "Cupra"
+    ]
   },
   "Skoda": {
-    "Citigo": ["SE", "Monte Carlo", "e iV"],
-    "Fabia": ["SE", "SE L", "Monte Carlo"],
-    "Scala": ["SE", "SE L", "Monte Carlo"],
-    "Octavia": ["SE", "SE L", "Sportline", "vRS", "Scout"],
-    "Superb": ["SE", "SE L", "Sportline", "Laurin & Klement", "iV"],
-    "Kamiq": ["SE", "SE L", "Monte Carlo"],
-    "Karoq": ["SE", "SE L", "Sportline", "Scout"],
-    "Kodiaq": ["SE", "SE L", "Sportline", "vRS"],
-    "Enyaq": ["60", "80", "85", "Sportline", "vRS"]
+    "models": [
+      "Citigo",
+      "Enyaq",
+      "Fabia",
+      "Kamiq",
+      "Karoq",
+      "Kodiaq",
+      "Octavia",
+      "Rapid",
+      "Roomster",
+      "Scala",
+      "Superb",
+      "Yeti"
+    ],
+    "types": {
+      "Fabia": [
+        "1.0 MPI",
+        "1.0 TSI",
+        "1.2 TSI",
+        "1.4 TDI"
+      ],
+      "Octavia": [
+        "1.0 TSI",
+        "1.4 TSI",
+        "1.5 TSI",
+        "2.0 TDI",
+        "vRS",
+        "iV"
+      ],
+      "Superb": [
+        "1.5 TSI",
+        "2.0 TDI",
+        "2.0 TSI",
+        "iV"
+      ],
+      "Kodiaq": [
+        "1.5 TSI",
+        "2.0 TDI",
+        "vRS"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "SE L",
+      "SportLine",
+      "Monte Carlo",
+      "Laurin & Klement",
+      "vRS",
+      "Edition"
+    ]
   },
   "Smart": {
-    "ForTwo": ["Coupe", "Cabrio", "Electric Drive", "EQ"],
-    "ForFour": ["Passion", "Prime", "Electric Drive", "EQ"],
-    "#1": ["Pro", "Premium", "Brabus"],
-    "#3": ["Pro", "Premium", "Brabus"]
+    "models": [
+      "Forfour",
+      "Fortwo",
+      "Roadster",
+      "#1",
+      "#3"
+    ],
+    "types": {
+      "Fortwo": [
+        "Coupe",
+        "Cabrio",
+        "Electric Drive"
+      ],
+      "#1": [
+        "Pro+",
+        "Premium",
+        "Brabus"
+      ]
+    },
+    "specs": [
+      "Passion",
+      "Prime",
+      "Proxy",
+      "Pulse",
+      "Brabus"
+    ]
+  },
+  "SsangYong": {
+    "models": [
+      "Korando",
+      "Musso",
+      "Rexton",
+      "Rodius",
+      "Tivoli",
+      "Turismo"
+    ],
+    "types": {},
+    "specs": [
+      "EX",
+      "ELX",
+      "Ultimate",
+      "Sapphire",
+      "Ventura"
+    ]
   },
   "Subaru": {
-    "Impreza": ["WRX", "WRX STI", "Sport"],
-    "Legacy": ["SE", "Touring", "Spec B"],
-    "Outback": ["SE", "Limited", "Touring"],
-    "Forester": ["XE", "XC", "e-Boxer"],
-    "XV": ["SE", "Premium", "e-Boxer"],
-    "BRZ": ["SE", "Limited"],
-    "Solterra": ["Limited", "Touring"]
+    "models": [
+      "BRZ",
+      "Forester",
+      "Impreza",
+      "Legacy",
+      "Levorg",
+      "Outback",
+      "WRX",
+      "WRX STI",
+      "XV",
+      "Solterra"
+    ],
+    "types": {
+      "Impreza": [
+        "1.6i",
+        "2.0i",
+        "WRX",
+        "STI"
+      ],
+      "Forester": [
+        "2.0i",
+        "e-Boxer",
+        "XT"
+      ],
+      "Outback": [
+        "2.5i",
+        "2.0D"
+      ]
+    },
+    "specs": [
+      "SE",
+      "SE Premium",
+      "Sport",
+      "Limited",
+      "STI",
+      "X-Break"
+    ]
   },
   "Suzuki": {
-    "Swift": ["SZ-L", "SZ-T", "SZ5", "Sport", "Hybrid"],
-    "Ignis": ["SZ3", "SZ-T", "SZ5", "Hybrid"],
-    "Baleno": ["SZ-T", "SZ5"],
-    "Vitara": ["SZ-T", "SZ5", "Hybrid", "AllGrip"],
-    "S-Cross": ["Motion", "Ultra", "Hybrid", "AllGrip"],
-    "Jimny": ["SZ4", "SZ5", "L1 Commercial"]
+    "models": [
+      "Alto",
+      "Baleno",
+      "Celerio",
+      "Ignis",
+      "Jimny",
+      "S-Cross",
+      "Splash",
+      "Swift",
+      "SX4",
+      "Vitara",
+      "Wagon R"
+    ],
+    "types": {
+      "Swift": [
+        "1.2 Dualjet",
+        "1.0 Boosterjet",
+        "Sport"
+      ],
+      "Vitara": [
+        "Boosterjet",
+        "Hybrid",
+        "AllGrip"
+      ],
+      "S-Cross": [
+        "Boosterjet",
+        "Hybrid",
+        "AllGrip"
+      ]
+    },
+    "specs": [
+      "SZ2",
+      "SZ3",
+      "SZ4",
+      "SZ5",
+      "Sport",
+      "Adventure"
+    ]
   },
   "Tesla": {
-    "Model 3": ["Standard Range Plus", "Rear-Wheel Drive", "Long Range", "Performance"],
-    "Model S": ["75D", "90D", "100D", "Long Range", "Plaid"],
-    "Model X": ["75D", "90D", "100D", "Long Range", "Plaid"],
-    "Model Y": ["Rear-Wheel Drive", "Long Range", "Performance"],
-    "Cybertruck": ["All-Wheel Drive", "Cyberbeast"]
+    "models": [
+      "Model 3",
+      "Model S",
+      "Model X",
+      "Model Y",
+      "Roadster"
+    ],
+    "types": {
+      "Model 3": [
+        "Standard Range Plus",
+        "Rear-Wheel Drive",
+        "Long Range",
+        "Performance"
+      ],
+      "Model Y": [
+        "Rear-Wheel Drive",
+        "Long Range",
+        "Performance"
+      ],
+      "Model S": [
+        "75D",
+        "90D",
+        "100D",
+        "Long Range",
+        "Performance",
+        "Plaid"
+      ],
+      "Model X": [
+        "75D",
+        "90D",
+        "100D",
+        "Long Range",
+        "Performance",
+        "Plaid"
+      ]
+    },
+    "specs": [
+      "Enhanced Autopilot",
+      "Full Self-Driving Capability",
+      "Premium Interior"
+    ]
   },
   "Toyota": {
-    "Aygo": ["x-play", "x-trend", "x-cite", "X"],
-    "Yaris": ["Icon", "Design", "Excel", "Hybrid", "GR Sport", "GR Yaris"],
-    "Corolla": ["Icon", "Design", "Excel", "Hybrid", "Touring Sports"],
-    "Auris": ["Icon", "Excel", "Hybrid", "Touring Sports"],
-    "Prius": ["Hybrid", "Plug-in Hybrid", "Excel"],
-    "C-HR": ["Icon", "Design", "Excel", "Hybrid", "GR Sport"],
-    "RAV4": ["Icon", "Design", "Excel", "Hybrid", "Plug-in Hybrid"],
-    "Highlander": ["Hybrid", "Excel"],
-    "Land Cruiser": ["Invincible", "Active", "Commercial"],
-    "Hilux": ["Active", "Icon", "Invincible", "Invincible X"],
-    "Supra": ["2.0", "3.0", "Pro"]
+    "models": [
+      "Auris",
+      "Avensis",
+      "Aygo",
+      "Aygo X",
+      "bZ4X",
+      "C-HR",
+      "Camry",
+      "Corolla",
+      "GR86",
+      "GT86",
+      "Hilux",
+      "Land Cruiser",
+      "Prius",
+      "Proace",
+      "RAV4",
+      "Supra",
+      "Urban Cruiser",
+      "Verso",
+      "Yaris",
+      "Yaris Cross"
+    ],
+    "types": {
+      "Yaris": [
+        "1.0 VVT-i",
+        "1.5 Hybrid",
+        "GR Yaris"
+      ],
+      "Corolla": [
+        "1.8 Hybrid",
+        "2.0 Hybrid",
+        "Touring Sports"
+      ],
+      "C-HR": [
+        "1.8 Hybrid",
+        "2.0 Hybrid",
+        "Plug-in Hybrid"
+      ],
+      "RAV4": [
+        "Hybrid",
+        "Plug-in Hybrid"
+      ],
+      "Supra": [
+        "2.0",
+        "3.0"
+      ]
+    },
+    "specs": [
+      "Icon",
+      "Design",
+      "Excel",
+      "Dynamic",
+      "GR Sport",
+      "Invincible",
+      "Business Edition",
+      "T Spirit"
+    ]
   },
   "Vauxhall": {
-    "Adam": ["Jam", "Glam", "Slam", "S"],
-    "Corsa": ["1.2", "1.2 Turbo", "Electric", "Design", "GS", "Ultimate", "VXR"],
-    "Astra": ["1.2 Turbo", "1.5 Turbo D", "Hybrid", "GSe", "Design", "GS", "Ultimate", "VXR"],
-    "Mokka": ["1.2 Turbo", "Electric", "Design", "GS", "Ultimate"],
-    "Insignia": ["Grand Sport", "Sports Tourer", "1.5 Turbo", "2.0 Turbo D", "SRi", "Elite"],
-    "Crossland": ["1.2", "1.2 Turbo", "Design", "GS"],
-    "Grandland": ["1.2 Turbo", "Hybrid", "GSe", "Design", "GS", "Ultimate"],
-    "Zafira": ["Tourer", "Design", "SRi", "Elite"],
-    "Vivaro": ["Panel Van", "Combi", "Electric"]
+    "models": [
+      "Adam",
+      "Agila",
+      "Ampera",
+      "Antara",
+      "Astra",
+      "Cascada",
+      "Combo",
+      "Corsa",
+      "Crossland",
+      "Crossland X",
+      "Grandland",
+      "Grandland X",
+      "Insignia",
+      "Meriva",
+      "Mokka",
+      "Mokka X",
+      "Movano",
+      "Tigra",
+      "Vectra",
+      "Vivaro",
+      "Zafira",
+      "Zafira Tourer"
+    ],
+    "types": {
+      "Corsa": [
+        "1.2",
+        "1.4",
+        "1.5 Turbo D",
+        "Electric",
+        "VXR"
+      ],
+      "Astra": [
+        "1.2 Turbo",
+        "1.4 Turbo",
+        "1.5 Turbo D",
+        "GSe",
+        "VXR"
+      ],
+      "Mokka": [
+        "1.2 Turbo",
+        "Electric"
+      ],
+      "Insignia": [
+        "1.5 Turbo",
+        "2.0 Turbo",
+        "2.0 CDTi",
+        "GSi"
+      ]
+    },
+    "specs": [
+      "Expression",
+      "Design",
+      "Life",
+      "SE",
+      "SRi",
+      "SRi Nav",
+      "Elite",
+      "Ultimate",
+      "Griffin",
+      "GS Line",
+      "VXR"
+    ]
   },
   "Volkswagen": {
-    "up!": ["Take up!", "Move up!", "High up!", "GTI"],
-    "Polo": ["1.0 MPI", "1.0 TSI", "Style", "Match", "R-Line", "GTI"],
-    "Golf": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "eTSI", "GTE", "GTI", "GTD", "R", "R-Line"],
-    "Passat": ["1.5 TSI", "2.0 TDI", "GTE", "R-Line", "Estate"],
-    "Arteon": ["Elegance", "R-Line", "Shooting Brake", "R"],
-    "T-Cross": ["1.0 TSI", "1.5 TSI", "R-Line", "Black Edition"],
-    "T-Roc": ["1.0 TSI", "1.5 TSI", "2.0 TDI", "R-Line", "R"],
-    "Tiguan": ["1.5 TSI", "2.0 TDI", "eHybrid", "R-Line", "R"],
-    "Touareg": ["3.0 TDI", "eHybrid", "R", "Black Edition"],
-    "ID.3": ["Pure", "Pro", "Pro S", "GTX"],
-    "ID.4": ["Pure", "Pro", "GTX"],
-    "ID.5": ["Pro", "GTX"],
-    "ID.7": ["Pro", "Tourer", "GTX"],
-    "Transporter": ["Panel Van", "Kombi", "Shuttle", "Camper"],
-    "Caddy": ["Panel Van", "Life", "Maxi"]
+    "models": [
+      "Amarok",
+      "Arteon",
+      "Beetle",
+      "Caddy",
+      "CC",
+      "Eos",
+      "Golf",
+      "Golf SV",
+      "ID.3",
+      "ID.4",
+      "ID.5",
+      "ID. Buzz",
+      "Jetta",
+      "Passat",
+      "Phaeton",
+      "Polo",
+      "Scirocco",
+      "Sharan",
+      "T-Cross",
+      "T-Roc",
+      "Taigo",
+      "Tiguan",
+      "Tiguan Allspace",
+      "Touareg",
+      "Touran",
+      "Transporter",
+      "Up"
+    ],
+    "types": {
+      "Golf": [
+        "1.0 TSI",
+        "1.4 TSI",
+        "1.5 TSI",
+        "1.6 TDI",
+        "2.0 TDI",
+        "e-Golf",
+        "GTE",
+        "GTD",
+        "GTI",
+        "R"
+      ],
+      "Polo": [
+        "1.0 MPI",
+        "1.0 TSI",
+        "1.2 TSI",
+        "1.4 TSI",
+        "GTI"
+      ],
+      "Tiguan": [
+        "1.4 TSI",
+        "1.5 TSI",
+        "2.0 TDI",
+        "eHybrid",
+        "R"
+      ],
+      "T-Roc": [
+        "1.0 TSI",
+        "1.5 TSI",
+        "2.0 TDI",
+        "R"
+      ]
+    },
+    "specs": [
+      "S",
+      "SE",
+      "Match",
+      "Life",
+      "Style",
+      "R-Line",
+      "Black Edition",
+      "GT",
+      "GT Edition",
+      "SEL",
+      "GTI",
+      "GTD",
+      "GTE",
+      "R"
+    ]
   },
   "Volvo": {
-    "C30": ["SE", "R-Design"],
-    "S60": ["D3", "D4", "T5", "T8", "R-Design", "Inscription"],
-    "S90": ["D4", "D5", "T8", "Momentum", "Inscription"],
-    "V40": ["D2", "D3", "T2", "T3", "R-Design", "Cross Country"],
-    "V60": ["D3", "D4", "T5", "T6", "T8", "R-Design", "Inscription"],
-    "V90": ["D4", "D5", "T6", "T8", "Cross Country", "Inscription"],
-    "XC40": ["T3", "T4", "T5", "B3", "B4", "Recharge", "Ultimate"],
-    "XC60": ["D4", "D5", "B4", "B5", "T8", "R-Design", "Ultimate"],
-    "XC90": ["D5", "B5", "B6", "T8", "R-Design", "Ultimate"],
-    "EX30": ["Single Motor", "Twin Motor", "Ultra"],
-    "EX90": ["Twin Motor", "Ultra"]
+    "models": [
+      "C30",
+      "C40",
+      "EX30",
+      "EX40",
+      "EX90",
+      "S40",
+      "S60",
+      "S80",
+      "S90",
+      "V40",
+      "V50",
+      "V60",
+      "V70",
+      "V90",
+      "XC40",
+      "XC60",
+      "XC70",
+      "XC90"
+    ],
+    "types": {
+      "XC40": [
+        "T3",
+        "T4",
+        "T5",
+        "B3",
+        "B4",
+        "B5",
+        "Recharge",
+        "Twin Motor"
+      ],
+      "XC60": [
+        "D4",
+        "D5",
+        "B4",
+        "B5",
+        "B6",
+        "T5",
+        "T6",
+        "T8 Recharge"
+      ],
+      "XC90": [
+        "D5",
+        "B5",
+        "B6",
+        "T5",
+        "T6",
+        "T8 Recharge"
+      ],
+      "V60": [
+        "D3",
+        "D4",
+        "B3",
+        "B4",
+        "T5",
+        "T6",
+        "T8"
+      ]
+    },
+    "specs": [
+      "Momentum",
+      "R-Design",
+      "Inscription",
+      "Core",
+      "Plus",
+      "Ultimate",
+      "Pro",
+      "Cross Country"
+    ]
+  },
+  "Other": {
+    "models": [],
+    "types": {},
+    "specs": []
+  },
+  "Mercedes": {
+    "models": [
+      "A-Class",
+      "B-Class",
+      "C-Class",
+      "E-Class",
+      "S-Class",
+      "CLA",
+      "CLS",
+      "CLE",
+      "SL",
+      "SLC",
+      "SLK",
+      "AMG GT",
+      "GLA",
+      "GLB",
+      "GLC",
+      "GLE",
+      "GLS",
+      "G-Class",
+      "EQ A",
+      "EQ B",
+      "EQ C",
+      "EQ E",
+      "EQ S",
+      "EQ V",
+      "V-Class",
+      "X-Class",
+      "Maybach S-Class"
+    ],
+    "types": {
+      "A-Class": [
+        "A160",
+        "A180",
+        "A180d",
+        "A200",
+        "A200d",
+        "A220",
+        "A220d",
+        "A250",
+        "A250e",
+        "A35 AMG",
+        "A45 AMG"
+      ],
+      "B-Class": [
+        "B180",
+        "B180d",
+        "B200",
+        "B200d",
+        "B250e"
+      ],
+      "C-Class": [
+        "C180",
+        "C200",
+        "C220d",
+        "C250",
+        "C250d",
+        "C300",
+        "C300d",
+        "C300e",
+        "C350e",
+        "C43 AMG",
+        "C63 AMG"
+      ],
+      "E-Class": [
+        "E200",
+        "E220d",
+        "E300",
+        "E300de",
+        "E300e",
+        "E350d",
+        "E400d",
+        "E43 AMG",
+        "E53 AMG",
+        "E63 AMG"
+      ],
+      "S-Class": [
+        "S350d",
+        "S400d",
+        "S450",
+        "S500",
+        "S560",
+        "S580",
+        "S63 AMG",
+        "S65 AMG"
+      ],
+      "CLA": [
+        "CLA180",
+        "CLA200",
+        "CLA220d",
+        "CLA250",
+        "CLA35 AMG",
+        "CLA45 AMG"
+      ],
+      "GLA": [
+        "GLA180",
+        "GLA200",
+        "GLA220d",
+        "GLA250e",
+        "GLA35 AMG",
+        "GLA45 AMG"
+      ],
+      "GLC": [
+        "GLC200",
+        "GLC220d",
+        "GLC250d",
+        "GLC300",
+        "GLC300e",
+        "GLC350e",
+        "GLC43 AMG",
+        "GLC63 AMG"
+      ],
+      "GLE": [
+        "GLE250d",
+        "GLE300d",
+        "GLE350d",
+        "GLE350de",
+        "GLE400d",
+        "GLE450",
+        "GLE53 AMG",
+        "GLE63 AMG"
+      ],
+      "G-Class": [
+        "G350d",
+        "G400d",
+        "G500",
+        "G63 AMG"
+      ]
+    },
+    "specs": [
+      "SE",
+      "Sport",
+      "AMG Line",
+      "AMG Line Executive",
+      "AMG Line Premium",
+      "AMG Line Premium Plus",
+      "Night Edition",
+      "Edition 1",
+      "Premium",
+      "Premium Plus",
+      "Exclusive",
+      "Luxury",
+      "Avantgarde"
+    ]
   }
 };
-
-const kerbCleanModelMakes = new Set(Object.keys(kerbUkVehicleModelOverrides));
-
-Object.assign(curatedVehicleModelDetails, kerbUkVehicleModelOverrides);
-
-export const vehicleModelDetailMeta = {
-  "BMW|1 Series|116i": {
-    "from": 2011
-  },
-  "BMW|1 Series|116d": {
-    "from": 2011
-  },
-  "BMW|1 Series|118i": {
-    "from": 2011
-  },
-  "BMW|1 Series|118i M Sport": {
-    "from": 2011
-  },
-  "BMW|1 Series|118d": {
-    "from": 2011
-  },
-  "BMW|1 Series|118d M Sport": {
-    "from": 2011
-  },
-  "BMW|1 Series|120i": {
-    "from": 2011
-  },
-  "BMW|1 Series|120d": {
-    "from": 2011
-  },
-  "BMW|1 Series|125i": {
-    "from": 2012,
-    "to": 2019
-  },
-  "BMW|1 Series|128ti": {
-    "from": 2020
-  },
-  "BMW|1 Series|M135i": {
-    "from": 2012
-  },
-  "BMW|1 Series|M140i": {
-    "from": 2016,
-    "to": 2019
-  },
-  "BMW|2 Series|218i": {
-    "from": 2014
-  },
-  "BMW|2 Series|218d": {
-    "from": 2014
-  },
-  "BMW|2 Series|220i": {
-    "from": 2014
-  },
-  "BMW|2 Series|220d": {
-    "from": 2014
-  },
-  "BMW|2 Series|225e": {
-    "from": 2021
-  },
-  "BMW|2 Series|225i": {
-    "from": 2014,
-    "to": 2021
-  },
-  "BMW|2 Series|228i": {
-    "from": 2014,
-    "to": 2016
-  },
-  "BMW|2 Series|230i": {
-    "from": 2016
-  },
-  "BMW|2 Series|M235i": {
-    "from": 2014
-  },
-  "BMW|2 Series|M240i": {
-    "from": 2016
-  },
-  "BMW|2 Series|M2": {
-    "from": 2016
-  },
-  "BMW|3 Series|316i": {
-    "from": 2012,
-    "to": 2019
-  },
-  "BMW|3 Series|316d": {
-    "from": 2012,
-    "to": 2019
-  },
-  "BMW|3 Series|318i": {
-    "from": 2012
-  },
-  "BMW|3 Series|318i M Sport": {
-    "from": 2012
-  },
-  "BMW|3 Series|318d": {
-    "from": 2012
-  },
-  "BMW|3 Series|318d M Sport": {
-    "from": 2012
-  },
-  "BMW|3 Series|320i": {
-    "from": 2012
-  },
-  "BMW|3 Series|320i M Sport": {
-    "from": 2012
-  },
-  "BMW|3 Series|320i xDrive": {
-    "from": 2012
-  },
-  "BMW|3 Series|320d": {
-    "from": 2012
-  },
-  "BMW|3 Series|320d M Sport": {
-    "from": 2012
-  },
-  "BMW|3 Series|320d xDrive": {
-    "from": 2012
-  },
-  "BMW|3 Series|325d": {
-    "from": 2012,
-    "to": 2019
-  },
-  "BMW|3 Series|328i": {
-    "from": 2012,
-    "to": 2016
-  },
-  "BMW|3 Series|330i": {
-    "from": 2015
-  },
-  "BMW|3 Series|330i M Sport": {
-    "from": 2015
-  },
-  "BMW|3 Series|330d": {
-    "from": 2012
-  },
-  "BMW|3 Series|330d M Sport": {
-    "from": 2012
-  },
-  "BMW|3 Series|330e": {
-    "from": 2016
-  },
-  "BMW|3 Series|330e M Sport": {
-    "from": 2016
-  },
-  "BMW|3 Series|335d": {
-    "from": 2012,
-    "to": 2019
-  },
-  "BMW|3 Series|335i": {
-    "from": 2012,
-    "to": 2015
-  },
-  "BMW|3 Series|340i": {
-    "from": 2015,
-    "to": 2019
-  },
-  "BMW|3 Series|M340i": {
-    "from": 2019
-  },
-  "BMW|3 Series|M340d": {
-    "from": 2019
-  },
-  "BMW|3 Series|M3": {
-    "from": 2014
-  },
-  "BMW|4 Series|418d": {
-    "from": 2014,
-    "to": 2020
-  },
-  "BMW|4 Series|420i": {
-    "from": 2014
-  },
-  "BMW|4 Series|420i M Sport": {
-    "from": 2014
-  },
-  "BMW|4 Series|420d": {
-    "from": 2013
-  },
-  "BMW|4 Series|420d M Sport": {
-    "from": 2013
-  },
-  "BMW|4 Series|420d xDrive": {
-    "from": 2013
-  },
-  "BMW|4 Series|425d": {
-    "from": 2014,
-    "to": 2020
-  },
-  "BMW|4 Series|428i": {
-    "from": 2013,
-    "to": 2016
-  },
-  "BMW|4 Series|428i Sport": {
-    "from": 2013,
-    "to": 2016
-  },
-  "BMW|4 Series|428i Luxury": {
-    "from": 2013,
-    "to": 2016
-  },
-  "BMW|4 Series|428i M Sport": {
-    "from": 2013,
-    "to": 2016
-  },
-  "BMW|4 Series|428i Coupe": {
-    "from": 2013,
-    "to": 2016
-  },
-  "BMW|4 Series|428i Convertible": {
-    "from": 2014,
-    "to": 2016
-  },
-  "BMW|4 Series|428i Gran Coupe": {
-    "from": 2014,
-    "to": 2016
-  },
-  "BMW|4 Series|430i": {
-    "from": 2016
-  },
-  "BMW|4 Series|430i M Sport": {
-    "from": 2016
-  },
-  "BMW|4 Series|430d": {
-    "from": 2013
-  },
-  "BMW|4 Series|430d M Sport": {
-    "from": 2013
-  },
-  "BMW|4 Series|435d": {
-    "from": 2013,
-    "to": 2020
-  },
-  "BMW|4 Series|435i": {
-    "from": 2013,
-    "to": 2016
-  },
-  "BMW|4 Series|440i": {
-    "from": 2016,
-    "to": 2020
-  },
-  "BMW|4 Series|M440i": {
-    "from": 2020
-  },
-  "BMW|4 Series|M440d": {
-    "from": 2021
-  },
-  "BMW|4 Series|M4": {
-    "from": 2014
-  },
-  "BMW|5 Series|520i": {
-    "from": 2010
-  },
-  "BMW|5 Series|520d": {
-    "from": 2010
-  },
-  "BMW|5 Series|523i": {
-    "from": 2010,
-    "to": 2012
-  },
-  "BMW|5 Series|525d": {
-    "from": 2010
-  },
-  "BMW|5 Series|528i": {
-    "from": 2010,
-    "to": 2016
-  },
-  "BMW|5 Series|530i": {
-    "from": 2016
-  },
-  "BMW|5 Series|530d": {
-    "from": 2010
-  },
-  "BMW|5 Series|530e": {
-    "from": 2017
-  },
-  "BMW|5 Series|535d": {
-    "from": 2010
-  },
-  "BMW|5 Series|535i": {
-    "from": 2010,
-    "to": 2016
-  },
-  "BMW|5 Series|540i": {
-    "from": 2016
-  },
-  "BMW|5 Series|545e": {
-    "from": 2020,
-    "to": 2023
-  },
-  "BMW|5 Series|550e": {
-    "from": 2023
-  },
-  "BMW|5 Series|M550i": {
-    "from": 2017
-  },
-  "BMW|5 Series|M5": {
-    "from": 2011
-  },
-  "BMW|6 Series|620d": {
-    "from": 2017,
-    "to": 2023
-  },
-  "BMW|6 Series|630i": {
-    "from": 2017,
-    "to": 2023
-  },
-  "BMW|6 Series|630d": {
-    "from": 2011,
-    "to": 2023
-  },
-  "BMW|6 Series|635d": {
-    "from": 2007,
-    "to": 2011
-  },
-  "BMW|6 Series|640i": {
-    "from": 2011,
-    "to": 2018
-  },
-  "BMW|6 Series|640i M Sport": {
-    "from": 2011,
-    "to": 2018
-  },
-  "BMW|6 Series|640d": {
-    "from": 2011,
-    "to": 2018
-  },
-  "BMW|6 Series|640d M Sport": {
-    "from": 2011,
-    "to": 2018
-  },
-  "BMW|6 Series|650i": {
-    "from": 2011,
-    "to": 2018
-  },
-  "BMW|6 Series|M6": {
-    "from": 2012,
-    "to": 2018
-  },
-  "BMW|7 Series|730d": {
-    "from": 2008
-  },
-  "BMW|7 Series|740d": {
-    "from": 2008
-  },
-  "BMW|7 Series|740i": {
-    "from": 2008
-  },
-  "BMW|7 Series|745e": {
-    "from": 2019,
-    "to": 2022
-  },
-  "BMW|7 Series|750i": {
-    "from": 2008
-  },
-  "BMW|7 Series|760i": {
-    "from": 2008
-  },
-  "BMW|8 Series|840i": {
-    "from": 2018
-  },
-  "BMW|8 Series|840d": {
-    "from": 2018
-  },
-  "BMW|8 Series|M850i": {
-    "from": 2018
-  },
-  "BMW|8 Series|M8": {
-    "from": 2019
-  },
-  "BMW|X1|sDrive18i": {
-    "from": 2009
-  },
-  "BMW|X1|sDrive18d": {
-    "from": 2009
-  },
-  "BMW|X1|xDrive20d": {
-    "from": 2009
-  },
-  "BMW|X1|xDrive25e": {
-    "from": 2020
-  },
-  "BMW|X2|sDrive18i": {
-    "from": 2018
-  },
-  "BMW|X2|sDrive18d": {
-    "from": 2018
-  },
-  "BMW|X2|xDrive20d": {
-    "from": 2018
-  },
-  "BMW|X2|M35i": {
-    "from": 2018
-  },
-  "BMW|X3|xDrive20d": {
-    "from": 2010
-  },
-  "BMW|X3|xDrive30d": {
-    "from": 2010
-  },
-  "BMW|X3|xDrive30e": {
-    "from": 2020
-  },
-  "BMW|X3|M40i": {
-    "from": 2017
-  },
-  "BMW|X3|M40d": {
-    "from": 2018
-  },
-  "BMW|X3|X3 M": {
-    "from": 2019
-  },
-  "BMW|X4|xDrive20d": {
-    "from": 2014
-  },
-  "BMW|X4|xDrive30d": {
-    "from": 2014
-  },
-  "BMW|X4|M40i": {
-    "from": 2016
-  },
-  "BMW|X4|M40d": {
-    "from": 2018
-  },
-  "BMW|X4|X4 M": {
-    "from": 2019
-  },
-  "BMW|X5|xDrive30d": {
-    "from": 2010
-  },
-  "BMW|X5|xDrive40i": {
-    "from": 2018
-  },
-  "BMW|X5|xDrive45e": {
-    "from": 2019
-  },
-  "BMW|X5|xDrive50e": {
-    "from": 2023
-  },
-  "BMW|X5|M50d": {
-    "from": 2012,
-    "to": 2020
-  },
-  "BMW|X5|X5 M": {
-    "from": 2010
-  },
-  "BMW|X6|xDrive30d": {
-    "from": 2010
-  },
-  "BMW|X6|xDrive40i": {
-    "from": 2019
-  },
-  "BMW|X6|M50d": {
-    "from": 2012,
-    "to": 2020
-  },
-  "BMW|X6|X6 M": {
-    "from": 2010
-  },
-  "BMW|X7|xDrive30d": {
-    "from": 2019
-  },
-  "BMW|X7|xDrive40i": {
-    "from": 2019
-  },
-  "BMW|X7|M50i": {
-    "from": 2019
-  },
-  "BMW|X7|M60i": {
-    "from": 2022
-  },
-  "BMW|Z4|sDrive20i": {
-    "from": 2009
-  },
-  "BMW|Z4|sDrive28i": {
-    "from": 2011,
-    "to": 2016
-  },
-  "BMW|Z4|sDrive30i": {
-    "from": 2018
-  },
-  "BMW|Z4|M40i": {
-    "from": 2018
-  },
-  "BMW|i3|60Ah": {
-    "from": 2013,
-    "to": 2017
-  },
-  "BMW|i3|94Ah": {
-    "from": 2016,
-    "to": 2018
-  },
-  "BMW|i3|120Ah": {
-    "from": 2018,
-    "to": 2022
-  },
-  "BMW|i3|Range Extender": {
-    "from": 2013,
-    "to": 2018
-  },
-  "BMW|i4|eDrive35": {
-    "from": 2022
-  },
-  "BMW|i4|eDrive40": {
-    "from": 2021
-  },
-  "BMW|i4|M50": {
-    "from": 2021
-  },
-  "BMW|i5|eDrive40": {
-    "from": 2023
-  },
-  "BMW|i5|M60": {
-    "from": 2023
-  },
-  "BMW|i7|xDrive60": {
-    "from": 2022
-  },
-  "BMW|i7|M70": {
-    "from": 2023
-  },
-  "BMW|i8|Coupe": {
-    "from": 2014,
-    "to": 2020
-  },
-  "BMW|i8|Roadster": {
-    "from": 2018,
-    "to": 2020
-  },
-  "BMW|iX|xDrive40": {
-    "from": 2021
-  },
-  "BMW|iX|xDrive50": {
-    "from": 2021
-  },
-  "BMW|iX|M60": {
-    "from": 2022
-  }
-};
-
-const makeFamilyRules = {
-  BMW: [
-    { family: "1 Series", pattern: /^(1 Series|1[123][0-9][a-zA-Z]*|128ti|M135i|M140i)\b/i },
-    { family: "2 Series", pattern: /^(2 Series|2[123][0-9][a-zA-Z]*|M235i|M240i|M2)\b/i },
-    { family: "3 Series", pattern: /^(3 Series|3[1234][0-9][a-zA-Z]*|M340[di]?|M3)\b/i },
-    { family: "4 Series", pattern: /^(4 Series|4[1234][0-9][a-zA-Z]*|M440[di]?|M4)\b/i },
-    { family: "5 Series", pattern: /^(5 Series|5[12345][0-9][a-zA-Z]*|M550i|M5)\b/i },
-    { family: "6 Series", pattern: /^(6 Series|6[2345][0-9][a-zA-Z]*|M6)\b/i },
-    { family: "7 Series", pattern: /^(7 Series|7[3456][0-9][a-zA-Z]*)\b/i },
-    { family: "8 Series", pattern: /^(8 Series|8[45][0-9][a-zA-Z]*|M850i|M8)\b/i },
-    { family: "X1", pattern: /^X1\b/i }, { family: "X2", pattern: /^X2\b/i },
-    { family: "X3", pattern: /^X3\b/i }, { family: "X4", pattern: /^X4\b/i },
-    { family: "X5", pattern: /^X5\b/i }, { family: "X6", pattern: /^X6\b/i },
-    { family: "X7", pattern: /^X7\b/i }, { family: "Z4", pattern: /^Z4\b/i },
-    { family: "i3", pattern: /^i3\b/i }, { family: "i4", pattern: /^i4\b/i },
-    { family: "i5", pattern: /^i5\b/i }, { family: "i7", pattern: /^i7\b/i },
-    { family: "i8", pattern: /^i8\b/i }, { family: "iX", pattern: /^iX\b/i },
-  ],
-  Audi: [
-    { family: "Q4 e-tron", pattern: /^Q4\b.*e-tron/i }, { family: "e-tron GT", pattern: /^e-tron GT\b/i },
-    { family: "e-tron", pattern: /^e-tron\b/i }, { family: "A1", pattern: /^A1\b/i },
-    { family: "A2", pattern: /^A2\b/i }, { family: "A3", pattern: /^A3\b/i },
-    { family: "A4", pattern: /^A4\b/i }, { family: "A5", pattern: /^A5\b/i },
-    { family: "A6", pattern: /^A6\b/i }, { family: "A7", pattern: /^A7\b/i },
-    { family: "A8", pattern: /^A8\b/i }, { family: "Q2", pattern: /^Q2\b/i },
-    { family: "Q3", pattern: /^Q3\b/i }, { family: "Q5", pattern: /^Q5\b/i },
-    { family: "Q7", pattern: /^Q7\b/i }, { family: "Q8", pattern: /^Q8\b/i },
-    { family: "TT", pattern: /^TT\b/i }, { family: "R8", pattern: /^R8\b/i },
-  ],
-  "Mercedes-Benz": [
-    { family: "A-Class", pattern: /^(A-Class|A ?1[68]0|A ?200|A ?220|A ?250|A35|A45)\b/i },
-    { family: "B-Class", pattern: /^(B-Class|B ?180|B ?200|B ?250)\b/i },
-    { family: "C-Class", pattern: /^(C-Class|C ?180|C ?200|C ?220|C ?300|C ?350|C43|C63)\b/i },
-    { family: "E-Class", pattern: /^(E-Class|E ?200|E ?220|E ?300|E ?400|E53|E63)\b/i },
-    { family: "S-Class", pattern: /^(S-Class|S ?350|S ?400|S ?500|S ?580|S63)\b/i },
-    { family: "CLA", pattern: /^CLA\b/i }, { family: "GLA", pattern: /^GLA\b/i },
-    { family: "GLB", pattern: /^GLB\b/i }, { family: "GLC", pattern: /^GLC\b/i },
-    { family: "GLE", pattern: /^GLE\b/i }, { family: "GLS", pattern: /^GLS\b/i },
-    { family: "G", pattern: /^G( |-|$)/i }, { family: "EQA", pattern: /^EQA\b/i },
-    { family: "EQB", pattern: /^EQB\b/i }, { family: "EQC", pattern: /^EQC\b/i },
-    { family: "EQE", pattern: /^EQE\b/i }, { family: "EQS", pattern: /^EQS\b/i },
-  ],
-  "Land Rover": [
-    { family: "Range Rover Evoque", pattern: /^Range Rover Evoque\b/i }, { family: "Range Rover Sport", pattern: /^Range Rover Sport\b/i },
-    { family: "Range Rover Velar", pattern: /^Range Rover Velar\b/i }, { family: "Range Rover", pattern: /^Range Rover\b/i },
-    { family: "Discovery Sport", pattern: /^Discovery Sport\b/i }, { family: "Discovery", pattern: /^Discovery\b/i },
-    { family: "Defender", pattern: /^Defender\b/i }, { family: "Freelander", pattern: /^Freelander\b/i },
-  ],
-  Jaguar: [
-    { family: "XE", pattern: /^XE\b/i }, { family: "XF", pattern: /^XF\b/i }, { family: "XJ", pattern: /^XJ\b/i },
-    { family: "F-Pace", pattern: /^F-Pace\b/i }, { family: "E-Pace", pattern: /^E-Pace\b/i },
-    { family: "I-Pace", pattern: /^I-Pace\b/i }, { family: "F-Type", pattern: /^F-Type\b/i },
-  ],
-  Volkswagen: [
-    { family: "T-Cross", pattern: /^T-Cross\b/i }, { family: "T-Roc", pattern: /^T-Roc\b/i },
-    { family: "Golf", pattern: /^Golf\b/i }, { family: "Polo", pattern: /^Polo\b/i },
-    { family: "Passat", pattern: /^Passat\b/i }, { family: "Tiguan", pattern: /^Tiguan\b/i },
-    { family: "Touareg", pattern: /^Touareg\b/i }, { family: "ID3", pattern: /^ID\.?3\b/i },
-    { family: "ID4", pattern: /^ID\.?4\b/i }, { family: "ID5", pattern: /^ID\.?5\b/i },
-    { family: "ID7", pattern: /^ID\.?7\b/i },
-  ],
-};
-
-const trailingDescriptors = [
-  "2WD", "4WD", "AWD", "FWD", "RWD", "xDrive", "sDrive", "quattro", "4MATIC",
-  "Auto", "Automatic", "Manual", "MHT", "PHEV", "Hybrid", "Electric",
-  "Coupe", "Convertible", "Cabriolet", "Roadster", "Saloon", "Sedan", "Estate", "Touring", "Wagon",
-  "Hatchback", "Sportback", "Gran Coupe", "MPV", "SUV", "Van", "Pickup", "Crew Cab", "Double Cab", "LWB", "SWB",
-  "S line", "S-Line", "M Sport", "AMG Line", "ST-Line", "R-Line", "GT Line",
-  "Sport", "SE", "SEL", "S", "SXT", "Limited", "Luxury", "Premium", "Plus", "Pro",
-];
 
 const allowedVehicleMakes = [
   "Abarth",
@@ -7882,26 +9174,111 @@ const allowedVehicleMakes = [
   "Zenos"
 ];
 
+
+// Kerb uses the curated UK catalogue below for public dropdowns.
+// The large rawVehicleMakes object above is intentionally preserved as a fallback/source list,
+// but raw US/global trim noise is not shown directly to users.
+
 const makeAliases = {
-  Fiat: ["FIAT"],
-  Hummer: ["HUMMER"],
-  INEOS: ["INEOS Automotive"],
-  JBA: ["JBA Motorcars, Inc."],
-  McLaren: ["McLaren Automotive"],
+  "Citroen": ["Citroën"],
+  "Cupra": ["CUPRA"],
+  "CUPRA": ["Cupra"],
+  "DS": ["DS AUTOMOBILES"],
+  "Fiat": ["FIAT"],
+  "GWM": ["Great Wall"],
+  "Hummer": ["HUMMER"],
+  "INEOS": ["INEOS Automotive"],
+  "KGM": ["SsangYong"],
+  "MAXUS": ["LDV"],
+  "McLaren": ["McLaren Automotive"],
+  "Mercedes-Benz": ["Mercedes", "Mercedes Benz"],
+  "MG": ["MG Motor UK"],
+  "MINI": ["Mini"],
+  "OMODA": ["Omoda"],
+  "Ram": ["RAM"],
+  "Skoda": ["Škoda"],
+  "Vauxhall": ["Opel"],
 };
 
+const fallbackFamilyRules = {
+  "Aston Martin": ["DBX", "DB12", "DB11", "DB9", "DB7", "DBS", "Vantage", "Vanquish", "Virage", "Rapide", "Lagonda"],
+  "Audi": ["RS e-tron GT", "e-tron GT", "Q8 e-tron", "RS Q8", "SQ8", "SQ7", "SQ5", "RS7", "RS6", "RS5", "RS4", "RS3", "S8", "S7", "S6", "S5", "S4", "S3", "A8", "A7", "A6", "A5", "A4", "A3", "A1", "Q8", "Q7", "Q5", "Q4", "Q3", "Q2", "R8", "TT", "TTS", "TT RS", "e-tron"],
+  "BMW": ["8 Series", "7 Series", "6 Series", "5 Series", "4 Series", "3 Series", "2 Series", "1 Series", "M8", "M6", "M5", "M4", "M3", "M2", "XM", "X7", "X6", "X5", "X4", "X3", "X2", "X1", "iX", "i8", "i7", "i5", "i4", "i3", "Z4", "Z3"],
+  "Ford": ["Fiesta", "Focus", "Mondeo", "Kuga", "Puma", "EcoSport", "Explorer", "Mustang Mach-E", "Mustang", "Ranger", "Transit Custom", "Transit Connect", "Transit", "S-MAX", "Galaxy", "B-MAX", "C-MAX", "Ka"],
+  "Honda": ["Civic", "Jazz", "Accord", "CR-V", "HR-V", "ZR-V", "e", "S2000", "NSX"],
+  "Hyundai": ["i10", "i20", "i30", "i40", "IONIQ 5", "IONIQ 6", "IONIQ", "Kona", "Tucson", "Santa Fe", "Bayon", "Veloster"],
+  "Jaguar": ["F-PACE", "E-PACE", "I-PACE", "F-TYPE", "XE", "XF", "XJ", "XK"],
+  "Kia": ["Picanto", "Rio", "Ceed", "ProCeed", "XCeed", "Stonic", "Niro", "Sportage", "Sorento", "Soul", "EV3", "EV6", "EV9", "Optima", "Stinger"],
+  "Land Rover": ["Range Rover Evoque", "Range Rover Sport", "Range Rover Velar", "Range Rover", "Discovery Sport", "Discovery", "Defender", "Freelander"],
+  "Lexus": ["LBX", "UX", "NX", "RX L", "RX", "RZ", "CT", "IS", "ES", "GS", "LS", "LC", "RC", "RC F", "SC"],
+  "Mercedes-Benz": ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "CLA", "CLS", "CLE", "GLA", "GLB", "GLC", "GLE", "GLS", "G-Class", "AMG GT", "SLK", "SLC", "SL", "EQA", "EQB", "EQC", "EQE", "EQS", "EQV", "V-Class", "Vito", "Sprinter", "Citan"],
+  "MINI": ["Hatch", "Clubman", "Countryman", "Convertible", "Coupe", "Roadster", "Paceman", "Aceman"],
+  "Nissan": ["Micra", "Note", "Juke", "Qashqai", "X-Trail", "Leaf", "Ariya", "Navara", "GT-R", "370Z", "350Z"],
+  "Porsche": ["718", "911", "Boxster", "Cayman", "Macan", "Cayenne", "Panamera", "Taycan"],
+  "Toyota": ["Aygo", "Yaris", "Corolla", "Auris", "Prius", "C-HR", "RAV4", "Highlander", "Land Cruiser", "Hilux", "Supra", "GR86", "GT86"],
+  "Vauxhall": ["Adam", "Corsa", "Astra", "Mokka", "Insignia", "Crossland", "Grandland", "Zafira", "Vivaro", "Combo"],
+  "Volkswagen": ["up!", "Polo", "Golf", "Passat", "Arteon", "T-Cross", "T-Roc", "Tiguan", "Touareg", "ID.3", "ID.4", "ID.5", "ID.7", "Transporter", "Caddy", "Scirocco", "Beetle", "Touran", "Sharan"],
+};
+
+const genericTrailingDescriptors = [
+  "2WD", "4WD", "AWD", "FWD", "RWD", "xDrive", "sDrive", "quattro", "4MATIC", "All4", "AllGrip",
+  "Auto", "Automatic", "Manual", "MHT", "PHEV", "Hybrid", "Electric", "Mild Hybrid", "Plug-in Hybrid",
+  "Coupe", "Convertible", "Cabriolet", "Roadster", "Saloon", "Sedan", "Estate", "Touring", "Wagon",
+  "Hatchback", "Sportback", "Gran Coupe", "MPV", "SUV", "Van", "Panel Van", "Pickup", "Crew Cab", "Double Cab", "LWB", "SWB",
+  "S line", "S-Line", "M Sport", "AMG Line", "ST-Line", "R-Line", "GT Line", "F Sport", "N-Connecta",
+  "Sport", "SE", "SEL", "S", "SXT", "Limited", "Luxury", "Premium", "Plus", "Pro", "Ultimate", "Design", "Icon", "Excel", "Tekna", "Acenta",
+];
+
+const commonSpecOptions = [
+  "M Sport", "M Sport Pro", "AMG Line", "AMG Line Premium", "AMG Line Premium Plus",
+  "S line", "Black Edition", "Vorsprung", "R-Line", "GT Line", "ST-Line", "F Sport",
+  "FR", "Vignale", "Tekna", "Tekna+", "N-Connecta", "Acenta", "Design", "GS", "Ultimate",
+  "SE", "SE L", "Sport", "Sportline", "Monte Carlo", "Elegance", "Excellence", "Xcellence",
+  "Icon", "Design", "Excel", "GR Sport", "Takumi", "Premium", "Premium Plus", "Launch Edition",
+  "John Cooper Works", "Cooper", "Cooper S", "Trophy", "Exclusive", "Excite", "GT", "GT Line",
+];
+
 function cleanText(value) {
-  return String(value || "").replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  return String(value || "")
+    .replace(/&amp;/g, "and")
+    .replace(/\s*\([^)]*(?:wheel|tire|tyre|postal|gvwr|payload|ffv|cng|lpg)[^)]*\)/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalise(value) {
+  return cleanText(value)
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "");
 }
 
 function escapeRegExp(value) {
   return String(value).replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
 }
 
+function dedupe(items) {
+  const seen = new Set();
+  return (items || [])
+    .map(cleanText)
+    .filter(Boolean)
+    .filter((item) => {
+      const key = normalise(item);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 function naturalSort(items) {
-  return [...new Set(items.filter(Boolean))].sort((a, b) =>
+  return dedupe(items).sort((a, b) =>
     a.localeCompare(b, "en-GB", { numeric: true, sensitivity: "base" })
   );
+}
+
+function getRawModelsForMake(make) {
+  const rawNames = [make, ...(makeAliases[make] || [])];
+  return rawNames.flatMap((rawName) => rawVehicleMakes[rawName] || []);
 }
 
 function stripTrailingDescriptors(value) {
@@ -7910,11 +9287,9 @@ function stripTrailingDescriptors(value) {
 
   while (changed) {
     changed = false;
-
-    for (const descriptor of trailingDescriptors) {
+    for (const descriptor of genericTrailingDescriptors) {
       const next = clean.replace(new RegExp("\\s+" + escapeRegExp(descriptor) + "$", "i"), "").trim();
-
-      if (next !== clean && next) {
+      if (next && next !== clean) {
         clean = next;
         changed = true;
       }
@@ -7924,159 +9299,205 @@ function stripTrailingDescriptors(value) {
   return clean;
 }
 
-function getRuleFamily(make, rawModel) {
-  const rules = makeFamilyRules[make] || [];
+function findKnownFamily(make, rawModel) {
   const clean = cleanText(rawModel);
-  const match = rules.find((rule) => rule.pattern.test(clean));
+  const curatedModels = curatedVehicleCatalog[make]?.models || [];
+  const families = [...(fallbackFamilyRules[make] || []), ...curatedModels]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
 
-  return match?.family || "";
+  return families.find((family) => {
+    const pattern = new RegExp("^" + escapeRegExp(family).replace(/\\\\\./g, "\\\\.?") + "(\\b|\\s|$)", "i");
+    return pattern.test(clean);
+  }) || "";
 }
 
-function getCuratedFamily(make, rawModel) {
-  const clean = cleanText(rawModel).toLowerCase();
-  const curatedModels = Object.keys(curatedVehicleModelDetails[make] || {}).sort((a, b) => b.length - a.length);
+function getFallbackFamily(make, rawModel) {
+  const known = findKnownFamily(make, rawModel);
+  if (known) return known;
 
-  return curatedModels.find((model) => clean.startsWith(model.toLowerCase())) || "";
-}
-
-function getGenericFamily(rawModel) {
-  const clean = cleanText(rawModel);
-
+  const clean = cleanText(rawModel).split("/")[0]?.trim() || "";
   if (!clean) return "";
 
-  const slashFamily = clean.split("/")[0]?.trim();
-  const stripped = stripTrailingDescriptors(slashFamily || clean);
+  const stripped = stripTrailingDescriptors(clean);
+
+  // If a raw value is mostly drivetrain/technical noise, skip it.
+  if (/^(van|wagon|sedan|limousine|commercial chassis|funeral coach|postal vehicle)$/i.test(stripped)) {
+    return "";
+  }
 
   return stripped || clean;
 }
 
-function getModelFamily(make, rawModel) {
-  return getRuleFamily(make, rawModel) || getCuratedFamily(make, rawModel) || getGenericFamily(rawModel);
-}
-
-function getVariantFromRaw(rawModel, family) {
+function getFallbackType(rawModel, family) {
   const clean = cleanText(rawModel);
+  if (!clean || !family) return "";
 
-  if (!clean || clean.toLowerCase() === String(family || "").toLowerCase()) return "";
+  let type = clean.replace(new RegExp("^" + escapeRegExp(family) + "\\s*", "i"), "").trim();
+  type = type.replace(/^[-/]+\s*/, "").trim();
+  type = stripTrailingDescriptors(type);
 
-  const familyPattern = new RegExp("^" + escapeRegExp(family) + "\\s+", "i");
-  const variant = clean.replace(familyPattern, "").trim();
+  if (!type || normalise(type) === normalise(family)) return "";
+  if (/^(2wd|4wd|awd|fwd|rwd|auto|manual)$/i.test(type)) return "";
 
-  return variant && variant.toLowerCase() !== String(family || "").toLowerCase() ? variant : "";
+  return type;
 }
 
-function getRawModelsForMake(make) {
-  const rawNames = [make, ...(makeAliases[make] || [])];
+function buildFallbackMakeData(make) {
+  const models = new Set();
+  const types = {};
+  const specsByModel = {};
 
-  return rawNames.flatMap((rawName) => rawVehicleMakes[rawName] || []);
+  for (const rawModel of getRawModelsForMake(make)) {
+    const family = getFallbackFamily(make, rawModel);
+    if (!family) continue;
+
+    models.add(family);
+    const type = getFallbackType(rawModel, family);
+    if (type) {
+      if (!types[family]) types[family] = new Set();
+      types[family].add(type);
+    }
+  }
+
+  const finalTypes = {};
+  for (const [model, typeSet] of Object.entries(types)) {
+    finalTypes[model] = naturalSort([...typeSet]).slice(0, 80);
+  }
+
+  // Generic specs are intentionally light for fallback makes to avoid noisy dropdowns.
+  for (const model of models) {
+    specsByModel[model] = [];
+  }
+
+  return {
+    models: naturalSort([...models]).slice(0, 120),
+    types: finalTypes,
+    specs: [],
+    specsByModel,
+  };
+}
+
+function getMakeData(make) {
+  const cleanMake = cleanText(make);
+  const aliasTarget = Object.keys(curatedVehicleCatalog).find((key) => normalise(key) === normalise(cleanMake));
+
+  return curatedVehicleCatalog[aliasTarget || cleanMake] || buildFallbackMakeData(cleanMake);
 }
 
 function buildVehicleData() {
+  const makes = naturalSort([
+    ...allowedVehicleMakes,
+    ...Object.keys(curatedVehicleCatalog),
+  ]);
+
   const modelsByMake = {};
   const detailsByMake = {};
+  const specsByMake = {};
 
-  for (const make of allowedVehicleMakes) {
-    const modelSet = new Set();
-    const detailSets = {};
-    const curatedModels = curatedVehicleModelDetails[make] || {};
-    const useCleanCuratedOnly = kerbCleanModelMakes.has(make);
+  for (const make of makes) {
+    const data = getMakeData(make);
+    modelsByMake[make] = dedupe(data.models || []);
+    detailsByMake[make] = Object.fromEntries(
+      Object.entries(data.types || {}).map(([model, details]) => [model, naturalSort(details || [])])
+    );
 
-    for (const model of Object.keys(curatedModels)) {
-      modelSet.add(model);
-      detailSets[model] = new Set(curatedModels[model]);
-    }
+    const specsByModel = Object.fromEntries(
+      Object.entries(data.specsByModel || {}).map(([model, specs]) => [model, naturalSort(specs || [])])
+    );
 
-    // For cleaned UK-market makes, do not mix the old raw US/global trim list
-    // back into the public Model dropdown. Raw model names such as "190D 2.5",
-    // "320i xDrive", or "NX 350 AWD F" belong in Type / variant, not Model.
-    if (!useCleanCuratedOnly) {
-      for (const rawModel of getRawModelsForMake(make)) {
-        const family = getModelFamily(make, rawModel);
-
-        if (!family) continue;
-
-        modelSet.add(family);
-
-        const variant = getVariantFromRaw(rawModel, family);
-
-        if (variant) {
-          if (!detailSets[family]) detailSets[family] = new Set();
-          detailSets[family].add(variant);
-        }
-      }
-    }
-
-    modelsByMake[make] = useCleanCuratedOnly ? [...modelSet] : naturalSort([...modelSet]);
-
-    const makeDetails = {};
-    for (const [model, details] of Object.entries(detailSets)) {
-      makeDetails[model] = naturalSort([...details]);
-    }
-    detailsByMake[make] = makeDetails;
+    specsByMake[make] = {
+      __make: naturalSort(data.specs || []),
+      ...specsByModel,
+    };
   }
 
-  return { modelsByMake, detailsByMake };
+  return { modelsByMake, detailsByMake, specsByMake };
 }
 
 const builtVehicleData = buildVehicleData();
 
 export const vehicleMakes = builtVehicleData.modelsByMake;
 export const vehicleModelDetails = builtVehicleData.detailsByMake;
+export const vehicleSpecDetails = builtVehicleData.specsByMake;
 export const vehicleMakeOptions = Object.keys(vehicleMakes);
+export const vehicleModelDetailMeta = {};
+export const vehicleSpecMeta = {};
 
 function metaKey(make, model, detail) {
   return [make, model, detail].map((value) => String(value || "").trim()).join("|");
 }
 
-function getInheritedVariantMeta(make, model, detail) {
-  const detailText = String(detail || "").trim();
-  const makeDetails = vehicleModelDetails[make]?.[model] || [];
-  const baseDetail = makeDetails
-    .filter((option) => detailText.toLowerCase().startsWith(option.toLowerCase()))
-    .sort((a, b) => b.length - a.length)
-    .find((option) => vehicleModelDetailMeta[metaKey(make, model, option)]);
-
-  return baseDetail ? vehicleModelDetailMeta[metaKey(make, model, baseDetail)] : null;
-}
-
 export function getVehicleModelDetailMeta({ make, model, detail } = {}) {
-  return (
-    vehicleModelDetailMeta[metaKey(make, model, detail)] ||
-    getInheritedVariantMeta(make, model, detail) ||
-    null
-  );
+  return vehicleModelDetailMeta[metaKey(make, model, detail)] || null;
 }
 
 export function isVehicleModelDetailYearCompatible({ make, model, detail, year } = {}) {
   const numericYear = Number(year);
   const meta = getVehicleModelDetailMeta({ make, model, detail });
-
   if (!meta || !Number.isFinite(numericYear) || !numericYear) return true;
   if (meta.from && numericYear < meta.from) return false;
   if (meta.to && numericYear > meta.to) return false;
-
   return true;
 }
 
 export function getVehicleModelDetailYears({ make, model, detail } = {}) {
   const meta = getVehicleModelDetailMeta({ make, model, detail });
-
   if (!meta) return "";
-  if (meta.from && meta.to) return String(meta.from) + "-" + String(meta.to);
-  if (meta.from) return String(meta.from) + " onwards";
-  if (meta.to) return "up to " + String(meta.to);
-
+  if (meta.from && meta.to) return `${meta.from}-${meta.to}`;
+  if (meta.from) return `${meta.from} onwards`;
+  if (meta.to) return `up to ${meta.to}`;
   return "";
 }
 
 export function getVehicleModelDetailOptions({ make, model, year } = {}) {
   const details = vehicleModelDetails[make]?.[model] || [];
-
   return details.filter((detail) => isVehicleModelDetailYearCompatible({ make, model, detail, year }));
 }
 
+export function getVehicleSpecOptions({ make, model } = {}) {
+  const makeSpecs = vehicleSpecDetails[make]?.__make || [];
+  const modelSpecs = vehicleSpecDetails[make]?.[model] || [];
+  return naturalSort([...makeSpecs, ...modelSpecs]);
+}
+
+export function getVehicleSpecYears() {
+  return "";
+}
+
+export function isVehicleSpecYearCompatible() {
+  return true;
+}
+
+export function splitVehicleDescription({ make, model, type, spec } = {}) {
+  return {
+    make: cleanText(make),
+    model: cleanText(model),
+    model_detail: cleanText(type),
+    variant: cleanText(spec),
+  };
+}
+
 export const bodyTypeOptions = [
-  "Hatchback", "Saloon", "Estate", "SUV", "Coupe", "Convertible", "MPV", "Pickup", "Van", "4x4", "Camper", "Chassis Cab", "Combi Van", "Limousine", "Minibus", "People Carrier", "Sports", "Wheelchair Accessible", "Other"
+  "Hatchback",
+  "Saloon",
+  "Estate",
+  "SUV",
+  "Coupe",
+  "Convertible",
+  "MPV",
+  "Pickup",
+  "Van",
+  "4x4",
+  "Camper",
+  "Chassis Cab",
+  "Combi Van",
+  "Limousine",
+  "Minibus",
+  "People Carrier",
+  "Sports",
+  "Wheelchair Accessible",
+  "Other",
 ];
 
 export const conditionOptions = ["New", "Used"];
