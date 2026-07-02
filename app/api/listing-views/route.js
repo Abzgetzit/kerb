@@ -155,6 +155,10 @@ export async function POST(request) {
       view_count: viewCount,
       last_viewed_at: row?.last_viewed_at || null,
       analytics,
+      views_today: analytics.views_today,
+      views_last_7_days: analytics.views_last_7_days,
+      views_last_14_days: analytics.views_last_14_days,
+      views_last_30_days: analytics.views_last_30_days,
     });
   }
 
@@ -214,5 +218,9 @@ export async function POST(request) {
     view_count: viewCount,
     last_viewed_at: updatedListing?.last_viewed_at || now,
     analytics,
+    views_today: analytics.views_today,
+    views_last_7_days: analytics.views_last_7_days,
+    views_last_14_days: analytics.views_last_14_days,
+    views_last_30_days: analytics.views_last_30_days,
   });
 }
