@@ -24,11 +24,6 @@ function getRequestIp(request) {
   );
 }
 
-function getResultRow(data) {
-  if (Array.isArray(data)) return data[0] || null;
-  return data || null;
-}
-
 function noStoreJson(body, init = {}) {
   return NextResponse.json(body, {
     ...init,
@@ -129,42 +124,8 @@ export async function POST(request) {
   const viewerEmail = cleanText(body.viewer_email).toLowerCase() || null;
   const viewerUserAgent = cleanText(request.headers.get("user-agent")) || null;
   const viewerIp = getRequestIp(request) || null;
+  const now = new Date().toISOString();
 
-  // Preferred path: one atomic database function call.
-  // This guarantees every request increments the counter by 1, including refreshes.
-  // The SQL function also inserts a row into kerb_listing_view_events, which powers
-  // Today / 7 days / 14 days / 30 days seller stats.
-  const { data: rpcData, error: rpcError } = await supabase.rpc(
-    "kerb_record_listing_view",
-    {
-      p_listing_id: listingId,
-      p_viewer_email: viewerEmail,
-      p_viewer_ip: viewerIp,
-      p_user_agent: viewerUserAgent,
-    }
-  );
-
-  if (!rpcError) {
-    const row = getResultRow(rpcData);
-    const viewCount = Number(row?.view_count || 0);
-    const analytics = await getListingViewAnalytics(listingId, viewCount);
-
-    return noStoreJson({
-      success: true,
-      counted: true,
-      view_count: viewCount,
-      last_viewed_at: row?.last_viewed_at || null,
-      analytics,
-      views_today: analytics.views_today,
-      views_last_7_days: analytics.views_last_7_days,
-      views_last_14_days: analytics.views_last_14_days,
-      views_last_30_days: analytics.views_last_30_days,
-    });
-  }
-
-  console.warn("Kerb view RPC unavailable, using fallback:", rpcError.message);
-
-  // Fallback path: still counts views, even if the SQL function has not been added yet.
   const { data: listing, error: listingError } = await supabase
     .from("kerb_listings")
     .select("id, view_count")
@@ -179,9 +140,10 @@ export async function POST(request) {
     return noStoreJson({ error: "Listing not found." }, { status: 404 });
   }
 
-  const now = new Date().toISOString();
-  const nextViewCount = Number(listing.view_count || 0) + 1;
-
+  // Important: do NOT call the old Supabase RPC here.
+  // The old function was incrementing lifetime views but not reliably inserting
+  // event rows, so Today / 14 days stayed stuck. This route writes the event row
+  // directly every single time the listing page loads.
   const { error: eventError } = await supabase
     .from("kerb_listing_view_events")
     .insert({
@@ -189,11 +151,14 @@ export async function POST(request) {
       viewer_email: viewerEmail,
       viewer_ip: viewerIp,
       user_agent: viewerUserAgent,
+      created_at: now,
     });
 
   if (eventError) {
     console.warn("Kerb view event could not be saved:", eventError.message);
   }
+
+  const nextViewCount = Number(listing.view_count || 0) + 1;
 
   const { data: updatedListing, error: updateError } = await supabase
     .from("kerb_listings")
@@ -215,6 +180,8 @@ export async function POST(request) {
   return noStoreJson({
     success: true,
     counted: true,
+    event_inserted: !eventError,
+    event_error: eventError?.message || "",
     view_count: viewCount,
     last_viewed_at: updatedListing?.last_viewed_at || now,
     analytics,
