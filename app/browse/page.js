@@ -7,6 +7,7 @@ import SiteMenu from "../components/SiteMenu";
 import {
   bodyTypeOptions,
   getVehicleModelDetailOptions,
+  getVehicleSpecOptions,
   vehicleMakeOptions,
   vehicleMakes,
 } from "../lib/vehicle-data";
@@ -26,6 +27,7 @@ const defaultFilters = {
   make: "",
   model: "",
   modelDetail: "",
+  spec: "",
   priceMin: "",
   priceMax: "",
   mileageMin: "",
@@ -96,7 +98,7 @@ function formatMileageOption(value) {
 function getTitle(car) {
   if (car.title) return car.title;
 
-  const title = [car.make, car.model, car.model_detail]
+  const title = [car.make, car.model, car.model_detail, car.variant]
     .filter(Boolean)
     .join(" ")
     .trim();
@@ -689,6 +691,12 @@ function getRootModelForOption(make, value) {
 
   if (prefixKnown) return prefixKnown;
 
+  const directKnown = knownModels.find(
+    (model) => model.toLowerCase() === lowerOption
+  );
+
+  if (directKnown) return directKnown;
+
   if (make === "BMW") {
     const bmwRules = [
       { family: "1 Series", pattern: /^(1 series|11[68][id]?|12[058][id]?|128ti|m135i|m140i)\b/i },
@@ -706,12 +714,6 @@ function getRootModelForOption(make, value) {
     if (bmwMatch) return bmwMatch.family;
   }
 
-  const directKnown = knownModels.find(
-    (model) => model.toLowerCase() === lowerOption
-  );
-
-  if (directKnown) return directKnown;
-
   return option;
 }
 
@@ -728,13 +730,20 @@ function getModelOptionsForBrowse(make, cars) {
       .filter(Boolean),
   ];
 
-  return [
-    ...new Set(
-      rawOptions
-        .map((option) => getRootModelForOption(make, option))
-        .filter(Boolean)
-    ),
-  ].sort((a, b) => a.localeCompare(b, "en-GB", { numeric: true }));
+  const cleaned = rawOptions
+    .map((option) => getRootModelForOption(make, option))
+    .filter(Boolean);
+
+  const unique = [...new Set(cleaned)];
+  const knownOrder = new Map(knownModels.map((model, index) => [model, index]));
+
+  return unique.sort((a, b) => {
+    const aOrder = knownOrder.has(a) ? knownOrder.get(a) : 9999;
+    const bOrder = knownOrder.has(b) ? knownOrder.get(b) : 9999;
+
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.localeCompare(b, "en-GB", { numeric: true });
+  });
 }
 
 function getTypeOptionsForBrowse({ make, model, cars }) {
@@ -751,12 +760,35 @@ function getTypeOptionsForBrowse({ make, model, cars }) {
 
       return carMake === selectedMake && carModel === selectedModel;
     })
-    .flatMap((car) => [car.model_detail, car.variant])
+    .flatMap((car) => [car.model_detail])
     .filter(Boolean);
 
   return [...new Set([...fromVehicleData, ...fromListings])]
-    .filter((option) => option.toLowerCase() !== selectedModel)
-    .sort((a, b) => a.localeCompare(b, "en-GB", { numeric: true }));
+    .filter((option) => option.toLowerCase() !== selectedModel);
+}
+
+function getSpecOptionsForBrowse({ make, model, cars }) {
+  if (!make || !model) return [];
+
+  const selectedMake = String(make).trim().toLowerCase();
+  const selectedModel = String(model).trim().toLowerCase();
+  const fromVehicleData = getVehicleSpecOptions({ make, model }) || [];
+
+  const fromListings = cars
+    .filter((car) => {
+      const carMake = String(car.make || "").trim().toLowerCase();
+      const carModel = getRootModelForOption(make, car.model || "").toLowerCase();
+
+      return carMake === selectedMake && carModel === selectedModel;
+    })
+    .flatMap((car) => [car.variant, car.title, car.model_detail, car.description])
+    .filter(Boolean)
+    .flatMap((value) => {
+      const text = String(value).toLowerCase();
+      return fromVehicleData.filter((spec) => text.includes(String(spec).toLowerCase()));
+    });
+
+  return [...new Set([...fromVehicleData, ...fromListings])];
 }
 
 function carMatchesModelFilter(car, make, model) {
@@ -801,6 +833,7 @@ export default function BrowsePage() {
           params.get("modelDetail") ||
           params.get("type") ||
           "",
+        spec: params.get("spec") || params.get("trim") || "",
         priceMin: params.get("priceMin") || "",
         priceMax: params.get("priceMax") || "",
         mileageMin: params.get("mileageMin") || "",
@@ -989,6 +1022,7 @@ export default function BrowsePage() {
     if (nextFilters.make) params.set("make", nextFilters.make);
     if (nextFilters.model) params.set("model", nextFilters.model);
     if (nextFilters.modelDetail) params.set("model_detail", nextFilters.modelDetail);
+    if (nextFilters.spec) params.set("spec", nextFilters.spec);
     if (nextFilters.priceMin) params.set("priceMin", nextFilters.priceMin);
     if (nextFilters.priceMax) params.set("priceMax", nextFilters.priceMax);
     if (nextFilters.mileageMin) params.set("mileageMin", nextFilters.mileageMin);
@@ -1020,10 +1054,12 @@ export default function BrowsePage() {
     if (key === "make") {
       nextFilters.model = "";
       nextFilters.modelDetail = "";
+      nextFilters.spec = "";
     }
 
     if (key === "model") {
       nextFilters.modelDetail = "";
+      nextFilters.spec = "";
     }
 
     setFilters(nextFilters);
@@ -1076,9 +1112,11 @@ export default function BrowsePage() {
       nextFilters.make = "";
       nextFilters.model = "";
       nextFilters.modelDetail = "";
+      nextFilters.spec = "";
     } else if (key === "model") {
       nextFilters.model = "";
       nextFilters.modelDetail = "";
+      nextFilters.spec = "";
     } else {
       nextFilters[key] = "";
     }
@@ -1271,6 +1309,16 @@ export default function BrowsePage() {
     [cars, filters.make, filters.model]
   );
 
+  const availableSpecs = useMemo(
+    () =>
+      getSpecOptionsForBrowse({
+        make: filters.make,
+        model: filters.model,
+        cars,
+      }),
+    [cars, filters.make, filters.model]
+  );
+
   const visibleCars = useMemo(() => {
     let list = [...cars];
 
@@ -1331,8 +1379,18 @@ export default function BrowsePage() {
       if (
         filters.modelDetail &&
         !includesText(
-          [car.model_detail, car.variant, car.title].filter(Boolean).join(" "),
+          [car.model_detail, car.title].filter(Boolean).join(" "),
           filters.modelDetail
+        )
+      ) {
+        return false;
+      }
+
+      if (
+        filters.spec &&
+        !includesText(
+          [car.variant, car.model_detail, car.title, car.description].filter(Boolean).join(" "),
+          filters.spec
         )
       ) {
         return false;
@@ -1459,6 +1517,10 @@ export default function BrowsePage() {
 
     if (filters.modelDetail) {
       chips.push({ key: "modelDetail", label: `Type: ${filters.modelDetail}` });
+    }
+
+    if (filters.spec) {
+      chips.push({ key: "spec", label: `Spec: ${filters.spec}` });
     }
 
     if (filters.priceMin || filters.priceMax) {
@@ -1709,7 +1771,7 @@ export default function BrowsePage() {
                 <label className="filter-card">
                   <SvgIcon name="sliders" />
                   <div>
-                    <p>Type</p>
+                    <p>Type / engine</p>
                     <select
                       value={filters.modelDetail}
                       onChange={(event) =>
@@ -1720,6 +1782,26 @@ export default function BrowsePage() {
                       {availableModelDetails.map((detail) => (
                         <option key={detail} value={detail}>
                           {detail}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              )}
+
+              {filters.make && filters.model && availableSpecs.length > 0 && (
+                <label className="filter-card">
+                  <SvgIcon name="sliders" />
+                  <div>
+                    <p>Spec / trim</p>
+                    <select
+                      value={filters.spec}
+                      onChange={(event) => setFilter("spec", event.target.value)}
+                    >
+                      <option value="">Any spec</option>
+                      {availableSpecs.map((spec) => (
+                        <option key={spec} value={spec}>
+                          {spec}
                         </option>
                       ))}
                     </select>
@@ -2097,7 +2179,7 @@ export default function BrowsePage() {
                 <label className="filter-card">
                   <SvgIcon name="sliders" />
                   <div>
-                    <p>Type</p>
+                    <p>Type / engine</p>
                     <select
                       value={filters.modelDetail}
                       onChange={(event) =>
@@ -2108,6 +2190,26 @@ export default function BrowsePage() {
                       {availableModelDetails.map((detail) => (
                         <option key={detail} value={detail}>
                           {detail}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              )}
+
+              {filters.make && filters.model && availableSpecs.length > 0 && (
+                <label className="filter-card">
+                  <SvgIcon name="sliders" />
+                  <div>
+                    <p>Spec / trim</p>
+                    <select
+                      value={filters.spec}
+                      onChange={(event) => setFilter("spec", event.target.value)}
+                    >
+                      <option value="">Any spec</option>
+                      {availableSpecs.map((spec) => (
+                        <option key={spec} value={spec}>
+                          {spec}
                         </option>
                       ))}
                     </select>
