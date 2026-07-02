@@ -61,9 +61,6 @@ const rawVehicleMakes = {
     "ZDX AWD",
     "ZDX RWD"
   ],
-  "AION": [],
-  "Aixam": [],
-  "AK": [],
   "Alfa Romeo": [
     "164",
     "4C",
@@ -81,9 +78,7 @@ const rawVehicleMakes = {
     "Stelvio AWD",
     "Tonale eAWD"
   ],
-  "Allard": [],
   "Alpine": [],
-  "Alvis": [],
   "AM General": [
     "DJ Po Vehicle 2WD",
     "FJ8c Post Office",
@@ -103,11 +98,9 @@ const rawVehicleMakes = {
     "Eagle 4WD",
     "Eagle SX/4 4WD"
   ],
-  "Ariel": [],
   "ASC Incorporated": [
     "GNX"
   ],
-  "Asia": [],
   "Aston Martin": [
     "DB AR1",
     "DB-7 GT Coupe",
@@ -900,7 +893,6 @@ const rawVehicleMakes = {
     "Roadster V8"
   ],
   "Bramwith": [],
-  "Bristol": [],
   "Bugatti": [
     "Chiron",
     "Chiron Pur Sport",
@@ -1060,15 +1052,10 @@ const rawVehicleMakes = {
     "XTS Hearse",
     "XTS Limo"
   ],
-  "Carbodies": [],
   "Caterham": [],
   "CCC Engineering": [
     "Duntov GT"
   ],
-  "CFMOTO": [],
-  "Changan": [],
-  "Chery": [],
-  "Chesil": [],
   "Chevrolet": [
     "Astro",
     "Astro 2WD (cargo)",
@@ -1461,7 +1448,6 @@ const rawVehicleMakes = {
   "Consulier Industries Inc": [
     "Consulier GTP"
   ],
-  "Corbin": [],
   "Corvette": [],
   "CUPRA": [
     "Ateca",
@@ -1502,7 +1488,6 @@ const rawVehicleMakes = {
     "Rocky",
     "Rocky 4WD"
   ],
-  "Daimler": [],
   "Datsun": [
     "200SX",
     "210",
@@ -1518,8 +1503,6 @@ const rawVehicleMakes = {
     "Sentra",
     "Stanza"
   ],
-  "David Brown": [],
-  "Dax": [],
   "De Tomaso": [],
   "DeLorean": [
     "DMC-12"
@@ -1671,7 +1654,6 @@ const rawVehicleMakes = {
     "W250 Pickup 4WD"
   ],
   "DS AUTOMOBILES": [],
-  "E-COBRA": [],
   "E. P. Dutton, Inc.": [
     "Funeral Coach"
   ],
@@ -2150,8 +2132,6 @@ const rawVehicleMakes = {
   "Freightliner": [
     "Sprinter"
   ],
-  "Gardner Douglas": [],
-  "GBS": [],
   "Geely": [],
   "General Motors": [
     "Coachbuilder Wagon"
@@ -2193,7 +2173,6 @@ const rawVehicleMakes = {
     "Tracker Van 4WD",
     "Tracker Van 4x4"
   ],
-  "Ginetta": [],
   "GMC": [
     "Acadia",
     "Acadia AWD",
@@ -2394,17 +2373,12 @@ const rawVehicleMakes = {
   "Goldacre": [
     "Goldacre Limited"
   ],
-  "Great Wall": [],
   "Grumman Allied Industries": [
     "LLV"
   ],
   "Grumman Olson": [
     "Kubvan"
   ],
-  "GWM": [],
-  "Healey": [],
-  "Hillman": [],
-  "Holden": [],
   "Honda": [
     "Accord",
     "Accord 2.0T Sport/Touring",
@@ -2791,7 +2765,6 @@ const rawVehicleMakes = {
     "VehiCROSS",
     "Vehicross 4WD"
   ],
-  "Iveco": [],
   "J.K. Motors": [
     "190E 2.3 MERC BENZ",
     "230E MERC BENZ",
@@ -2928,7 +2901,6 @@ const rawVehicleMakes = {
     "XKR",
     "XKR Convertible"
   ],
-  "JBA": [],
   "JBA Motorcars, Inc.": [
     "W-126/4 Series"
   ],
@@ -3025,7 +2997,6 @@ const rawVehicleMakes = {
     "Wrangler/TJ 4WD"
   ],
   "Jensen": [],
-  "Jiayuan": [],
   "Kandi": [
     "K27"
   ],
@@ -3275,9 +3246,6 @@ const rawVehicleMakes = {
     "Range Rover Velar P380",
     "Range Rover Velar P400 MHEV"
   ],
-  "LDV": [],
-  "Leapmotor": [],
-  "LEVC": [],
   "Lexus": [
     "CT 200h",
     "ES 250",
@@ -3402,7 +3370,6 @@ const rawVehicleMakes = {
     "UX 300h",
     "UX 300h AWD"
   ],
-  "Leyland": [],
   "Lincoln": [
     "Aviator",
     "Aviator 2WD",
@@ -3460,15 +3427,12 @@ const rawVehicleMakes = {
     "Town Car FFV",
     "Zephyr"
   ],
-  "Lister": [],
-  "Locust": [],
   "London Coach Co Inc": [
     "London Taxi"
   ],
   "London Taxi": [
     "London Taxi"
   ],
-  "London Taxis International": [],
   "Lordstown": [
     "Endurance"
   ],
@@ -3508,9 +3472,6 @@ const rawVehicleMakes = {
     "Air Touring AWD with 20 inch wheels",
     "Air Touring AWD with 21 inch wheels",
     "Air Touring AWD with 21inch wheels"
-  ],
-  "Mahindra": [
-    "TR40"
   ],
   "Maserati": [
     "222E",
@@ -3576,7 +3537,6 @@ const rawVehicleMakes = {
     "Spyder",
     "Spyder Cambiocorsa/GT/90 ANV"
   ],
-  "MAXUS": [],
   "Maybach": [
     "57",
     "57 Zeppelin",
@@ -4277,8 +4237,6 @@ const rawVehicleMakes = {
     "HS",
     "ZS"
   ],
-  "Micro": [],
-  "Microcar": [],
   "MINI": [
     "Clubman",
     "Clubman S",
@@ -4405,12 +4363,10 @@ const rawVehicleMakes = {
     "MV-1",
     "MV-1 CNG"
   ],
-  "MOKE": [],
   "Morgan": [
     "Plus Eight"
   ],
   "Morris": [],
-  "Nardini": [],
   "Nissan": [
     "200SX",
     "240SX",
@@ -4571,50 +4527,8 @@ const rawVehicleMakes = {
     "Z NISMO"
   ],
   "Noble": [],
-  "Oldsmobile": [
-    "88",
-    "Achieva",
-    "Alero",
-    "Aurora",
-    "Bravada",
-    "Bravada 2WD",
-    "Bravada AWD",
-    "Calais",
-    "Ciera SL",
-    "Ciera SL Wagon",
-    "Custom Cruiser",
-    "Custom Cruiser Wagon",
-    "Cutlass",
-    "Cutlass Calais",
-    "Cutlass Ciera",
-    "Cutlass Cruiser",
-    "Cutlass Cruiser Wagon",
-    "Cutlass Supreme",
-    "Cutlass Supreme Classic",
-    "Delta 88",
-    "Delta 88 Royale",
-    "Eighty-Eight",
-    "Eighty-Eight/Regency",
-    "Eighty-Eight/Regency/LSS",
-    "Firenza",
-    "Firenza Cruiser",
-    "Firenza Cruiser Wagon",
-    "Intrigue",
-    "Ninety-Eight",
-    "Ninety-Eight II",
-    "Ninety-Eight Regency",
-    "Ninety-Eight/Touring",
-    "Omega",
-    "Regency",
-    "Silhouette",
-    "Silhouette 2WD",
-    "Silhouette AWD",
-    "Toronado",
-    "Trofeo/Toronado"
-  ],
   "OMODA": [],
   "Opel": [],
-  "Other": [],
   "Pagani": [
     "Huayra",
     "Huayra Coupe",
@@ -4638,7 +4552,6 @@ const rawVehicleMakes = {
     "Pas-Syclone",
     "Pas-Typhoon"
   ],
-  "Perodua": [],
   "Peugeot": [
     "108",
     "2008",
@@ -4660,7 +4573,6 @@ const rawVehicleMakes = {
     "604 Sedan",
     "Rifter"
   ],
-  "Pilgrim": [],
   "Pininfarina": [
     "Spider"
   ],
@@ -4981,36 +4893,12 @@ const rawVehicleMakes = {
     "Turbo GT2",
     "Turbo Kit"
   ],
-  "Proton": [],
-  "Quantum": [],
   "Quantum Technologies": [
     "Chevrolet Cavalier"
   ],
   "Qvale": [
     "Detomaso Mangusta"
   ],
-  "Radical": [],
-  "Ram": [
-    "1500 2WD",
-    "1500 4WD",
-    "1500 Classic 2WD",
-    "1500 Classic 4WD",
-    "1500 HFE 2WD",
-    "1500 HO 4WD",
-    "1500 RHO 4WD",
-    "1500 TRX 4WD",
-    "C/V",
-    "C/V Cargo Van",
-    "C/V Tradesman",
-    "Promaster City"
-  ],
-  "RAM": [
-    "1500",
-    "2500",
-    "3500",
-    "4500"
-  ],
-  "Raptor": [],
   "Red Shift Ltd.": [
     "Delta 204T"
   ],
@@ -5306,7 +5194,6 @@ const rawVehicleMakes = {
     "Octavia",
     "Superb"
   ],
-  "Skywell": [],
   "Smart": [],
   "smart": [
     "EQ fortwo (convertible)",
@@ -5332,7 +5219,6 @@ const rawVehicleMakes = {
     "Viper"
   ],
   "SsangYong": [],
-  "Standard": [],
   "Sterling": [
     "825",
     "827"
@@ -5428,7 +5314,6 @@ const rawVehicleMakes = {
     "XV Crosstrek AWD",
     "XV Crosstrek Hybrid AWD"
   ],
-  "Sunbeam": [],
   "Superior Coaches Div E.p. Dutton": [
     "Funeral Coach 2WD"
   ],
@@ -6095,8 +5980,6 @@ const rawVehicleMakes = {
     "Wetl 850I",
     "Wetl Testarossa"
   ],
-  "Westfield": [],
-  "Wiesmann": [],
   "XPENG": [],
   "Yugo": [
     "GV",
@@ -8862,11 +8745,6 @@ const curatedVehicleCatalog = {
       "Cross Country"
     ]
   },
-  "Other": {
-    "models": [],
-    "types": {},
-    "specs": []
-  },
   "Mercedes": {
     "models": [
       "A-Class",
@@ -9017,15 +8895,8 @@ const curatedVehicleCatalog = {
 const allowedVehicleMakes = [
   "Abarth",
   "AC",
-  "AION",
-  "Aixam",
-  "AK",
   "Alfa Romeo",
-  "Allard",
   "Alpine",
-  "Alvis",
-  "Ariel",
-  "Asia",
   "Aston Martin",
   "Audi",
   "Austin",
@@ -9034,62 +8905,40 @@ const allowedVehicleMakes = [
   "Bentley",
   "BMW",
   "Bramwith",
-  "Bristol",
   "Bugatti",
   "Buick",
   "BYD",
   "Cadillac",
-  "Carbodies",
   "Caterham",
-  "CFMOTO",
-  "Changan",
-  "Chery",
-  "Chesil",
   "Chevrolet",
   "Chrysler",
   "Citroen",
-  "Corbin",
   "Corvette",
   "CUPRA",
   "Dacia",
   "Daewoo",
   "Daihatsu",
-  "Daimler",
   "Datsun",
-  "David Brown",
-  "Dax",
   "De Tomaso",
   "Dodge",
   "DS AUTOMOBILES",
-  "E-COBRA",
   "Ferrari",
   "Fiat",
   "Fisker",
   "Ford",
-  "Gardner Douglas",
-  "GBS",
   "Geely",
   "Genesis",
-  "Ginetta",
   "GMC",
-  "Great Wall",
-  "GWM",
-  "Healey",
-  "Hillman",
-  "Holden",
   "Honda",
   "Hummer",
   "Hyundai",
   "INEOS",
   "Infiniti",
   "Isuzu",
-  "Iveco",
   "JAECOO",
   "Jaguar",
-  "JBA",
   "Jeep",
   "Jensen",
-  "Jiayuan",
   "KGM",
   "Kia",
   "Koenigsegg",
@@ -9097,51 +8946,30 @@ const allowedVehicleMakes = [
   "Lamborghini",
   "Lancia",
   "Land Rover",
-  "LDV",
-  "Leapmotor",
-  "LEVC",
   "Lexus",
-  "Leyland",
   "Lincoln",
-  "Lister",
-  "Locust",
-  "London Taxis International",
   "Lotus",
-  "Mahindra",
   "Maserati",
-  "MAXUS",
   "Maybach",
   "Mazda",
   "McLaren",
   "Mercedes-Benz",
   "MEV",
   "MG",
-  "Micro",
-  "Microcar",
   "MINI",
   "Mitsubishi",
-  "MOKE",
   "Morgan",
   "Morris",
-  "Nardini",
   "Nissan",
   "Noble",
-  "Oldsmobile",
   "OMODA",
   "Opel",
   "Panther",
-  "Perodua",
   "Peugeot",
-  "Pilgrim",
   "Plymouth",
   "Polestar",
   "Pontiac",
   "Porsche",
-  "Proton",
-  "Quantum",
-  "Radical",
-  "Ram",
-  "Raptor",
   "Reliant",
   "Renault",
   "Rolls-Royce",
@@ -9151,12 +8979,9 @@ const allowedVehicleMakes = [
   "SEAT",
   "Shelby",
   "Skoda",
-  "Skywell",
   "Smart",
   "SsangYong",
-  "Standard",
   "Subaru",
-  "Sunbeam",
   "Suzuki",
   "Tesla",
   "Toyota",
@@ -9167,13 +8992,77 @@ const allowedVehicleMakes = [
   "Volkswagen",
   "Volvo",
   "VRS",
-  "Westfield",
-  "Wiesmann",
   "XPENG",
   "Yugo",
   "Zenos"
 ];
 
+
+const hiddenVehicleMakes = new Set([
+  "AION",
+  "Aixam",
+  "AK",
+  "Allard",
+  "Alvis",
+  "Ariel",
+  "Asia",
+  "Bristol",
+  "Carbodies",
+  "CFMOTO",
+  "Changan",
+  "Chery",
+  "Chesil",
+  "Corbin",
+  "Daimler",
+  "David Brown",
+  "Dax",
+  "E- cobra",
+  "E-COBRA",
+  "E-Cobra",
+  "Gardner Douglas",
+  "GBS",
+  "Ginetta",
+  "Great Wall",
+  "GWM",
+  "Healey",
+  "Hillman",
+  "Holden",
+  "IVECO",
+  "Iveco",
+  "JBA",
+  "Jiayuan",
+  "Jiayun",
+  "LDV",
+  "Leapmotor",
+  "LEVC",
+  "Leyland",
+  "Lister",
+  "Locust",
+  "London Taxis",
+  "London Taxis International",
+  "Mahindra",
+  "MAXUS",
+  "Maxus",
+  "Micro",
+  "Microcar",
+  "MOKE",
+  "Nardini",
+  "Oldsmobile",
+  "Other",
+  "Perodua",
+  "Pilgrim",
+  "Proton",
+  "Quantum",
+  "Radical",
+  "RAM",
+  "Ram",
+  "Raptor",
+  "Skywell",
+  "Standard",
+  "Sunbeam",
+  "Westfield",
+  "Wiesmann",
+].map((make) => normalise(make)));
 
 // Kerb uses the curated UK catalogue below for public dropdowns.
 // The large rawVehicleMakes object above is intentionally preserved as a fallback/source list,
@@ -9185,17 +9074,14 @@ const makeAliases = {
   "CUPRA": ["Cupra"],
   "DS": ["DS AUTOMOBILES"],
   "Fiat": ["FIAT"],
-  "GWM": ["Great Wall"],
   "Hummer": ["HUMMER"],
   "INEOS": ["INEOS Automotive"],
   "KGM": ["SsangYong"],
-  "MAXUS": ["LDV"],
   "McLaren": ["McLaren Automotive"],
   "Mercedes-Benz": ["Mercedes", "Mercedes Benz"],
   "MG": ["MG Motor UK"],
   "MINI": ["Mini"],
   "OMODA": ["Omoda"],
-  "Ram": ["RAM"],
   "Skoda": ["Škoda"],
   "Vauxhall": ["Opel"],
 };
@@ -9389,7 +9275,7 @@ function buildVehicleData() {
   const makes = naturalSort([
     ...allowedVehicleMakes,
     ...Object.keys(curatedVehicleCatalog),
-  ]);
+  ]).filter((make) => !hiddenVehicleMakes.has(normalise(make)));
 
   const modelsByMake = {};
   const detailsByMake = {};
