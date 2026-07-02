@@ -52,6 +52,17 @@ const modelNewPriceGuide = {
   "BMW|X1": 39000,
   "BMW|X3": 54000,
   "BMW|X5": 76000,
+  "BMW|M2": 62000,
+  "BMW|M3": 85000,
+  "BMW|M4": 88000,
+  "BMW|M5": 115000,
+  "Audi|S3": 50000,
+  "Audi|RS3": 65000,
+  "Audi|S4": 62000,
+  "Audi|RS4": 85000,
+  "Audi|S5": 67000,
+  "Audi|RS5": 90000,
+  "Mercedes-Benz|AMG GT": 125000,
 
   "Audi|A1": 25000,
   "Audi|A3": 35000,
@@ -121,6 +132,11 @@ const marketAnchors = [
   { make: "BMW", model: "4 Series", detailIncludes: "428i", baseYear: 2015, baseMileage: 65000, low: 9500, high: 13500, mileageRate: 0.07 },
   { make: "BMW", model: "4 Series", detailIncludes: "430i", baseYear: 2021, baseMileage: 45000, low: 22000, high: 29000, mileageRate: 0.12 },
   { make: "BMW", model: "4 Series", detailIncludes: "M440i", baseYear: 2021, baseMileage: 45000, low: 34500, high: 46000, mileageRate: 0.16 },
+
+  { make: "BMW", model: "M2", detailIncludes: "", baseYear: 2021, baseMileage: 35000, low: 36500, high: 52000, mileageRate: 0.16 },
+  { make: "BMW", model: "M3", detailIncludes: "", baseYear: 2021, baseMileage: 35000, low: 54000, high: 72000, mileageRate: 0.22 },
+  { make: "BMW", model: "M4", detailIncludes: "", baseYear: 2021, baseMileage: 35000, low: 54000, high: 75000, mileageRate: 0.22 },
+  { make: "BMW", model: "M5", detailIncludes: "", baseYear: 2021, baseMileage: 40000, low: 56000, high: 78000, mileageRate: 0.24 },
   { make: "BMW", model: "5 Series", detailIncludes: "520d", baseYear: 2021, baseMileage: 50000, low: 18500, high: 26000, mileageRate: 0.12 },
   { make: "BMW", model: "5 Series", detailIncludes: "530e", baseYear: 2021, baseMileage: 50000, low: 20000, high: 29000, mileageRate: 0.12 },
   { make: "BMW", model: "X3", detailIncludes: "xDrive20d", baseYear: 2021, baseMileage: 50000, low: 24500, high: 33500, mileageRate: 0.14 },
@@ -135,6 +151,10 @@ const marketAnchors = [
   { make: "Audi", model: "Q5", detailIncludes: "", baseYear: 2021, baseMileage: 50000, low: 26500, high: 38500, mileageRate: 0.14 },
   { make: "Audi", model: "S3", detailIncludes: "", baseYear: 2021, baseMileage: 45000, low: 25500, high: 36000, mileageRate: 0.12 },
   { make: "Audi", model: "RS3", detailIncludes: "", baseYear: 2021, baseMileage: 40000, low: 41000, high: 56000, mileageRate: 0.18 },
+  { make: "Audi", model: "S4", detailIncludes: "", baseYear: 2021, baseMileage: 45000, low: 28500, high: 40000, mileageRate: 0.14 },
+  { make: "Audi", model: "RS4", detailIncludes: "", baseYear: 2021, baseMileage: 40000, low: 50000, high: 67500, mileageRate: 0.22 },
+  { make: "Audi", model: "S5", detailIncludes: "", baseYear: 2021, baseMileage: 45000, low: 32000, high: 45500, mileageRate: 0.15 },
+  { make: "Audi", model: "RS5", detailIncludes: "", baseYear: 2021, baseMileage: 40000, low: 51000, high: 70000, mileageRate: 0.22 },
 
   // Mercedes
   { make: "Mercedes-Benz", model: "A-Class", detailIncludes: "A180", baseYear: 2021, baseMileage: 45000, low: 15000, high: 22000, mileageRate: 0.075 },
@@ -226,8 +246,8 @@ function getAnchor({ make, model, modelDetail }) {
   return matches[0] || null;
 }
 
-function getTrimFactor(modelDetail) {
-  const detail = cleanText(modelDetail).toLowerCase();
+function getTrimFactor(modelDetail, variant) {
+  const detail = `${cleanText(modelDetail)} ${cleanText(variant)}`.toLowerCase();
   let factor = 1;
 
   if (detail.includes("black edition")) factor *= 1.06;
@@ -245,8 +265,8 @@ function getTrimFactor(modelDetail) {
   return factor;
 }
 
-function getBodyFactor(bodyType, modelDetail) {
-  const text = `${bodyType || ""} ${modelDetail || ""}`.toLowerCase();
+function getBodyFactor(bodyType, modelDetail, variant) {
+  const text = `${bodyType || ""} ${modelDetail || ""} ${variant || ""}`.toLowerCase();
   let factor = 1;
 
   if (text.includes("convertible")) factor *= 1.06;
@@ -324,11 +344,11 @@ function fallbackAgeFactor(age, fuelType) {
   return Math.max(0.08, base[base.length - 1] * Math.pow(0.94, age - base.length + 1));
 }
 
-function getNewPriceGuide({ make, model, modelDetail }) {
+function getNewPriceGuide({ make, model, modelDetail, variant }) {
   const cleanMake = normaliseMake(make);
   const modelKey = `${cleanMake}|${cleanText(model)}`;
   const base = modelNewPriceGuide[modelKey] || makeFallbackNewPriceGuide[cleanMake] || 24000;
-  return roundToNearestHundred(base * getTrimFactor(modelDetail));
+  return roundToNearestHundred(base * getTrimFactor(modelDetail, variant));
 }
 
 function buildFallbackRange(input) {
@@ -343,8 +363,8 @@ function buildFallbackRange(input) {
   let mid =
     newPriceGuide *
       fallbackAgeFactor(age, input.fuelType) *
-      getTrimFactor(input.modelDetail) *
-      getBodyFactor(input.bodyType, input.modelDetail) *
+      getTrimFactor(input.modelDetail, input.variant) *
+      getBodyFactor(input.bodyType, input.modelDetail, input.variant) *
       getFuelFactor(input.fuelType, age, null) *
       getGearboxFactor(input.gearbox, input.modelDetail) -
     mileageDelta * mileageRate;
@@ -372,8 +392,8 @@ function buildAnchorRange(input, anchor) {
   const mileage = cleanNumber(input.mileage);
   const age = Math.max(CURRENT_YEAR - year, 0);
   const yFactor = yearFactor(year, anchor.baseYear, input.fuelType, anchor);
-  const bodyFactor = getBodyFactor(input.bodyType, input.modelDetail);
-  const trimFactor = anchor.detailIncludes ? 1 : getTrimFactor(input.modelDetail);
+  const bodyFactor = getBodyFactor(input.bodyType, input.modelDetail, input.variant);
+  const trimFactor = anchor.detailIncludes ? getTrimFactor("", input.variant) : getTrimFactor(input.modelDetail, input.variant);
   const fuelFactor = getFuelFactor(input.fuelType, age, anchor);
   const gearboxFactor = getGearboxFactor(input.gearbox, input.modelDetail);
   const mileageAdjustment = (mileage - anchor.baseMileage) * (anchor.mileageRate || 0.08);
@@ -438,7 +458,8 @@ export function calculateKerbMarketGuide(input = {}) {
   const cleanInput = {
     make,
     model,
-    modelDetail: cleanText(input.modelDetail || input.variant),
+    modelDetail: cleanText(input.modelDetail || input.model_detail),
+    variant: cleanText(input.variant || input.spec),
     year,
     mileage,
     fuelType: cleanText(input.fuelType || input.fuel || input.fuel_type),
