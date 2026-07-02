@@ -106,6 +106,7 @@ function getSafeValuation({
   make,
   model,
   modelDetail,
+  variant,
   year,
   mileage,
   bodyType,
@@ -119,6 +120,7 @@ function getSafeValuation({
     make,
     model,
     modelDetail,
+    variant,
     year,
     mileage,
     bodyType,
@@ -286,6 +288,7 @@ export async function POST(request) {
     const make = cleanText(formData.get("make"));
     const model = cleanText(formData.get("model"));
     const modelDetail = cleanText(formData.get("model_detail"));
+    const variant = cleanText(formData.get("variant")) || cleanText(formData.get("spec"));
     const year = cleanNumber(formData.get("year"));
     const mileage = cleanNumber(formData.get("mileage"));
     const bodyType = cleanText(formData.get("body_type"));
@@ -299,6 +302,7 @@ export async function POST(request) {
       make,
       model,
       modelDetail,
+      variant,
       year,
       mileage,
       bodyType,
@@ -320,7 +324,7 @@ export async function POST(request) {
       );
     }
 
-    const title = [year, make, model, modelDetail].filter(Boolean).join(" ");
+    const title = [year, make, model, modelDetail, variant].filter(Boolean).join(" ");
 
     const listing = {
       status: "approved",
@@ -347,6 +351,7 @@ export async function POST(request) {
       make,
       model,
       model_detail: modelDetail,
+      variant,
       year,
       mileage,
       body_type: bodyType,
