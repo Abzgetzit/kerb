@@ -694,11 +694,24 @@ export default function ListingPage() {
           );
         }
 
-        if (result.analytics) {
-          setOwnerAnalytics((current) => ({
-            ...(current || {}),
-            ...result.analytics,
-          }));
+        if (result.analytics || result.counted) {
+          setOwnerAnalytics((current) => {
+            const currentToday = Number(current?.views_today || 0);
+            const current14Days = Number(current?.views_last_14_days || 0);
+            const resultToday = Number(result.analytics?.views_today || 0);
+            const result14Days = Number(result.analytics?.views_last_14_days || 0);
+
+            return {
+              ...(current || {}),
+              ...(result.analytics || {}),
+              view_count: Number(result.view_count || result.analytics?.view_count || current?.view_count || 0),
+              // Keep the UI moving immediately even if the account API has not
+              // refreshed yet. The direct listing-views API also saves the
+              // event row so these numbers stay correct after reloads.
+              views_today: Math.max(resultToday, currentToday + 1),
+              views_last_14_days: Math.max(result14Days, current14Days + 1),
+            };
+          });
         }
       } catch (error) {
         viewTrackedForListingRef.current = "";
