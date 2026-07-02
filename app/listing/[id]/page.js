@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
@@ -404,6 +404,7 @@ export default function ListingPage() {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isSavingListing, setIsSavingListing] = useState(false);
+  const viewTrackedForListingRef = useRef("");
 
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [isSendingEnquiry, setIsSendingEnquiry] = useState(false);
@@ -642,15 +643,26 @@ export default function ListingPage() {
 
   useEffect(() => {
     async function trackListingView() {
-      if (!id || !car?.id || !hasCheckedCurrentUser || isSellerOwner) return;
+      const listingId = String(id || car?.id || "").trim();
 
-      const storageKey = `kerb-listing-viewed:${id}`;
-      const lastViewedAt = Number(localStorage.getItem(storageKey) || 0);
-      const thirtyMinutes = 30 * 60 * 1000;
+      if (!listingId || !car?.id || !hasCheckedCurrentUser) return;
 
-      if (lastViewedAt && Date.now() - lastViewedAt < thirtyMinutes) return;
+      /*
+        Kerb view rule:
+        - Every full listing page load counts as 1 view.
+        - Browser refresh counts again.
+        - Logged-out viewers count.
+        - Logged-in viewers count.
+        - Seller/owner views count too.
+        - No localStorage cooldown, so 100 refreshes = 100 views.
 
-      localStorage.setItem(storageKey, String(Date.now()));
+        This ref only stops duplicate counts from normal React re-renders on the
+        same page load. A real browser refresh creates a new page instance, so it
+        still counts again.
+      */
+      if (viewTrackedForListingRef.current === listingId) return;
+
+      viewTrackedForListingRef.current = listingId;
 
       try {
         const response = await fetch("/api/listing-views", {
@@ -659,8 +671,8 @@ export default function ListingPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            listing_id: String(id),
-            viewer_email: currentEmail,
+            listing_id: listingId,
+            viewer_email: currentEmail || "",
           }),
         });
 
@@ -670,7 +682,7 @@ export default function ListingPage() {
           throw new Error(result.error || "Could not record listing view.");
         }
 
-        if (!result.skipped && result.view_count) {
+        if (!result.skipped && result.view_count !== undefined && result.view_count !== null) {
           setCar((current) =>
             current
               ? {
@@ -682,13 +694,13 @@ export default function ListingPage() {
           );
         }
       } catch (error) {
-        localStorage.removeItem(storageKey);
+        viewTrackedForListingRef.current = "";
         console.error("Listing view tracking error:", error);
       }
     }
 
     trackListingView();
-  }, [id, car?.id, hasCheckedCurrentUser, isSellerOwner, currentEmail]);
+  }, [id, car?.id, hasCheckedCurrentUser, currentEmail]);
 
   const specItems = [
     mileage
