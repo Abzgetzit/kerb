@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -28,9 +29,84 @@ function getResultRow(data) {
   return data || null;
 }
 
+function noStoreJson(body, init = {}) {
+  return NextResponse.json(body, {
+    ...init,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      ...(init.headers || {}),
+    },
+  });
+}
+
+async function getListingViewAnalytics(listingId, fallbackViewCount = 0) {
+  const nowMs = Date.now();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const todayStartMs = todayStart.getTime();
+  const sevenDaysAgoMs = nowMs - 7 * 24 * 60 * 60 * 1000;
+  const fourteenDaysAgoMs = nowMs - 14 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgoMs = nowMs - 30 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = new Date(thirtyDaysAgoMs).toISOString();
+
+  const { data, error } = await supabase
+    .from("kerb_listing_view_events")
+    .select("created_at")
+    .eq("listing_id", listingId)
+    .gte("created_at", thirtyDaysAgo);
+
+  if (error) {
+    console.warn("Kerb recent view analytics could not be loaded:", error.message);
+
+    return {
+      view_count: Number(fallbackViewCount || 0),
+      views_today: 0,
+      views_last_7_days: 0,
+      views_last_14_days: 0,
+      views_last_30_days: 0,
+    };
+  }
+
+  return (data || []).reduce(
+    (analytics, row) => {
+      const createdAt = row.created_at ? new Date(row.created_at) : null;
+
+      if (!createdAt || Number.isNaN(createdAt.getTime())) {
+        return analytics;
+      }
+
+      const createdAtMs = createdAt.getTime();
+
+      analytics.views_last_30_days += 1;
+
+      if (createdAtMs >= todayStartMs) {
+        analytics.views_today += 1;
+      }
+
+      if (createdAtMs >= sevenDaysAgoMs) {
+        analytics.views_last_7_days += 1;
+      }
+
+      if (createdAtMs >= fourteenDaysAgoMs) {
+        analytics.views_last_14_days += 1;
+      }
+
+      return analytics;
+    },
+    {
+      view_count: Number(fallbackViewCount || 0),
+      views_today: 0,
+      views_last_7_days: 0,
+      views_last_14_days: 0,
+      views_last_30_days: 0,
+    }
+  );
+}
+
 export async function POST(request) {
   if (!supabase) {
-    return NextResponse.json(
+    return noStoreJson(
       { error: "Supabase server client is not configured." },
       { status: 500 }
     );
@@ -47,10 +123,7 @@ export async function POST(request) {
   const listingId = cleanText(body.listing_id || body.listingId);
 
   if (!listingId) {
-    return NextResponse.json(
-      { error: "Missing listing_id." },
-      { status: 400 }
-    );
+    return noStoreJson({ error: "Missing listing_id." }, { status: 400 });
   }
 
   const viewerEmail = cleanText(body.viewer_email).toLowerCase() || null;
@@ -59,6 +132,8 @@ export async function POST(request) {
 
   // Preferred path: one atomic database function call.
   // This guarantees every request increments the counter by 1, including refreshes.
+  // The SQL function also inserts a row into kerb_listing_view_events, which powers
+  // Today / 7 days / 14 days / 30 days seller stats.
   const { data: rpcData, error: rpcError } = await supabase.rpc(
     "kerb_record_listing_view",
     {
@@ -71,12 +146,15 @@ export async function POST(request) {
 
   if (!rpcError) {
     const row = getResultRow(rpcData);
+    const viewCount = Number(row?.view_count || 0);
+    const analytics = await getListingViewAnalytics(listingId, viewCount);
 
-    return NextResponse.json({
+    return noStoreJson({
       success: true,
       counted: true,
-      view_count: Number(row?.view_count || 0),
+      view_count: viewCount,
       last_viewed_at: row?.last_viewed_at || null,
+      analytics,
     });
   }
 
@@ -90,11 +168,11 @@ export async function POST(request) {
     .maybeSingle();
 
   if (listingError) {
-    return NextResponse.json({ error: listingError.message }, { status: 500 });
+    return noStoreJson({ error: listingError.message }, { status: 500 });
   }
 
   if (!listing) {
-    return NextResponse.json({ error: "Listing not found." }, { status: 404 });
+    return noStoreJson({ error: "Listing not found." }, { status: 404 });
   }
 
   const now = new Date().toISOString();
@@ -124,13 +202,17 @@ export async function POST(request) {
     .single();
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    return noStoreJson({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({
+  const viewCount = Number(updatedListing?.view_count || nextViewCount);
+  const analytics = await getListingViewAnalytics(listingId, viewCount);
+
+  return noStoreJson({
     success: true,
     counted: true,
-    view_count: Number(updatedListing?.view_count || nextViewCount),
+    view_count: viewCount,
     last_viewed_at: updatedListing?.last_viewed_at || now,
+    analytics,
   });
 }
