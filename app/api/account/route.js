@@ -254,8 +254,15 @@ export async function GET(request) {
       return counts;
     }, new Map());
 
-    const sevenDaysAgo = getDaysAgoIso(7);
-    const thirtyDaysAgo = getDaysAgoIso(30);
+    const nowMs = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
+    const sevenDaysAgoMs = nowMs - 7 * 24 * 60 * 60 * 1000;
+    const fourteenDaysAgoMs = nowMs - 14 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgoMs = nowMs - 30 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = new Date(thirtyDaysAgoMs).toISOString();
+
     const { data: viewEventRows, error: viewEventError } = await supabase
       .from("kerb_listing_view_events")
       .select("listing_id, created_at")
@@ -274,15 +281,26 @@ export async function GET(request) {
             return groups;
           }
 
+          const createdAtMs = createdAt.getTime();
           const current = groups.get(listingId) || {
+            views_today: 0,
             views_last_7_days: 0,
+            views_last_14_days: 0,
             views_last_30_days: 0,
           };
 
           current.views_last_30_days += 1;
 
-          if (row.created_at >= sevenDaysAgo) {
+          if (createdAtMs >= todayStartMs) {
+            current.views_today += 1;
+          }
+
+          if (createdAtMs >= sevenDaysAgoMs) {
             current.views_last_7_days += 1;
+          }
+
+          if (createdAtMs >= fourteenDaysAgoMs) {
+            current.views_last_14_days += 1;
           }
 
           groups.set(listingId, current);
@@ -331,7 +349,9 @@ export async function GET(request) {
       ...listing,
       analytics: {
         view_count: Number(listing.view_count || 0),
+        views_today: Number(viewEventAnalytics.views_today || 0),
         views_last_7_days: Number(viewEventAnalytics.views_last_7_days || 0),
+        views_last_14_days: Number(viewEventAnalytics.views_last_14_days || 0),
         views_last_30_days: Number(viewEventAnalytics.views_last_30_days || 0),
         save_count: savedCountsByListingId.get(listingId) || 0,
         enquiry_count: listingEnquiries.length,
