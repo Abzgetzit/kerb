@@ -693,6 +693,13 @@ export default function ListingPage() {
               : current
           );
         }
+
+        if (result.analytics) {
+          setOwnerAnalytics((current) => ({
+            ...(current || {}),
+            ...result.analytics,
+          }));
+        }
       } catch (error) {
         viewTrackedForListingRef.current = "";
         console.error("Listing view tracking error:", error);
@@ -1274,16 +1281,16 @@ export default function ListingPage() {
                   {ownerAnalytics && (
                     <>
                       <div>
-                        <span>7 days</span>
+                        <span>Today</span>
                         <strong>
-                          {formatNumber(ownerAnalytics.views_last_7_days || 0)}
+                          {formatNumber(ownerAnalytics.views_today || 0)}
                         </strong>
                       </div>
 
                       <div>
-                        <span>30 days</span>
+                        <span>14 days</span>
                         <strong>
-                          {formatNumber(ownerAnalytics.views_last_30_days || 0)}
+                          {formatNumber(ownerAnalytics.views_last_14_days || 0)}
                         </strong>
                       </div>
 
