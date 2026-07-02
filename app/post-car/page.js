@@ -7,6 +7,7 @@ import {
   conditionOptions,
   getVehicleModelDetailOptions,
   getVehicleModelDetailYears,
+  getVehicleSpecOptions,
   isVehicleModelDetailYearCompatible,
   vehicleMakes,
 } from "../lib/vehicle-data";
@@ -91,6 +92,7 @@ export default function PostCarPage() {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [modelDetail, setModelDetail] = useState("");
+  const [modelSpec, setModelSpec] = useState("");
   const [customModel, setCustomModel] = useState("");
   const [year, setYear] = useState("");
   const [mileage, setMileage] = useState("");
@@ -143,6 +145,10 @@ export default function PostCarPage() {
     make && selectedModel && model !== "Other"
       ? getVehicleModelDetailOptions({ make, model: selectedModel, year })
       : [];
+  const availableModelSpecs =
+    make && selectedModel && model !== "Other"
+      ? getVehicleSpecOptions({ make, model: selectedModel })
+      : [];
   const selectedVariantYears = modelDetail
     ? getVehicleModelDetailYears({ make, model: selectedModel, detail: modelDetail })
     : "";
@@ -176,6 +182,7 @@ export default function PostCarPage() {
       gearbox,
       bodyType,
       condition,
+      variant: modelSpec,
     });
   }, [
     make,
@@ -187,6 +194,7 @@ export default function PostCarPage() {
     gearbox,
     bodyType,
     condition,
+    modelSpec,
     variantYearError,
   ]);
 
@@ -315,6 +323,7 @@ export default function PostCarPage() {
 
     formData.set("model", finalModel);
     formData.set("model_detail", modelDetail);
+    formData.set("variant", modelSpec);
     formData.set("body_type", bodyType);
     formData.set("condition", condition);
     formData.set("finance_available", financeAvailable);
@@ -427,6 +436,7 @@ export default function PostCarPage() {
                   submittedListing.make,
                   submittedListing.model,
                   submittedListing.model_detail,
+                  submittedListing.variant,
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -480,7 +490,7 @@ export default function PostCarPage() {
         <div className="heroCard">
           <h3>Listing checklist</h3>
           <ul>
-            <li>Choose the make, model, type and body style</li>
+            <li>Choose the make, model, type, spec and body style</li>
             <li>Add mileage, year, condition and price</li>
             <li>Upload clear car photos</li>
             <li>Submit your seller details</li>
@@ -508,6 +518,7 @@ export default function PostCarPage() {
                   setMake(e.target.value);
                   setModel("");
                   setModelDetail("");
+                  setModelSpec("");
                   setCustomModel("");
                 }}
               >
@@ -537,10 +548,11 @@ export default function PostCarPage() {
                     onChange={(e) => {
                       setModel(e.target.value);
                       setModelDetail("");
+                      setModelSpec("");
                     }}
                     required={!customModel}
                   >
-                    <option value="">Select model line</option>
+                    <option value="">Select model</option>
                     {availableModels.map((modelName) => (
                       <option key={modelName} value={modelName}>
                         {modelName}
@@ -566,7 +578,7 @@ export default function PostCarPage() {
 
             {(availableModelDetails.length > 0 || modelDetail) && (
               <label>
-                Type / variant
+                Type / engine
                 <select
                   value={modelDetail}
                   onChange={(e) => setModelDetail(e.target.value)}
@@ -595,6 +607,27 @@ export default function PostCarPage() {
                     {variantYearError}
                   </small>
                 )}
+              </label>
+            )}
+
+            {(availableModelSpecs.length > 0 || modelSpec) && (
+              <label>
+                Spec / trim
+                <select
+                  name="variant"
+                  value={modelSpec}
+                  onChange={(e) => setModelSpec(e.target.value)}
+                >
+                  <option value="">I am not sure / standard spec</option>
+                  {modelSpec && !availableModelSpecs.includes(modelSpec) && (
+                    <option value={modelSpec}>{modelSpec}</option>
+                  )}
+                  {availableModelSpecs.map((spec) => (
+                    <option key={spec} value={spec}>
+                      {spec}
+                    </option>
+                  ))}
+                </select>
               </label>
             )}
 
