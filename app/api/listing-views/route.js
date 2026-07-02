@@ -15,6 +15,19 @@ function cleanText(value) {
   return String(value || "").trim();
 }
 
+function getRequestIp(request) {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")?.[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    ""
+  );
+}
+
+function getResultRow(data) {
+  if (Array.isArray(data)) return data[0] || null;
+  return data || null;
+}
+
 export async function POST(request) {
   if (!supabase) {
     return NextResponse.json(
@@ -23,30 +36,56 @@ export async function POST(request) {
     );
   }
 
-  let body;
+  let body = {};
 
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid request body." },
-      { status: 400 }
-    );
+    body = {};
   }
 
-  const listingId = cleanText(body?.listing_id);
-  const viewerEmail = cleanText(body?.viewer_email).toLowerCase();
+  const listingId = cleanText(body.listing_id || body.listingId);
 
   if (!listingId) {
     return NextResponse.json(
-      { error: "Listing ID is required." },
+      { error: "Missing listing_id." },
       { status: 400 }
     );
   }
 
+  const viewerEmail = cleanText(body.viewer_email).toLowerCase() || null;
+  const viewerUserAgent = cleanText(request.headers.get("user-agent")) || null;
+  const viewerIp = getRequestIp(request) || null;
+
+  // Preferred path: one atomic database function call.
+  // This guarantees every request increments the counter by 1, including refreshes.
+  const { data: rpcData, error: rpcError } = await supabase.rpc(
+    "kerb_record_listing_view",
+    {
+      p_listing_id: listingId,
+      p_viewer_email: viewerEmail,
+      p_viewer_ip: viewerIp,
+      p_user_agent: viewerUserAgent,
+    }
+  );
+
+  if (!rpcError) {
+    const row = getResultRow(rpcData);
+
+    return NextResponse.json({
+      success: true,
+      counted: true,
+      view_count: Number(row?.view_count || 0),
+      last_viewed_at: row?.last_viewed_at || null,
+    });
+  }
+
+  console.warn("Kerb view RPC unavailable, using fallback:", rpcError.message);
+
+  // Fallback path: still counts views, even if the SQL function has not been added yet.
   const { data: listing, error: listingError } = await supabase
     .from("kerb_listings")
-    .select("id, view_count, status")
+    .select("id, view_count")
     .eq("id", listingId)
     .maybeSingle();
 
@@ -55,58 +94,43 @@ export async function POST(request) {
   }
 
   if (!listing) {
-    return NextResponse.json(
-      { error: "Listing could not be found." },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
 
-  if (String(listing.status || "").toLowerCase() !== "approved") {
-    return NextResponse.json({
-      success: true,
-      skipped: true,
-      view_count: listing.view_count || 0,
-    });
-  }
-
+  const now = new Date().toISOString();
   const nextViewCount = Number(listing.view_count || 0) + 1;
-  const viewedAt = new Date().toISOString();
+
+  const { error: eventError } = await supabase
+    .from("kerb_listing_view_events")
+    .insert({
+      listing_id: listingId,
+      viewer_email: viewerEmail,
+      viewer_ip: viewerIp,
+      user_agent: viewerUserAgent,
+    });
+
+  if (eventError) {
+    console.warn("Kerb view event could not be saved:", eventError.message);
+  }
 
   const { data: updatedListing, error: updateError } = await supabase
     .from("kerb_listings")
     .update({
       view_count: nextViewCount,
-      last_viewed_at: viewedAt,
+      last_viewed_at: now,
     })
     .eq("id", listingId)
-    .select("id, view_count, last_viewed_at")
+    .select("view_count, last_viewed_at")
     .single();
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  try {
-    const { error: viewEventError } = await supabase
-      .from("kerb_listing_view_events")
-      .insert({
-        listing_id: listingId,
-        viewer_email: viewerEmail || null,
-        viewer_kind: viewerEmail ? "account" : "guest",
-        user_agent: cleanText(request.headers.get("user-agent")) || null,
-        created_at: viewedAt,
-      });
-
-    if (viewEventError) {
-      console.warn("Listing view event could not be stored:", viewEventError);
-    }
-  } catch (error) {
-    console.warn("Listing view event could not be stored:", error);
-  }
-
   return NextResponse.json({
     success: true,
-    view_count: updatedListing.view_count || nextViewCount,
-    last_viewed_at: updatedListing.last_viewed_at,
+    counted: true,
+    view_count: Number(updatedListing?.view_count || nextViewCount),
+    last_viewed_at: updatedListing?.last_viewed_at || now,
   });
 }
