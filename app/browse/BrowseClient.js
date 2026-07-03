@@ -1,7 +1,17 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import SiteMenu from "../components/SiteMenu";
+import { vehicleMakes } from "../lib/vehicle-data";
+
+const categoryLabels = {
+  "first-car": "First cars",
+  performance: "Performance cars",
+  "family-suv": "Family SUVs",
+  "electric-hybrid": "Electric & hybrid cars",
+  "newer-car": "New cars",
+};
 
 function price(value) {
   const n = Number(value || 0);
@@ -39,8 +49,90 @@ function mileage(car) {
   return `${n.toLocaleString("en-GB")} miles`;
 }
 
-export default function BrowseClient({ initialCars = [], initialLoadError = "" }) {
-  const cars = Array.isArray(initialCars) ? initialCars : [];
+function text(car) {
+  return [car.title, car.make, car.model, car.model_detail, car.variant, car.fuel, car.fuel_type, car.gearbox, car.body_type, car.condition, car.location, car.description, Array.isArray(car.features) ? car.features.join(" ") : car.features]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function hasFinance(car) {
+  const financeText = [car.finance, car.finance_available, car.finance_option, car.finance_options, car.payment_options, car.seller_finance]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return car.finance === true || car.finance_available === true || financeText.includes("finance") || financeText.includes("available");
+}
+
+function carPrice(car) {
+  return Number(car.price || car.asking_price || car.listing_price || 0);
+}
+
+function carMileage(car) {
+  return Number(car.mileage || car.miles || 0);
+}
+
+function categoryMatch(car, category) {
+  if (!category) return true;
+  if (String(car.listing_category || "").toLowerCase() === category) return true;
+
+  const blob = text(car);
+  const year = Number(car.year || 0);
+  const miles = carMileage(car);
+  const p = carPrice(car);
+  const body = String(car.body_type || "").toLowerCase();
+  const fuel = String(car.fuel || car.fuel_type || "").toLowerCase();
+  const currentYear = new Date().getFullYear();
+
+  if (category === "newer-car") return year >= currentYear - 3 || String(car.condition || "").toLowerCase().includes("new");
+  if (category === "electric-hybrid") return fuel.includes("electric") || fuel.includes("hybrid") || blob.includes("ev") || blob.includes("phev");
+  if (category === "family-suv") return body.includes("suv") || body.includes("4x4") || body.includes("crossover") || blob.includes("family suv") || blob.includes("7 seats");
+  if (category === "first-car") return p > 0 && p <= 10000 && (!miles || miles <= 90000) && (body.includes("hatchback") || ["fiesta", "corsa", "polo", "yaris", "aygo", "i10", "picanto", "clio"].some((term) => blob.includes(term)));
+  if (category === "performance") return ["performance", "m sport", "amg", "s line", "gti", "golf r", "m3", "m4", "m5", "rs3", "rs4", "s3", "type r", "cupra", "vrs", "quadrifoglio"].some((term) => blob.includes(term));
+
+  return true;
+}
+
+function sortCars(cars, sort) {
+  const items = [...cars];
+  if (sort === "price-low") return items.sort((a, b) => carPrice(a) - carPrice(b));
+  if (sort === "price-high") return items.sort((a, b) => carPrice(b) - carPrice(a));
+  if (sort === "mileage-low") return items.sort((a, b) => carMileage(a) - carMileage(b));
+  return items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+}
+
+export default function BrowseClient({ initialCars = [], initialFilters = {}, initialSearch = "", initialSort = "featured", initialLoadError = "" }) {
+  const [filters, setFilters] = useState({ ...initialFilters });
+  const [query, setQuery] = useState(initialSearch || "");
+  const [sort, setSort] = useState(initialSort || "featured");
+
+  const cars = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return sortCars(
+      (initialCars || []).filter((car) => {
+        const blob = text(car);
+        if (q && !blob.includes(q)) return false;
+        if (filters.make && String(car.make || "").toLowerCase() !== String(filters.make).toLowerCase()) return false;
+        if (filters.model && !blob.includes(String(filters.model).toLowerCase())) return false;
+        if (filters.location && !String(car.location || "").toLowerCase().includes(String(filters.location).toLowerCase())) return false;
+        if (filters.finance === "true" && !hasFinance(car)) return false;
+        if (filters.priceMin && carPrice(car) < Number(filters.priceMin)) return false;
+        if (filters.priceMax && carPrice(car) > Number(filters.priceMax)) return false;
+        if (filters.mileageMax && carMileage(car) > Number(filters.mileageMax)) return false;
+        if (!categoryMatch(car, filters.category)) return false;
+        return true;
+      }),
+      sort
+    );
+  }, [initialCars, filters, query, sort]);
+
+  const heading = filters.category ? categoryLabels[filters.category] || "Browse cars" : filters.finance === "true" ? "Cars with finance available" : "Browse cars for sale";
+
+  function updateFilter(name, value) {
+    setFilters((current) => ({ ...current, [name]: value, ...(name === "make" ? { model: "" } : {}) }));
+  }
+
+  const modelOptions = filters.make ? vehicleMakes[filters.make] || [] : [];
 
   return (
     <main className="page">
@@ -60,10 +152,23 @@ export default function BrowseClient({ initialCars = [], initialLoadError = "" }
       <section className="hero">
         <div>
           <p>Kerb marketplace</p>
-          <h1>Browse cars for sale</h1>
-          <span>{cars.length} {cars.length === 1 ? "car" : "cars"} available</span>
+          <h1>{heading}</h1>
+          <span>{cars.length} {cars.length === 1 ? "car" : "cars"} found</span>
         </div>
         <Link href="/sell-car" className="sellBtn">Sell your car for free</Link>
+      </section>
+
+      <section className="filters">
+        <input value={filters.location || ""} onChange={(e) => updateFilter("location", e.target.value)} placeholder="Town or city" />
+        <select value={filters.make || ""} onChange={(e) => updateFilter("make", e.target.value)}><option value="">Any make</option>{Object.keys(vehicleMakes).map((make) => <option key={make}>{make}</option>)}</select>
+        <select value={filters.model || ""} onChange={(e) => updateFilter("model", e.target.value)} disabled={!filters.make}><option value="">Any model</option>{modelOptions.map((model) => <option key={model}>{model}</option>)}</select>
+        <input value={filters.priceMin || ""} onChange={(e) => updateFilter("priceMin", e.target.value.replace(/[^0-9]/g, ""))} placeholder="£ Min" />
+        <input value={filters.priceMax || ""} onChange={(e) => updateFilter("priceMax", e.target.value.replace(/[^0-9]/g, ""))} placeholder="£ Max" />
+        <input value={filters.mileageMax || ""} onChange={(e) => updateFilter("mileageMax", e.target.value.replace(/[^0-9]/g, ""))} placeholder="Mileage max" />
+        <select value={filters.finance || ""} onChange={(e) => updateFilter("finance", e.target.value)}><option value="">Any finance</option><option value="true">Finance available</option></select>
+        <select value={filters.category || ""} onChange={(e) => updateFilter("category", e.target.value)}><option value="">All categories</option><option value="newer-car">New cars</option><option value="electric-hybrid">Electric & hybrid</option><option value="family-suv">Family SUVs</option><option value="first-car">First cars</option><option value="performance">Performance cars</option></select>
+        <input className="wide" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search make, model, fuel, location..." />
+        <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="featured">Newest first</option><option value="price-low">Price low to high</option><option value="price-high">Price high to low</option><option value="mileage-low">Lowest mileage</option></select>
       </section>
 
       {initialLoadError && <div className="notice">{initialLoadError}</div>}
@@ -76,21 +181,14 @@ export default function BrowseClient({ initialCars = [], initialLoadError = "" }
               <div>
                 <h2>{title(car)}</h2>
                 <p>{[car.fuel_type || car.fuel, car.gearbox, car.body_type].filter(Boolean).join(" • ") || "Used car listed on Kerb"}</p>
-                <div className="meta">
-                  {car.location && <span>{car.location}</span>}
-                  <span>{mileage(car)}</span>
-                  {car.finance_available && <span>Finance available</span>}
-                </div>
-                <strong>{price(car.price || car.asking_price)}</strong>
+                <div className="meta">{car.location && <span>{car.location}</span>}<span>{mileage(car)}</span>{hasFinance(car) && <span>Finance available</span>}</div>
+                <strong>{price(carPrice(car))}</strong>
               </div>
             </Link>
           ))}
         </section>
       ) : (
-        <section className="empty">
-          <h2>No cars listed yet</h2>
-          <p>New listings will appear here as soon as they go live.</p>
-        </section>
+        <section className="empty"><h2>No cars match these filters yet</h2><p>Try widening your filters or browse all cars on Kerb.</p><button type="button" onClick={() => setFilters({})}>Clear filters</button></section>
       )}
 
       <style jsx>{`
@@ -103,7 +201,10 @@ export default function BrowseClient({ initialCars = [], initialLoadError = "" }
         .hero p { margin: 0 0 8px; color: #0048ff; font-weight: 950; }
         h1 { margin: 0 0 10px; font-size: clamp(38px, 6vw, 72px); letter-spacing: -3px; line-height: 0.94; }
         .hero span { color: #53617a; font-weight: 900; }
-        .sellBtn { border-radius: 18px; background: #0048ff; color: white; padding: 15px 20px; text-decoration: none; font-weight: 950; }
+        .sellBtn, .empty button { border: none; border-radius: 18px; background: #0048ff; color: white; padding: 15px 20px; text-decoration: none; font-weight: 950; cursor: pointer; }
+        .filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; border: 1px solid #dfe8f7; border-radius: 24px; background: white; padding: 16px; }
+        input, select { min-height: 46px; border: 1px solid #d8e3f3; border-radius: 14px; padding: 0 12px; font-weight: 800; background: #fbfdff; }
+        .wide { grid-column: span 2; }
         .notice, .empty { border: 1px solid #dfe8f7; border-radius: 24px; background: white; padding: 24px; margin-bottom: 18px; }
         .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
         .card { background: white; color: inherit; text-decoration: none; border: 1px solid #dfe8f7; border-radius: 24px; overflow: hidden; box-shadow: 0 14px 40px rgba(14, 30, 70, 0.07); }
@@ -114,8 +215,8 @@ export default function BrowseClient({ initialCars = [], initialLoadError = "" }
         .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
         .meta span { background: #eef4ff; border-radius: 999px; padding: 7px 10px; font-size: 12px; font-weight: 900; }
         .card strong { font-size: 24px; }
-        @media (max-width: 900px) { .page { padding: 16px; } .links { display: none; } .hero { flex-direction: column; align-items: flex-start; } .grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .page { padding: 16px; } .links { display: none; } .hero { flex-direction: column; align-items: flex-start; } .filters, .grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 620px) { .filters, .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
       `}</style>
     </main>
   );
