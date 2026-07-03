@@ -58,7 +58,7 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
             <Link href="/new-cars" onClick={closeMenu}>New cars</Link>
             <Link href="/sell-car" onClick={closeMenu}>Sell your car</Link>
             <Link href="/electric-cars" onClick={closeMenu}>Electric cars</Link>
-            <Link href="/cars-on-finance" onClick={closeMenu}>Cars with finance available</Link>
+            <Link href="/cars-on-finance" onClick={closeMenu}>Finance</Link>
             <Link href="/guides" onClick={closeMenu}>Guides</Link>
             <Link href="/guides/how-to-sell-your-car" onClick={closeMenu}>How to sell your car</Link>
             <Link href="/guides/buying-a-used-car-safely" onClick={closeMenu}>Buying safely</Link>
