@@ -2,6 +2,10 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import {
+  createJsonResponseWithSessionCookie,
+  createSessionExpiry,
+} from "../../../lib/kerb-session-cookie";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -21,10 +25,7 @@ function createSessionToken() {
 
 async function createSession(account) {
   const sessionToken = createSessionToken();
-
-  const expiresAt = new Date(
-    Date.now() + 365 * 24 * 60 * 60 * 1000
-  ).toISOString();
+  const expiresAt = createSessionExpiry();
 
   const { error } = await supabase.from("kerb_account_sessions").insert({
     account_id: account.id,
@@ -37,7 +38,7 @@ async function createSession(account) {
     throw new Error(error.message);
   }
 
-  return sessionToken;
+  return { sessionToken, expiresAt };
 }
 
 export async function POST(request) {
@@ -113,22 +114,25 @@ export async function POST(request) {
   }
 
   try {
-    const sessionToken = await createSession(account);
+    const { sessionToken, expiresAt } = await createSession(account);
 
-    return NextResponse.json({
-      success: true,
-      account: {
-        id: account.id,
-        email: account.email,
-        full_name: account.full_name,
-        phone: account.phone,
-        profile_photo_url: account.profile_photo_url,
-        default_show_seller_name: account.default_show_seller_name,
-        default_show_seller_phone: account.default_show_seller_phone,
-        created_at: account.created_at,
+    return createJsonResponseWithSessionCookie(
+      {
+        success: true,
+        account: {
+          id: account.id,
+          email: account.email,
+          full_name: account.full_name,
+          phone: account.phone,
+          profile_photo_url: account.profile_photo_url,
+          default_show_seller_name: account.default_show_seller_name,
+          default_show_seller_phone: account.default_show_seller_phone,
+          created_at: account.created_at,
+        },
       },
-      session_token: sessionToken,
-    });
+      sessionToken,
+      expiresAt
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error.message || "Could not create session." },
