@@ -64,7 +64,7 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
             <Link href="/guides/buying-a-used-car-safely" onClick={closeMenu}>Buying safely</Link>
             <Link href="/safety" onClick={closeMenu}>Safety</Link>
             <Link href="/contact" onClick={closeMenu}>Contact Kerb Car support</Link>
-            <Link href={currentUser ? "/account?tab=saved" : "/login"} onClick={closeMenu}>Saved cars</Link>
+            <Link href="/saved" onClick={closeMenu}>Saved cars</Link>
 
             <div className="line" />
 
@@ -72,6 +72,7 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
               <>
                 <Link href="/account?tab=messages" onClick={closeMenu}>Messages {count > 0 && <em>{badge}</em>}</Link>
                 <Link href="/account" onClick={closeMenu}>My account</Link>
+                <Link href="/account/password" onClick={closeMenu}>Change password</Link>
                 <button type="button" onClick={logout}>Log out</button>
               </>
             ) : (
