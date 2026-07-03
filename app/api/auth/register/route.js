@@ -7,6 +7,10 @@ import {
   getSiteUrl,
   sendKerbEmail,
 } from "../../../lib/kerb-email";
+import {
+  createJsonResponseWithSessionCookie,
+  createSessionExpiry,
+} from "../../../lib/kerb-session-cookie";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -40,10 +44,7 @@ function createSessionToken() {
 
 async function createSession(account) {
   const sessionToken = createSessionToken();
-
-  const expiresAt = new Date(
-    Date.now() + 365 * 24 * 60 * 60 * 1000
-  ).toISOString();
+  const expiresAt = createSessionExpiry();
 
   const { error } = await supabase.from("kerb_account_sessions").insert({
     account_id: account.id,
@@ -56,7 +57,7 @@ async function createSession(account) {
     throw new Error(error.message);
   }
 
-  return sessionToken;
+  return { sessionToken, expiresAt };
 }
 
 export async function POST(request) {
@@ -168,7 +169,7 @@ export async function POST(request) {
   }
 
   try {
-    const sessionToken = await createSession(account);
+    const { sessionToken, expiresAt } = await createSession(account);
     const siteUrl = getSiteUrl(request);
     const welcomeEmail = await sendKerbEmail({
       to: account.email,
@@ -179,14 +180,17 @@ export async function POST(request) {
       }),
     });
 
-    return NextResponse.json({
-      success: true,
-      account,
-      session_token: sessionToken,
-      emails: {
-        welcome: welcomeEmail,
+    return createJsonResponseWithSessionCookie(
+      {
+        success: true,
+        account,
+        emails: {
+          welcome: welcomeEmail,
+        },
       },
-    });
+      sessionToken,
+      expiresAt
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error.message || "Could not create session." },
