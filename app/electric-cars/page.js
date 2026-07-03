@@ -4,8 +4,9 @@ import { fetchApprovedListings } from "../lib/kerb-server-listings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Electric and hybrid cars for sale | Kerb",
-  description: "Browse electric and hybrid cars for sale on Kerb.",
+  title: "Electric and Hybrid Cars for Sale | Kerb Car",
+  description:
+    "Browse electric and hybrid cars for sale on Kerb Car from private sellers and dealers.",
 };
 
 export default async function ElectricCarsPage() {
