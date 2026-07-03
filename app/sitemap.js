@@ -6,7 +6,7 @@ const routes = [
   { path: "/sell-car", priority: 0.9, changeFrequency: "weekly" },
   { path: "/electric-cars", priority: 0.85, changeFrequency: "daily" },
   { path: "/new-cars", priority: 0.85, changeFrequency: "daily" },
-  { path: "/car-finance", priority: 0.8, changeFrequency: "daily" },
+  { path: "/cars-on-finance", priority: 0.8, changeFrequency: "daily" },
   { path: "/first-cars", priority: 0.75, changeFrequency: "daily" },
   { path: "/family-suvs", priority: 0.75, changeFrequency: "daily" },
   { path: "/performance-cars", priority: 0.75, changeFrequency: "daily" },
