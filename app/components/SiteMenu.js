@@ -63,6 +63,7 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
             <Link href="/guides/how-to-sell-your-car" onClick={closeMenu}>How to sell your car</Link>
             <Link href="/guides/buying-a-used-car-safely" onClick={closeMenu}>Buying safely</Link>
             <Link href="/safety" onClick={closeMenu}>Safety</Link>
+            <Link href="/contact" onClick={closeMenu}>Contact Kerb Car support</Link>
             <Link href={currentUser ? "/account?tab=saved" : "/login"} onClick={closeMenu}>Saved cars</Link>
 
             <div className="line" />
