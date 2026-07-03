@@ -63,19 +63,19 @@ const boostPlanOptions = [
   {
     value: "7-days",
     label: "1 week",
-    price: "\u00a37.99",
+    price: "£7.99",
     description: "Priority placement for 7 days.",
   },
   {
     value: "14-days",
     label: "2 weeks",
-    price: "\u00a313.99",
+    price: "£13.99",
     description: "Priority placement for 14 days.",
   },
   {
     value: "30-days",
     label: "1 month",
-    price: "\u00a319.99",
+    price: "£19.99",
     description: "Priority placement for 30 days.",
   },
 ];
@@ -136,7 +136,7 @@ export default function PostCarPage() {
       return;
     }
 
-    window.location.href = "/login";
+    window.location.replace("/login?next=/post-car");
   }, []);
 
   const availableModels = make ? vehicleMakes[make] || [] : [];
@@ -310,7 +310,7 @@ export default function PostCarPage() {
     const token = localStorage.getItem("kerbSessionToken");
 
     if (!token) {
-      window.location.href = "/login";
+      window.location.href = "/login?next=/post-car";
       return;
     }
 
@@ -407,7 +407,7 @@ export default function PostCarPage() {
   if (isCheckingAuth) {
     return (
       <main className="page">
-        <div className="loadingBox">Checking your account...</div>
+        <div className="loadingBox">Opening your listing form...</div>
         <style>{styles}</style>
       </main>
     );
@@ -418,44 +418,14 @@ export default function PostCarPage() {
       <main className="page">
         <div className="successBox">
           <a href="/" className="logo">Kerb</a>
-          <div className="successIcon">✅</div>
           <h1>Your listing is live</h1>
-          <p>
-            Your car listing has been saved and is now live on Kerb.
-          </p>
-
-          {boostCheckoutError && (
-            <div className="warningBox">{boostCheckoutError}</div>
+          <p>Buyers can now find it on Kerb.</p>
+          {submittedListing?.id && (
+            <a href={`/listing/${submittedListing.id}`} className="primaryButton">View listing</a>
           )}
-
-          {submittedListing && (
-            <div className="listingSummary">
-              <strong>
-                {[
-                  submittedListing.year,
-                  submittedListing.make,
-                  submittedListing.model,
-                  submittedListing.model_detail,
-                  submittedListing.variant,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              </strong>
-              <span>{submittedListing.location}</span>
-            </div>
-          )}
-
-          <div className="successActions">
-            <a href="/account" className="secondaryBtn">My account</a>
-            {submittedListing?.id && (
-              <a href={`/listing/${submittedListing.id}`} className="secondaryBtn">
-                View live listing
-              </a>
-            )}
-            <a href="/browse" className="primaryBtn">Browse cars</a>
-          </div>
+          <a href="/account" className="secondaryLink">Go to account</a>
+          {boostCheckoutError && <div className="errorBox">{boostCheckoutError}</div>}
         </div>
-
         <style>{styles}</style>
       </main>
     );
@@ -465,565 +435,234 @@ export default function PostCarPage() {
     <main className="page">
       <header className="navbar">
         <a href="/" className="logo">Kerb</a>
-
         <div className="navActions">
-          <a href="/browse" className="navLink">Browse cars</a>
-          <a href="/account" className="accountButton">My account</a>
-          <button className="logoutButton" type="button" onClick={handleLogout}>
-            Log out
-          </button>
+          <a href="/browse">Browse cars</a>
+          <a href="/account">My account</a>
+          <button type="button" onClick={handleLogout}>Log out</button>
         </div>
-
         <SiteMenu currentUser={currentUser} onLogout={handleLogout} />
       </header>
 
       <section className="hero">
         <div>
-          <div className="pill">Seller early access</div>
-          <h1>Post your car on Kerb</h1>
-          <p>
-            Create your car listing with vehicle details, photos, seller
-            information and a Kerb Market Guide estimate.
-          </p>
+          <p>Sell on Kerb</p>
+          <h1>Post your car</h1>
+          <span>Complete the details below to create your listing.</span>
         </div>
-
-        <div className="heroCard">
-          <h3>Listing checklist</h3>
-          <ul>
-            <li>Choose the make, model, type, spec and body style</li>
-            <li>Add mileage, year, condition and price</li>
-            <li>Upload clear car photos</li>
-            <li>Submit your seller details</li>
-          </ul>
+        <div className="heroSteps">
+          <strong>1. Details</strong>
+          <strong>2. Photos</strong>
+          <strong>3. Enquiries</strong>
         </div>
       </section>
 
-      <section className="formSection">
-        <form className="formCard" onSubmit={handleSubmit}>
-          <div className="formHeader">
-            <div>
-              <h2>Car details</h2>
-              <p>Start with the basic information buyers care about most.</p>
-            </div>
+      <form className="formShell" onSubmit={handleSubmit}>
+        <section className="formSection">
+          <div className="sectionIntro">
+            <span>Vehicle details</span>
+            <h2>Tell buyers what you are selling</h2>
+            <p>Choose the closest details. You can use “Other” if your model is not listed.</p>
           </div>
 
-          <div className="grid">
+          <div className="grid two">
             <label>
               Make
-              <select
-                name="make"
-                required
-                value={make}
-                onChange={(e) => {
-                  setMake(e.target.value);
-                  setModel("");
-                  setModelDetail("");
-                  setModelSpec("");
-                  setCustomModel("");
-                }}
-              >
+              <select name="make" value={make} onChange={(event) => { setMake(event.target.value); setModel(""); setModelDetail(""); setModelSpec(""); }} required>
                 <option value="">Select make</option>
-                {Object.keys(vehicleMakes).map((makeName) => (
-                  <option key={makeName} value={makeName}>
-                    {makeName}
-                  </option>
-                ))}
+                {Object.keys(vehicleMakes).map((makeOption) => <option key={makeOption}>{makeOption}</option>)}
               </select>
             </label>
 
             <label>
-              Model line
-              {make === "Other" || availableModels.length === 0 ? (
-                <input
-                  name="model_manual"
-                  placeholder="Type the model"
-                  value={customModel}
-                  onChange={(e) => setCustomModel(e.target.value)}
-                  required
-                />
-              ) : (
-                <>
-                  <select
-                    value={model}
-                    onChange={(e) => {
-                      setModel(e.target.value);
-                      setModelDetail("");
-                      setModelSpec("");
-                    }}
-                    required={!customModel}
-                  >
-                    <option value="">Select model</option>
-                    {availableModels.map((modelName) => (
-                      <option key={modelName} value={modelName}>
-                        {modelName}
-                      </option>
-                    ))}
-                    <option value="Other">Other / type manually</option>
-                  </select>
-
-                  {model === "Other" && (
-                    <input
-                      className="manualInput"
-                      name="model_manual"
-                      placeholder="Type the model"
-                      value={customModel}
-                      onChange={(e) => setCustomModel(e.target.value)}
-                      required
-                    />
-                  )}
-                </>
-              )}
-              <input type="hidden" name="model" value={finalModel} />
+              Model
+              <select name="model_select" value={model} onChange={(event) => { setModel(event.target.value); setModelDetail(""); setModelSpec(""); }} required>
+                <option value="">Select model</option>
+                {availableModels.map((modelOption) => <option key={modelOption}>{modelOption}</option>)}
+                <option>Other</option>
+              </select>
             </label>
 
-            {(availableModelDetails.length > 0 || modelDetail) && (
+            {model === "Other" && (
               <label>
-                Type / engine
-                <select
-                  value={modelDetail}
-                  onChange={(e) => setModelDetail(e.target.value)}
-                >
-                  <option value="">I am not sure / standard type</option>
-                  {modelDetail &&
-                    !availableModelDetails.includes(modelDetail) && (
-                      <option value={modelDetail}>{modelDetail}</option>
-                    )}
-                  {availableModelDetails.map((detail) => {
-                    const years = getVehicleModelDetailYears({
-                      make,
-                      model: selectedModel,
-                      detail,
-                    });
-
-                    return (
-                      <option key={detail} value={detail}>
-                        {years ? `${detail} (${years})` : detail}
-                      </option>
-                    );
-                  })}
-                </select>
-                {variantYearError && (
-                  <small className="fieldNotice errorNotice">
-                    {variantYearError}
-                  </small>
-                )}
-              </label>
-            )}
-
-            {(availableModelSpecs.length > 0 || modelSpec) && (
-              <label>
-                Spec / trim
-                <select
-                  name="variant"
-                  value={modelSpec}
-                  onChange={(e) => setModelSpec(e.target.value)}
-                >
-                  <option value="">I am not sure / standard spec</option>
-                  {modelSpec && !availableModelSpecs.includes(modelSpec) && (
-                    <option value={modelSpec}>{modelSpec}</option>
-                  )}
-                  {availableModelSpecs.map((spec) => (
-                    <option key={spec} value={spec}>
-                      {spec}
-                    </option>
-                  ))}
-                </select>
+                Custom model
+                <input value={customModel} onChange={(event) => setCustomModel(event.target.value)} placeholder="e.g. XE" required />
               </label>
             )}
 
             <label>
               Year
-              <input
-                name="year"
-                placeholder="2020"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                required
-              />
+              <input name="year" value={year} onChange={(event) => setYear(event.target.value.replace(/[^0-9]/g, "").slice(0, 4))} placeholder="2019" required />
+            </label>
+
+            <label>
+              Variant / type
+              <select name="model_detail_select" value={modelDetail} onChange={(event) => setModelDetail(event.target.value)}>
+                <option value="">Select variant</option>
+                {availableModelDetails.map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </label>
+
+            <label>
+              Spec / trim
+              <select name="variant_select" value={modelSpec} onChange={(event) => setModelSpec(event.target.value)}>
+                <option value="">Select spec</option>
+                {availableModelSpecs.map((option) => <option key={option}>{option}</option>)}
+              </select>
             </label>
 
             <label>
               Mileage
-              <input
-                name="mileage"
-                placeholder="45,000"
-                value={mileage}
-                onChange={(e) => setMileage(e.target.value)}
-                required
-              />
+              <input name="mileage" value={mileage} onChange={(event) => setMileage(event.target.value.replace(/[^0-9]/g, ""))} placeholder="45000" required />
             </label>
 
             <label>
-              Body type
-              <select
-                name="body_type"
-                value={bodyType}
-                onChange={(e) => setBodyType(e.target.value)}
-                required
-              >
-                <option value="">Select body type</option>
-                {bodyTypeOptions.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
+              Asking price
+              <input name="price" value={askingPrice} onChange={(event) => setAskingPrice(event.target.value.replace(/[^0-9]/g, ""))} placeholder="12000" required />
             </label>
 
             <label>
-              Condition
-              <select
-                name="condition"
-                value={condition}
-                onChange={(e) => setCondition(e.target.value)}
-                required
-              >
-                <option value="">Select condition</option>
-                {conditionOptions.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Fuel type
-              <select
-                name="fuel_type"
-                value={fuel}
-                onChange={(e) => setFuel(e.target.value)}
-                required
-              >
-                <option value="">Select fuel type</option>
-                <option>Petrol</option>
-                <option>Diesel</option>
-                <option>Hybrid</option>
-                <option>Electric</option>
+              Fuel
+              <select name="fuel" value={fuel} onChange={(event) => setFuel(event.target.value)} required>
+                <option value="">Select fuel</option>
+                <option>Petrol</option><option>Diesel</option><option>Hybrid</option><option>Electric</option>
               </select>
             </label>
 
             <label>
               Gearbox
-              <select
-                name="gearbox"
-                value={gearbox}
-                onChange={(e) => setGearbox(e.target.value)}
-                required
-              >
+              <select name="gearbox" value={gearbox} onChange={(event) => setGearbox(event.target.value)} required>
                 <option value="">Select gearbox</option>
-                <option>Manual</option>
-                <option>Automatic</option>
+                <option>Manual</option><option>Automatic</option><option>Semi-automatic</option>
               </select>
             </label>
 
             <label>
-              Asking price
-              <input
-                name="asking_price"
-                value={askingPrice}
-                onChange={(e) => setAskingPrice(e.target.value)}
-                placeholder={"\u00a312,995"}
-                required
-              />
-            </label>
-
-            <label>
-              Location
-              <input name="location" placeholder="Leicester" required />
-            </label>
-
-            <label>
-              Finance available from seller/dealer?
-              <select
-                name="finance_available"
-                value={financeAvailable}
-                onChange={(e) => setFinanceAvailable(e.target.value)}
-                required
-              >
-                <option value="false">No</option>
-                <option value="true">Yes</option>
+              Body type
+              <select name="body_type_select" value={bodyType} onChange={(event) => setBodyType(event.target.value)} required>
+                <option value="">Select body</option>
+                {bodyTypeOptions.map((option) => <option key={option}>{option}</option>)}
               </select>
             </label>
 
             <label>
-              Best fit
-              <select
-                name="listing_category"
-                value={listingCategory}
-                onChange={(e) => setListingCategory(e.target.value)}
-              >
-                {listingCategoryOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+              Condition
+              <select name="condition_select" value={condition} onChange={(event) => setCondition(event.target.value)} required>
+                <option value="">Select condition</option>
+                {conditionOptions.map((option) => <option key={option}>{option}</option>)}
               </select>
             </label>
           </div>
 
-          <div className="infoBox">
-            <strong>Finance note</strong>
-            <p>
-              This only tells buyers whether the seller or dealer may offer finance.
-              Kerb does not provide finance or sell cars directly.
-            </p>
-          </div>
-
+          {variantYearError && <div className="errorBox">{variantYearError}</div>}
           {valuation && (
-            <div className="valuationBox">
-              <div>
-                <span>Kerb Market Guide</span>
-                <strong>
-                  {"\u00a3"}
-                  {valuation.low.toLocaleString()} - {"\u00a3"}
-                  {valuation.high.toLocaleString()}
-                </strong>
-                {valuation.mid && (
-                  <small>Mid guide: {"\u00a3"}{valuation.mid.toLocaleString()}</small>
-                )}
-              </div>
+            <div className={`valuationBox ${pricePosition?.status || ""}`}>
+              <strong>Kerb market guide: £{valuation.low.toLocaleString()} – £{valuation.high.toLocaleString()}</strong>
+              {pricePosition?.label && <span>{pricePosition.label}</span>}
+            </div>
+          )}
+        </section>
 
-              <p>
-                We only show an estimate. This is a guide, not a guaranteed sale
-                price.
-              </p>
+        <section className="formSection">
+          <div className="sectionIntro">
+            <span>Photos and description</span>
+            <h2>Make the advert feel trustworthy</h2>
+            <p>Add clear photos and describe the car honestly.</p>
+          </div>
 
-              {pricePosition && (
-                <div className={`valuationStatus ${pricePosition.tone}`}>
-                  <b>{pricePosition.label}</b>
-                  <span>{pricePosition.text}</span>
+          <label>
+            Description
+            <textarea name="description" rows={7} placeholder="Tell buyers about the car, history, condition and any issues." required />
+          </label>
+
+          <label>
+            Location
+            <input name="location" placeholder="Leicester" required />
+          </label>
+
+          <label className="photoDrop">
+            Upload photos
+            <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
+            <span>Add up to {MAX_LISTING_PHOTOS} photos.</span>
+          </label>
+
+          {photos.length > 0 && (
+            <div className="photoGrid">
+              {photos.map((photo) => (
+                <div key={photo.id}>
+                  <img src={photo.url} alt={photo.name} />
+                  <button type="button" onClick={() => removePhoto(photo.id)}>Remove</button>
                 </div>
-              )}
+              ))}
             </div>
           )}
 
-          <input type="hidden" name="valuation_low" value={valuation?.low || ""} />
-          <input type="hidden" name="valuation_high" value={valuation?.high || ""} />
+          <div className="featuresGrid">
+            {carFeatureOptions.map((feature) => (
+              <label key={feature} className="checkPill">
+                <input type="checkbox" name="features" value={feature} />
+                {feature}
+              </label>
+            ))}
+          </div>
+        </section>
 
-          <section className="featuresSection">
-            <div>
-              <h2>Features</h2>
-              <p>Select only the features this car actually has.</p>
-            </div>
-
-            <div className="featureChecklist">
-              {carFeatureOptions.map((feature) => (
-                <label className="featureOption" key={feature}>
-                  <input name="features" type="checkbox" value={feature} />
-                  <span>{feature}</span>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          <label>
-            Short description
-            <textarea
-              name="description"
-              placeholder="Tell buyers about condition, service history, features, MOT, ownership, modifications or damage."
-            />
-          </label>
-
-          <div className="photoSection">
-            <div>
-              <h2>Photos</h2>
-              <p>Add up to {MAX_LISTING_PHOTOS} photos. Clear photos help buyers trust the listing.</p>
-            </div>
-
-            <label className="uploadBox">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoUpload}
-              />
-              <span>📸</span>
-              <strong>Upload car photos</strong>
-              <small>Front, rear, sides, interior, wheels and dashboard</small>
-            </label>
-
-            {photos.length > 0 && (
-              <div className="photoGrid">
-                {photos.map((photo, index) => (
-                  <div className="photoPreview" key={photo.id}>
-                    <img src={photo.url} alt={photo.name} />
-                    <button
-                      type="button"
-                      className="removePhotoButton"
-                      onClick={() => removePhoto(photo.id)}
-                      aria-label={`Remove photo ${index + 1}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+        <section className="formSection">
+          <div className="sectionIntro">
+            <span>Seller options</span>
+            <h2>Choose how buyers contact you</h2>
+            <p>Kerb is a marketplace. You control the listing and buyer conversations.</p>
           </div>
 
-          <h2>Seller details</h2>
-
-          <div className="grid">
+          <div className="grid two">
             <label>
-              Full name
-              <input
-                name="seller_name"
-                placeholder="Your name"
-                defaultValue={
-                  currentUser?.name ||
-                  currentUser?.full_name ||
-                  ""
-                }
-                required
-              />
+              Category
+              <select value={listingCategory} onChange={(event) => setListingCategory(event.target.value)}>
+                {listingCategoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
             </label>
 
             <label>
-              Email address
-              <input
-                name="seller_email"
-                type="email"
-                placeholder="you@example.com"
-                defaultValue={currentUser?.email || ""}
-                readOnly={Boolean(currentUser?.email)}
-                required
-              />
-            </label>
-
-            <label>
-              Phone number <span className="optionalText">Optional</span>
-              <input
-                name="seller_phone"
-                placeholder="07..."
-                defaultValue={currentUser?.phone || ""}
-                required={showSellerPhone}
-              />
-            </label>
-
-            <label>
-              Seller type
-              <select name="seller_type" required>
-                <option value="">Select seller type</option>
-                <option>Private seller</option>
-                <option>Dealer</option>
+              Finance availability
+              <select value={financeAvailable} onChange={(event) => setFinanceAvailable(event.target.value)}>
+                <option value="false">No finance option shown</option>
+                <option value="true">Seller says finance may be available</option>
               </select>
             </label>
           </div>
 
-          <section className="privacySection">
-            <div>
-              <span className="privacyKicker">Public contact options</span>
-              <h2>Choose what buyers can see</h2>
-              <p>
-                Your email is kept for Kerb messages and account checks. Choose
-                whether your public listing shows your name or phone number.
-              </p>
-            </div>
+          <label className="checkRow">
+            <input type="checkbox" checked={showSellerName} onChange={(event) => setShowSellerName(event.target.checked)} />
+            Show my name on this listing
+          </label>
 
-            <div className="privacyOptions">
-              <label className="privacyOption">
-                <input
-                  type="checkbox"
-                  checked={showSellerName}
-                  onChange={(event) => setShowSellerName(event.target.checked)}
-                />
-                <span>
-                  <strong>Show my name on the listing</strong>
-                  <em>Turn this off to show only your seller type, like Private seller.</em>
-                </span>
+          <label className="checkRow">
+            <input type="checkbox" checked={showSellerPhone} onChange={(event) => setShowSellerPhone(event.target.checked)} />
+            Show my phone number on this listing
+          </label>
+
+          <div className="boostGrid">
+            {boostPlanOptions.map((plan) => (
+              <label key={plan.value} className={selectedBoostPlan === plan.value ? "boostPlan active" : "boostPlan"}>
+                <input type="radio" name="boost_plan" value={plan.value} checked={selectedBoostPlan === plan.value} onChange={(event) => setSelectedBoostPlan(event.target.value)} />
+                <strong>{plan.label}</strong>
+                <span>{plan.price}</span>
+                <em>{plan.description}</em>
               </label>
+            ))}
+          </div>
 
-              <label className="privacyOption">
-                <input
-                  type="checkbox"
-                  checked={showSellerPhone}
-                  onChange={(event) => setShowSellerPhone(event.target.checked)}
-                />
-                <span>
-                  <strong>Show my phone number on the listing</strong>
-                  <em>If this is off, buyers can still message you through Kerb.</em>
-                </span>
-              </label>
-            </div>
-          </section>
-
-          <section className="boostPreviewSection">
-            <div>
-              <span className="boostKicker">Optional listing boost</span>
-              <h2>Choose visibility before submitting</h2>
-              <p>
-                Boost your listing to give it higher placement in Kerb's
-                priority listing positions across Browse Cars and Featured Cars.
-                Boosting increases visibility but does not guarantee enquiries
-                or a sale.
-              </p>
-
-              <ul className="boostBenefits">
-                <li>Listing goes live immediately</li>
-                <li>Paid boosts start after Stripe confirms payment</li>
-                <li>If checkout is cancelled, the listing stays live</li>
-              </ul>
-            </div>
-
-            <div className="boostChoiceGrid">
-              {boostPlanOptions.map((plan) => (
-                <label
-                  className={
-                    selectedBoostPlan === plan.value
-                      ? "boostChoice active"
-                      : "boostChoice"
-                  }
-                  key={plan.value}
-                >
-                  <input
-                    type="radio"
-                    name="boost_plan"
-                    value={plan.value}
-                    checked={selectedBoostPlan === plan.value}
-                    onChange={() => setSelectedBoostPlan(plan.value)}
-                  />
-                  <span>
-                    <strong>{plan.label}</strong>
-                    <em>{plan.description}</em>
-                  </span>
-                  <b>{plan.price}</b>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          <section className="termsSection">
-            <label className="termsOption">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(event) => setAcceptedTerms(event.target.checked)}
-                required
-              />
-              <span>
-                <strong>I agree to Kerb's Terms and Conditions</strong>
-                <em>
-                  I understand Kerb is a marketplace, not a direct car seller,
-                  and I am responsible for making sure my listing is accurate,
-                  honest and allowed under Kerb's rules.
-                </em>
-                <a href="/terms" target="_blank" rel="noreferrer">
-                  Read Terms and Conditions
-                </a>
-              </span>
-            </label>
-          </section>
+          <label className="termsBox">
+            <input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} required />
+            <span>I confirm the listing is accurate and agree to Kerb’s marketplace terms.</span>
+          </label>
 
           {errorMessage && <div className="errorBox">{errorMessage}</div>}
 
-          <button className="primaryBtn" type="submit" disabled={isSubmitting || !acceptedTerms}>
-            {isSubmitting
-              ? selectedBoostPlan === "none"
-                ? "Submitting listing..."
-                : "Creating listing..."
-              : selectedBoostPlan === "none"
-                ? "Submit listing"
-                : "Submit listing and continue to boost"}
+          <button type="submit" className="primaryButton" disabled={isSubmitting}>
+            {isSubmitting ? "Posting your car..." : "Post car"}
           </button>
-        </form>
-      </section>
+        </section>
+      </form>
 
       <style>{styles}</style>
     </main>
@@ -1031,889 +670,54 @@ export default function PostCarPage() {
 }
 
 const styles = `
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    margin: 0;
-    background: #f7f9fd;
-    color: #071126;
-    font-family: Inter, Arial, sans-serif;
-  }
-
-  .page {
-    min-height: 100vh;
-    padding: 24px 36px 50px;
-  }
-
-  .navbar {
-    height: 58px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 22px;
-    gap: 18px;
-  }
-
-  .logo {
-    font-size: 36px;
-    font-weight: 900;
-    color: #0048ff;
-    letter-spacing: -1.8px;
-    text-decoration: none;
-  }
-
-  .navActions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .navLink,
-  .accountButton,
-  .logoutButton {
-    font-size: 14px;
-    font-weight: 900;
-    text-decoration: none;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-family: inherit;
-    white-space: nowrap;
-  }
-
-  .navLink {
-    color: #172033;
-  }
-
-  .accountButton {
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #eef3ff;
-    color: #0048ff;
-    padding: 0 16px;
-    border-radius: 13px;
-  }
-
-  .logoutButton {
-    color: #c01818;
-    padding: 0;
-  }
-
-  .hero {
-    display: grid;
-    grid-template-columns: 1.3fr 0.7fr;
-    gap: 24px;
-    align-items: stretch;
-    background:
-      linear-gradient(90deg, rgba(246,249,255,0.98), rgba(235,242,255,0.92)),
-      radial-gradient(circle at 80% 40%, rgba(0,72,255,0.15), transparent 35%);
-    border: 1px solid #e4eaf5;
-    border-radius: 30px;
-    padding: 42px;
-    box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
-  }
-
-  .pill {
-    display: inline-flex;
-    background: #eaf1ff;
-    color: #0048ff;
-    border: 1px solid #d7e4ff;
-    border-radius: 999px;
-    padding: 9px 14px;
-    font-size: 13px;
-    font-weight: 900;
-    margin-bottom: 18px;
-  }
-
-  h1 {
-    font-size: 56px;
-    line-height: 0.98;
-    margin: 0 0 18px;
-    letter-spacing: -2.6px;
-  }
-
-  p {
-    color: #59657a;
-    font-size: 16px;
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .heroCard {
-    background: white;
-    border: 1px solid #e5eaf4;
-    border-radius: 22px;
-    padding: 24px;
-  }
-
-  .heroCard h3 {
-    margin: 0 0 14px;
-    font-size: 22px;
-    letter-spacing: -0.5px;
-  }
-
-  .heroCard ul {
-    margin: 0;
-    padding-left: 20px;
-    color: #4d596f;
-    line-height: 1.9;
-    font-weight: 700;
-  }
-
-  .formSection {
-    margin-top: 24px;
-  }
-
-  .formCard {
-    background: white;
-    border: 1px solid #e5eaf4;
-    border-radius: 26px;
-    padding: 32px;
-    box-shadow: 0 12px 30px rgba(10, 20, 40, 0.05);
-  }
-
-  .formHeader {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 18px;
-  }
-
-  .formCard h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    letter-spacing: -0.7px;
-  }
-
-  .formCard p {
-    color: #657189;
-    font-size: 14px;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-    margin-bottom: 24px;
-  }
-
-  label {
-    display: grid;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 14px;
-    color: #172033;
-  }
-
-  .optionalText {
-    color: #7a8499;
-    font-size: 12px;
-    font-weight: 850;
-  }
-
-  input,
-  select,
-  textarea {
-    width: 100%;
-    border: 1px solid #dfe6f1;
-    border-radius: 14px;
-    padding: 15px 16px;
-    font-size: 15px;
-    outline: none;
-    background: #fbfcff;
-    font-family: inherit;
-  }
-
-  input[readonly] {
-    background: #f1f4fa;
-    color: #5d6778;
-    cursor: not-allowed;
-  }
-
-  .manualInput {
-    margin-top: 8px;
-  }
-
-  .fieldNotice {
-    color: #657189;
-    font-size: 12px;
-    font-weight: 850;
-    line-height: 1.45;
-  }
-
-  .errorNotice {
-    color: #b42318;
-  }
-
-  textarea {
-    min-height: 130px;
-    resize: vertical;
-    margin-bottom: 24px;
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: #0048ff;
-    box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
-  }
-
-  .infoBox {
-    margin: -4px 0 24px;
-    background: #f8fbff;
-    border: 1px solid #dce8ff;
-    border-radius: 18px;
-    padding: 16px;
-  }
-
-  .infoBox strong {
-    display: block;
-    color: #0048ff;
-    font-size: 14px;
-    font-weight: 950;
-    margin-bottom: 4px;
-  }
-
-  .infoBox p {
-    color: #657189;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .valuationBox {
-    margin: -4px 0 24px;
-    background: linear-gradient(90deg, #edf4ff, #ffffff);
-    border: 1px solid #dce8ff;
-    border-radius: 20px;
-    padding: 20px;
-    display: grid;
-    gap: 8px;
-  }
-
-  .valuationBox span {
-    display: block;
-    color: #657189;
-    font-size: 13px;
-    font-weight: 900;
-    margin-bottom: 4px;
-  }
-
-  .valuationBox strong {
-    display: block;
-    color: #0048ff;
-    font-size: 30px;
-    letter-spacing: -1px;
-  }
-
-  .valuationBox small {
-    display: block;
-    color: #465269;
-    font-size: 13px;
-    font-weight: 900;
-    margin-top: 3px;
-  }
-
-  .valuationBox p {
-    font-size: 13px;
-    color: #657189;
-  }
-
-  .valuationStatus {
-    display: grid;
-    gap: 3px;
-    background: #ffffff;
-    border: 1px solid #dce8ff;
-    border-radius: 14px;
-    padding: 12px 14px;
-    font-size: 13px;
-  }
-
-  .valuationStatus b {
-    color: #071126;
-  }
-
-  .valuationStatus span {
-    color: #657189;
-    line-height: 1.45;
-  }
-
-  .valuationStatus.good {
-    border-color: #bde8cf;
-    background: #f3fff7;
-  }
-
-  .valuationStatus.fair {
-    border-color: #cbdcff;
-    background: #f8fbff;
-  }
-
-  .valuationStatus.watch,
-  .valuationStatus.high {
-    border-color: #ffe0aa;
-    background: #fffaf0;
-  }
-
-  .featuresSection {
-    margin: 0 0 24px;
-    border: 1px solid #e5eaf4;
-    border-radius: 22px;
-    padding: 22px;
-    background: #fbfcff;
-  }
-
-  .featuresSection h2 {
-    margin-bottom: 8px;
-  }
-
-  .featureChecklist {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 18px;
-  }
-
-  .featureOption {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 46px;
-    border: 1px solid #dfe6f1;
-    border-radius: 14px;
-    padding: 10px 12px;
-    background: white;
-    color: #172033;
-    font-size: 13px;
-    font-weight: 850;
-    cursor: pointer;
-  }
-
-  .featureOption input {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    accent-color: #0048ff;
-  }
-
-  .photoSection {
-    border-top: 1px solid #edf1f7;
-    border-bottom: 1px solid #edf1f7;
-    padding: 26px 0;
-    margin-bottom: 26px;
-  }
-
-  .uploadBox {
-    margin-top: 18px;
-    border: 2px dashed #cfdaf0;
-    border-radius: 22px;
-    padding: 32px;
-    background: #f8fbff;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .uploadBox:hover {
-    border-color: #0048ff;
-    background: #f3f7ff;
-  }
-
-  .uploadBox input {
-    display: none;
-  }
-
-  .uploadBox span {
-    font-size: 34px;
-  }
-
-  .uploadBox strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 18px;
-  }
-
-  .uploadBox small {
-    color: #657189;
-    font-weight: 700;
-  }
-
-  .photoGrid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    margin-top: 18px;
-  }
-
-  .photoPreview {
-    position: relative;
-    height: 110px;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 1px solid #e5eaf4;
-    background: #f1f4fa;
-  }
-
-  .photoPreview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .removePhotoButton {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(7, 17, 38, 0.78);
-    color: white;
-    font-size: 22px;
-    line-height: 1;
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    opacity: 0;
-    transform: scale(0.92);
-    transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
-  }
-
-  .photoPreview:hover .removePhotoButton,
-  .removePhotoButton:focus-visible {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .removePhotoButton:hover {
-    background: #d7193f;
-  }
-
-  .privacySection {
-    margin: -6px 0 24px;
-    background: linear-gradient(135deg, #f8fbff, #ffffff);
-    border: 1px solid #dce8ff;
-    border-radius: 24px;
-    padding: 22px;
-    display: grid;
-    gap: 16px;
-  }
-
-  .privacyKicker {
-    display: inline-flex;
-    width: fit-content;
-    background: #eaf1ff;
-    color: #0048ff;
-    border: 1px solid #d7e4ff;
-    border-radius: 999px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 950;
-    margin-bottom: 10px;
-  }
-
-  .privacySection h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    letter-spacing: -0.7px;
-  }
-
-  .privacySection p {
-    margin: 0;
-    color: #5f6a82;
-    font-weight: 760;
-    line-height: 1.58;
-  }
-
-  .privacyOptions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .privacyOption {
-    background: white;
-    border: 1px solid #dfe7f6;
-    border-radius: 18px;
-    padding: 15px;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    gap: 12px;
-    cursor: pointer;
-  }
-
-  .privacyOption input {
-    width: 20px;
-    height: 20px;
-    margin: 2px 0 0;
-    accent-color: #0048ff;
-  }
-
-  .privacyOption span {
-    display: grid;
-    gap: 4px;
-  }
-
-  .privacyOption strong {
-    font-size: 14px;
-    font-weight: 950;
-    color: #172033;
-  }
-
-  .privacyOption em {
-    color: #69758d;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 760;
-    line-height: 1.4;
-  }
-
-  .boostPreviewSection {
-    margin: 0 0 24px;
-    background: linear-gradient(135deg, #f7faff, #ffffff);
-    border: 1px solid #dce8ff;
-    border-radius: 24px;
-    padding: 22px;
-    display: grid;
-    gap: 18px;
-  }
-
-  .boostKicker {
-    display: inline-flex;
-    width: fit-content;
-    background: #eaf1ff;
-    color: #0048ff;
-    border: 1px solid #d7e4ff;
-    border-radius: 999px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 950;
-    margin-bottom: 10px;
-  }
-
-  .boostPreviewSection h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    letter-spacing: -0.7px;
-  }
-
-  .boostPreviewSection p {
-    margin: 0;
-    color: #5f6a82;
-    font-weight: 760;
-    line-height: 1.58;
-  }
-
-  .boostBenefits {
-    margin: 14px 0 0;
-    padding: 0;
-    list-style: none;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .boostBenefits li {
-    background: #eef4ff;
-    border: 1px solid #dbe7ff;
-    color: #172033;
-    border-radius: 999px;
-    padding: 10px 12px;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  .boostChoiceGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .boostChoice {
-    background: white;
-    border: 1px solid #dfe7f6;
-    border-radius: 18px;
-    padding: 15px;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-  }
-
-  .boostChoice:hover {
-    border-color: #b9ccff;
-    box-shadow: 0 16px 34px rgba(18, 45, 105, 0.08);
-    transform: translateY(-1px);
-  }
-
-  .boostChoice.active {
-    border-color: #0b4bff;
-    box-shadow: 0 18px 38px rgba(11, 75, 255, 0.12);
-  }
-
-  .boostChoice input {
-    width: 18px;
-    height: 18px;
-    accent-color: #0b4bff;
-  }
-
-  .boostChoice span {
-    display: grid;
-    min-width: 0;
-    gap: 3px;
-  }
-
-  .boostChoice strong {
-    font-size: 13px;
-    font-weight: 950;
-    color: #172033;
-  }
-
-  .boostChoice em {
-    color: #69758d;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 760;
-    line-height: 1.35;
-  }
-
-  .boostChoice b {
-    color: #0048ff;
-    font-size: 16px;
-    font-weight: 950;
-    white-space: nowrap;
-  }
-
-  .termsSection {
-    margin: 0 0 24px;
-    background: #fbfcff;
-    border: 1px solid #dfe7f6;
-    border-radius: 20px;
-    padding: 18px;
-  }
-
-  .termsOption {
-    display: flex;
-    align-items: flex-start;
-    gap: 13px;
-    cursor: pointer;
-  }
-
-  .termsOption input {
-    width: 20px;
-    height: 20px;
-    margin-top: 2px;
-    accent-color: #0048ff;
-    flex: 0 0 auto;
-  }
-
-  .termsOption span {
-    display: grid;
-    gap: 5px;
-  }
-
-  .termsOption strong {
-    color: #172033;
-    font-size: 14px;
-    font-weight: 950;
-  }
-
-  .termsOption em {
-    color: #657189;
-    font-size: 13px;
-    font-style: normal;
-    font-weight: 760;
-    line-height: 1.45;
-  }
-
-  .termsOption a {
-    color: #0048ff;
-    width: fit-content;
-    font-size: 13px;
-    font-weight: 950;
-    text-decoration: none;
-  }
-
-  .termsOption a:hover {
-    text-decoration: underline;
-  }
-
-  .errorBox {
-    background: #fff1f1;
-    color: #b42318;
-    border: 1px solid #ffd1d1;
-    border-radius: 14px;
-    padding: 14px 16px;
-    font-weight: 800;
-    margin-bottom: 18px;
-  }
-
-  .warningBox {
-    background: #fff7ed;
-    color: #9a3412;
-    border: 1px solid #fed7aa;
-    border-radius: 14px;
-    padding: 14px 16px;
-    font-weight: 850;
-    line-height: 1.5;
-    margin: 18px 0;
-  }
-
-  .primaryBtn,
-  .secondaryBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 14px;
-    padding: 15px 26px;
-    font-weight: 900;
-    font-size: 15px;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .primaryBtn {
-    background: #0048ff;
-    color: white;
-    box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22);
-  }
-
-  .secondaryBtn {
-    background: #eef3ff;
-    color: #0048ff;
-  }
-
-  .primaryBtn:disabled,
-  .secondaryBtn:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-  }
-
-  .loadingBox,
-  .successBox {
-    max-width: 620px;
-    margin: 120px auto 0;
-    text-align: center;
-    background: white;
-    border: 1px solid #e5eaf4;
-    border-radius: 28px;
-    padding: 44px;
-    box-shadow: 0 16px 50px rgba(20, 35, 70, 0.08);
-  }
-
-  .successIcon {
-    width: 76px;
-    height: 76px;
-    margin: 28px auto 18px;
-    border-radius: 24px;
-    background: #edf3ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 34px;
-  }
-
-  .successBox h1 {
-    font-size: 42px;
-  }
-
-  .successBox p {
-    margin-bottom: 24px;
-  }
-
-  .successActions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .listingSummary {
-    background: #f7f9fd;
-    border: 1px solid #e5eaf4;
-    border-radius: 16px;
-    padding: 16px;
-    margin: 20px 0;
-    display: grid;
-    gap: 5px;
-  }
-
-  .listingSummary strong {
-    font-size: 18px;
-  }
-
-  .listingSummary span {
-    color: #657189;
-    font-weight: 700;
-  }
-
-  @media (max-width: 1100px) {
-    .featureChecklist {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .photoGrid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (max-width: 800px) {
-    .page {
-      padding: 18px;
-    }
-
-    .navbar {
-      height: auto;
-      align-items: center;
-    }
-
-    .navActions {
-      display: none;
-    }
-
-    .hero {
-      grid-template-columns: 1fr;
-      padding: 28px;
-    }
-
-    h1 {
-      font-size: 42px;
-    }
-
-    .grid {
-      grid-template-columns: 1fr;
-    }
-
-    .featureChecklist {
-      grid-template-columns: 1fr;
-    }
-
-    .formCard {
-      padding: 24px;
-    }
-
-    .photoGrid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .boostChoiceGrid,
-    .boostBenefits,
-    .privacyOptions {
-      grid-template-columns: 1fr;
-    }
-
-    .removePhotoButton {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
+  * { box-sizing: border-box; }
+  .page { min-height: 100vh; background: #f7f9fd; color: #071126; font-family: Inter, Arial, sans-serif; padding: 22px 40px 50px; }
+  .navbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 24px; }
+  .logo { color: #0048ff; font-size: 38px; font-weight: 950; text-decoration: none; letter-spacing: -2px; }
+  .navActions { display: flex; gap: 14px; align-items: center; font-weight: 900; }
+  .navActions a { color: #071126; text-decoration: none; }
+  .navActions button { border: none; background: #eef4ff; color: #0048ff; border-radius: 14px; padding: 12px 14px; font-weight: 950; cursor: pointer; }
+  .hero, .formSection, .successBox { border: 1px solid #dfe8f7; border-radius: 30px; background: white; box-shadow: 0 18px 46px rgba(14,30,70,.06); }
+  .hero { display: flex; justify-content: space-between; gap: 20px; padding: 34px; background: linear-gradient(135deg, #fff, #eef5ff); margin-bottom: 20px; }
+  .hero p, .sectionIntro span { color: #0048ff; font-weight: 950; margin: 0 0 8px; }
+  .hero h1 { margin: 0; font-size: clamp(42px, 7vw, 76px); letter-spacing: -3px; line-height: .92; }
+  .hero span, .sectionIntro p { color: #53617a; font-weight: 750; }
+  .heroSteps { display: grid; gap: 10px; min-width: 220px; }
+  .heroSteps strong { background: #fff; border: 1px solid #dbe7fb; border-radius: 16px; padding: 14px; }
+  .formShell { display: grid; gap: 20px; }
+  .formSection { padding: 28px; }
+  .sectionIntro h2 { margin: 0 0 8px; font-size: 32px; letter-spacing: -1px; }
+  .grid.two { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+  label { display: grid; gap: 8px; font-weight: 900; margin-top: 14px; }
+  input, select, textarea { width: 100%; border: 1px solid #dce5f3; border-radius: 14px; padding: 14px; font: inherit; font-weight: 750; background: #fbfdff; }
+  textarea { resize: vertical; }
+  .valuationBox, .errorBox { margin-top: 16px; border-radius: 16px; padding: 14px 16px; font-weight: 850; }
+  .valuationBox { background: #eef4ff; border: 1px solid #d6e4ff; color: #0048ff; display: grid; gap: 6px; }
+  .errorBox { background: #fff1f1; border: 1px solid #ffd1d1; color: #b42318; }
+  .photoDrop { border: 1px dashed #b8c8e6; border-radius: 18px; padding: 20px; background: #f8fbff; }
+  .photoDrop input { padding: 0; border: none; background: transparent; }
+  .photoDrop span { color: #53617a; font-size: 13px; }
+  .photoGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+  .photoGrid div { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid #dfe8f7; background: #eef4ff; }
+  .photoGrid img { width: 100%; height: 120px; object-fit: cover; display: block; }
+  .photoGrid button { width: 100%; border: none; background: #071126; color: white; padding: 9px; font-weight: 900; cursor: pointer; }
+  .featuresGrid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .checkPill, .checkRow, .termsBox { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; }
+  .checkPill { border: 1px solid #dfe8f7; border-radius: 999px; background: #fff; padding: 9px 12px; }
+  .checkPill input, .checkRow input, .termsBox input { width: auto; }
+  .boostGrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+  .boostPlan { border: 1px solid #dfe8f7; border-radius: 18px; padding: 16px; background: #fff; cursor: pointer; }
+  .boostPlan.active { border-color: #0048ff; background: #eef4ff; }
+  .boostPlan input { width: auto; }
+  .boostPlan strong, .boostPlan span, .boostPlan em { display: block; margin-top: 6px; }
+  .boostPlan span { color: #0048ff; font-weight: 950; }
+  .boostPlan em { color: #53617a; font-size: 13px; font-style: normal; line-height: 1.45; }
+  .termsBox { border: 1px solid #dfe8f7; border-radius: 16px; background: #f8fbff; padding: 15px; }
+  .primaryButton { margin-top: 18px; border: none; border-radius: 16px; background: #0048ff; color: white; padding: 16px 22px; font-weight: 950; cursor: pointer; box-shadow: 0 14px 30px rgba(0,72,255,.2); }
+  .primaryButton:disabled { opacity: .65; cursor: not-allowed; }
+  .loadingBox { width: min(520px, 100%); margin: 18vh auto 0; border: 1px solid #dfe8f7; border-radius: 24px; background: white; padding: 26px; text-align: center; color: #53617a; font-weight: 900; }
+  .successBox { width: min(720px, 100%); margin: 14vh auto 0; padding: 36px; display: grid; gap: 14px; }
+  .successBox h1 { margin: 0; font-size: 48px; letter-spacing: -2px; }
+  .secondaryLink { color: #0048ff; font-weight: 950; }
+  @media (max-width: 860px) { .page { padding: 16px; } .navActions { display: none; } .hero { flex-direction: column; padding: 24px; } .grid.two, .boostGrid, .photoGrid { grid-template-columns: 1fr; } .formSection { padding: 22px; } }
 `;
