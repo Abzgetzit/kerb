@@ -4,8 +4,9 @@ import { fetchApprovedListings } from "../lib/kerb-server-listings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Family SUVs for sale | Kerb",
-  description: "Browse family SUVs and practical crossover cars for sale on Kerb.",
+  title: "Family SUV Cars for Sale | Kerb Car",
+  description:
+    "Browse practical family SUV and crossover cars for sale on Kerb Car.",
 };
 
 export default async function FamilySuvsPage() {
