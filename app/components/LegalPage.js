@@ -6,6 +6,7 @@ const legalLinks = [
   { href: "/privacy", label: "Privacy" },
   { href: "/cookies", label: "Cookies" },
   { href: "/safety", label: "Safety" },
+  { href: "/contact", label: "Contact support" },
 ];
 
 export default function LegalPage({
@@ -25,7 +26,7 @@ export default function LegalPage({
 
         <div className={styles.navLinks}>
           <Link href="/browse">Browse cars</Link>
-          <Link href="/post-car">Post your car</Link>
+          <Link href="/sell-car">Sell your car</Link>
           <Link href="/account">My account</Link>
         </div>
       </nav>
@@ -35,7 +36,9 @@ export default function LegalPage({
           <span className={styles.kicker}>{kicker}</span>
           <h1>{title}</h1>
           <p>{description}</p>
-          <span className={styles.updated}>Last updated: {lastUpdated}</span>
+          {lastUpdated ? (
+            <span className={styles.updated}>Last updated: {lastUpdated}</span>
+          ) : null}
         </section>
 
         {showHub ? (
@@ -45,7 +48,7 @@ export default function LegalPage({
             <article className={styles.content}>{children}</article>
 
             <aside className={styles.sideCard}>
-              <h2>Legal pages</h2>
+              <h2>Helpful pages</h2>
               <div className={styles.sideLinks}>
                 {legalLinks.map((link) => (
                   <Link key={link.href} href={link.href}>
@@ -59,7 +62,7 @@ export default function LegalPage({
       </div>
 
       <footer className={styles.footer}>
-        <span>Kerb is a marketplace, not a direct car seller.</span>
+        <span>Kerb Car is a marketplace, not a direct car seller.</span>
         <span>
           <Link href="/legal">Legal hub</Link>
         </span>
