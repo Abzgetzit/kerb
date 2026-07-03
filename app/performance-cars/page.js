@@ -4,8 +4,9 @@ import { fetchApprovedListings } from "../lib/kerb-server-listings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Performance cars for sale | Kerb",
-  description: "Browse performance cars, hot hatches and sports models for sale on Kerb.",
+  title: "Performance Cars for Sale | Kerb Car",
+  description:
+    "Browse performance cars, hot hatches and sports models for sale on Kerb Car.",
 };
 
 export default async function PerformanceCarsPage() {
