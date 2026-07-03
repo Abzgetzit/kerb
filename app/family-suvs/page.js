@@ -1,4 +1,5 @@
 import BrowseClient from "../browse/BrowseClient";
+import SeoBottomContent from "../components/SeoBottomContent";
 import { fetchApprovedListings } from "../lib/kerb-server-listings";
 
 export const dynamic = "force-dynamic";
@@ -49,11 +50,13 @@ export default async function FamilySuvsPage() {
   const { listings, error } = await fetchApprovedListings();
 
   return (
-    <BrowseClient
-      initialCars={listings}
-      initialFilters={{ category: "family-suv" }}
-      initialLoadError={error}
-      landingContent={landingContent}
-    />
+    <>
+      <BrowseClient
+        initialCars={listings}
+        initialFilters={{ category: "family-suv" }}
+        initialLoadError={error}
+      />
+      <SeoBottomContent content={landingContent} />
+    </>
   );
 }
