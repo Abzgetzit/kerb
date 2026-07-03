@@ -1,3 +1,5 @@
+"use client";
+
 export default function SeoBottomContent({ content }) {
   if (!content) return null;
 
