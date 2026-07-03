@@ -6,9 +6,6 @@ export const metadata = {
   },
   description:
     "Browse used cars, list your car for free and connect with buyers and sellers across the UK on Kerb Car.",
-  alternates: {
-    canonical: "https://kerbcar.co.uk",
-  },
   openGraph: {
     title: "Kerb Car | Buy and Sell Used Cars in the UK",
     description:
