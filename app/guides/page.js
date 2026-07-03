@@ -40,7 +40,7 @@ export default function GuidesPage() {
           <Link href="/sell-car">Sell your car</Link>
           <Link href="/new-cars">New cars</Link>
           <Link href="/electric-cars">Electric</Link>
-          <Link href="/car-finance">Cars with finance available</Link>
+          <Link href="/cars-on-finance">Cars with finance available</Link>
         </nav>
       </header>
 
