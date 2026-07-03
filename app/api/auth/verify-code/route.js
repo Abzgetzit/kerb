@@ -6,6 +6,10 @@ import {
   getSiteUrl,
   sendKerbEmail,
 } from "../../../lib/kerb-email";
+import {
+  createJsonResponseWithSessionCookie,
+  createSessionExpiry,
+} from "../../../lib/kerb-session-cookie";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -129,7 +133,7 @@ export async function POST(request) {
   }
 
   const sessionToken = createSessionToken();
-  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = createSessionExpiry();
 
   const { error: sessionError } = await supabase
     .from("kerb_account_sessions")
@@ -159,12 +163,15 @@ export async function POST(request) {
     });
   }
 
-  return NextResponse.json({
-    success: true,
-    account,
-    session_token: sessionToken,
-    emails: {
-      welcome: welcomeEmail,
+  return createJsonResponseWithSessionCookie(
+    {
+      success: true,
+      account,
+      emails: {
+        welcome: welcomeEmail,
+      },
     },
-  });
+    sessionToken,
+    expiresAt
+  );
 }
