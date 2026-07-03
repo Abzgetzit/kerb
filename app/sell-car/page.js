@@ -23,7 +23,7 @@ export default function SellCarPage() {
           <Link href="/browse">Browse cars</Link>
           <Link href="/new-cars">New cars</Link>
           <Link href="/electric-cars">Electric</Link>
-          <Link href="/car-finance">Cars with finance available</Link>
+          <Link href="/cars-on-finance">Cars with finance available</Link>
           <Link href="/guides">Guides</Link>
         </nav>
 
@@ -33,10 +33,10 @@ export default function SellCarPage() {
       <section className="hero">
         <div>
           <span className="pill">Free seller listings</span>
-          <h1>Sell your car for free on Kerb</h1>
+          <h1>Sell your car on Kerb</h1>
           <p>
             Create a clear car advert with real photos, buyer enquiries and a simple seller dashboard.
-            Kerb connects buyers and sellers directly — Kerb is not a direct car seller.
+            Kerb Car connects buyers and sellers directly — Kerb Car is not a direct car seller.
           </p>
 
           <div className="heroActions">
@@ -63,18 +63,23 @@ export default function SellCarPage() {
       <section className="steps">
         <div>
           <strong>1</strong>
-          <h3>Add your car details</h3>
-          <p>Choose the make, model, type, spec, mileage, year, condition and asking price.</p>
+          <h3>Add vehicle details</h3>
+          <p>Enter the make, model, spec, mileage, year, condition and asking price.</p>
         </div>
         <div>
           <strong>2</strong>
-          <h3>Upload clear photos</h3>
+          <h3>Upload photos</h3>
           <p>Add front, rear, interior and wheel photos so buyers know what they are viewing.</p>
         </div>
         <div>
           <strong>3</strong>
-          <h3>Receive enquiries</h3>
+          <h3>Manage enquiries</h3>
           <p>Buyers can message you from the listing page. You stay in control of the sale.</p>
+        </div>
+        <div>
+          <strong>4</strong>
+          <h3>Mark as sold</h3>
+          <p>When the car is finished, mark it as sold from your account so buyers know it is no longer available.</p>
         </div>
       </section>
 
@@ -97,7 +102,7 @@ export default function SellCarPage() {
           <h2>Who handles the sale?</h2>
           <p>
             Buyers and sellers agree viewings, payment, collection and ownership transfer directly.
-            Kerb does not inspect, sell, finance, warrant or deliver vehicles.
+            Kerb Car does not inspect, sell, finance, warrant or deliver vehicles.
           </p>
         </div>
       </section>
@@ -235,7 +240,12 @@ const styles = `
     line-height: 1.85;
     font-weight: 850;
   }
-  .steps,
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+  }
   .infoGrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
