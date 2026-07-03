@@ -4,9 +4,12 @@ import { fetchApprovedListings } from "../lib/kerb-server-listings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "New and Nearly New Cars for Sale | Kerb Car",
+  title: "Newer Used Cars for Sale | Kerb Car",
   description:
-    "Browse newer and nearly-new cars for sale on Kerb Car from private sellers and dealers.",
+    "Browse newer and nearly-new used cars for sale on Kerb Car from private sellers and dealers.",
+  alternates: {
+    canonical: "https://kerbcar.co.uk/new-cars",
+  },
 };
 
 const landingContent = {
