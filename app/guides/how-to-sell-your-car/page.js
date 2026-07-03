@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "How to sell your car | Kerb Guides",
-  description: "A simple guide to selling your car on Kerb with clear details, real photos and safe buyer enquiries.",
+  title: "How to Sell Your Car Online | Kerb Car Guide",
+  description:
+    "A simple Kerb Car guide to selling your car online with clear details, real photos and safe buyer enquiries.",
 };
 
 export default function SellGuidePage() {
@@ -15,8 +16,8 @@ export default function SellGuidePage() {
 
       <article className="article">
         <span>Seller guide</span>
-        <h1>How to sell your car on Kerb</h1>
-        <p>Kerb helps you create a clear car advert and receive buyer enquiries. You remain responsible for the car, advert details, viewings, payment and ownership transfer.</p>
+        <h1>How to sell your car on Kerb Car</h1>
+        <p>Kerb Car helps you create a clear car advert and receive buyer enquiries. You remain responsible for the car, advert details, viewings, payment and ownership transfer.</p>
 
         <h2>1. Prepare your car details</h2>
         <p>Have the make, model, type, spec, year, mileage, fuel type, gearbox, body type, condition and asking price ready before starting.</p>
@@ -28,14 +29,14 @@ export default function SellGuidePage() {
         <p>Mention issues such as finance, accident damage, warning lights, mileage concerns, category markers, service history gaps or mechanical problems.</p>
 
         <h2>4. Choose public contact options</h2>
-        <p>Kerb lets you choose whether your name and phone number appear publicly. Buyers can still message you through Kerb if your phone number is hidden.</p>
+        <p>Kerb Car lets you choose whether your name and phone number appear publicly. Buyers can still message you through Kerb Car if your phone number is hidden.</p>
 
         <h2>5. Manage enquiries safely</h2>
         <p>Reply clearly, arrange safe viewings and do not hand over keys, documents or the vehicle until payment has fully cleared.</p>
 
         <div className="cta">
           <h2>Ready to start?</h2>
-          <p>Create your listing for free during Kerb early access.</p>
+          <p>Create your listing for free during Kerb Car early access.</p>
           <Link href="/sell-car">Start your free listing</Link>
         </div>
       </article>
