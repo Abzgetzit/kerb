@@ -1,16 +1,27 @@
 export const metadata = {
   metadataBase: new URL("https://kerbcar.co.uk"),
   title: {
-    default: "Kerb | Car Marketplace",
-    template: "%s | Kerb",
+    default: "Kerb Car | Buy and Sell Used Cars in the UK",
+    template: "%s",
   },
-  description: "Find, browse and sell cars with confidence on Kerb.",
+  description:
+    "Browse used cars, list your car for free and connect with buyers and sellers across the UK on Kerb Car.",
+  alternates: {
+    canonical: "https://kerbcar.co.uk",
+  },
   openGraph: {
-    title: "Kerb | Car Marketplace",
-    description: "Find, browse and sell cars with confidence on Kerb.",
+    title: "Kerb Car | Buy and Sell Used Cars in the UK",
+    description:
+      "Browse used cars, list your car for free and connect with buyers and sellers across the UK on Kerb Car.",
     url: "https://kerbcar.co.uk",
-    siteName: "Kerb",
+    siteName: "Kerb Car",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kerb Car | Buy and Sell Used Cars in the UK",
+    description:
+      "Browse used cars, list your car for free and connect with buyers and sellers across the UK on Kerb Car.",
   },
 };
 
