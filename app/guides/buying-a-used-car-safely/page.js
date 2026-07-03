@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Buying a used car safely | Kerb Guides",
-  description: "Kerb safety advice for checking a used car before viewing, test driving, paying or collecting.",
+  title: "Buying a Used Car Safely | Kerb Car Guide",
+  description:
+    "Kerb Car safety advice for checking a used car before viewing, test driving, paying or collecting.",
 };
 
 export default function BuyingSafelyGuidePage() {
@@ -16,7 +17,7 @@ export default function BuyingSafelyGuidePage() {
       <article className="article">
         <span>Buyer guide</span>
         <h1>Buying a used car safely</h1>
-        <p>Kerb connects buyers and sellers, but buyers should independently check every car before agreeing a sale. Kerb does not inspect, warrant, finance or deliver vehicles.</p>
+        <p>Kerb Car connects buyers and sellers, but buyers should independently check every car before agreeing a sale. Kerb Car does not inspect, warrant, finance or deliver vehicles.</p>
 
         <h2>1. Check the advert carefully</h2>
         <p>Look for clear photos, matching details, sensible pricing, mileage, MOT information and honest condition notes.</p>
@@ -34,7 +35,7 @@ export default function BuyingSafelyGuidePage() {
         <p>Make sure funds and documents are handled carefully. Do not send money if anything feels wrong.</p>
 
         <div className="cta">
-          <h2>Browse cars on Kerb</h2>
+          <h2>Browse cars on Kerb Car</h2>
           <p>Search live listings and message sellers directly.</p>
           <Link href="/browse">Browse cars</Link>
         </div>
