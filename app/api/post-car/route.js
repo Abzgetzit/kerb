@@ -13,26 +13,20 @@ const MAX_LISTING_PHOTOS = 30;
 
 function cleanText(value) {
   if (value === null || value === undefined) return null;
-
   const text = String(value).trim();
-
   return text || null;
 }
 
 function cleanNumber(value) {
   if (!value) return null;
-
   const number = Number(String(value).replace(/[^0-9.]/g, ""));
-
   return Number.isFinite(number) ? number : null;
 }
 
 function cleanBoolean(value) {
   if (value === true) return true;
   if (value === false) return false;
-
   const text = String(value || "").trim().toLowerCase();
-
   return text === "true" || text === "yes" || text === "1" || text === "on";
 }
 
@@ -44,34 +38,18 @@ async function getSignedInAccount(supabase, request) {
   const sessionToken = cleanText(request.headers.get("x-kerb-session-token"));
 
   if (!sessionToken) {
-    return {
-      error: "Sign in required.",
-      status: 401,
-    };
+    return { error: "Sign in required.", status: 401 };
   }
-
-  const now = new Date().toISOString();
 
   const { data: session, error: sessionError } = await supabase
     .from("kerb_account_sessions")
     .select("*")
     .eq("session_token", sessionToken)
-    .gt("expires_at", now)
+    .gt("expires_at", new Date().toISOString())
     .maybeSingle();
 
-  if (sessionError) {
-    return {
-      error: sessionError.message,
-      status: 500,
-    };
-  }
-
-  if (!session) {
-    return {
-      error: "Session expired. Please sign in again.",
-      status: 401,
-    };
-  }
+  if (sessionError) return { error: sessionError.message, status: 500 };
+  if (!session) return { error: "Session expired. Please sign in again.", status: 401 };
 
   const { data: account, error: accountError } = await supabase
     .from("kerb_accounts")
@@ -79,12 +57,7 @@ async function getSignedInAccount(supabase, request) {
     .eq("id", session.account_id)
     .maybeSingle();
 
-  if (accountError) {
-    return {
-      error: accountError.message,
-      status: 500,
-    };
-  }
+  if (accountError) return { error: accountError.message, status: 500 };
 
   const accountEmail = normaliseEmail(session.email || account?.email);
   const accountName =
@@ -130,34 +103,20 @@ function getSafeValuation({
   });
 
   if (calculatedGuide?.low && calculatedGuide?.high) {
-    return {
-      low: calculatedGuide.low,
-      high: calculatedGuide.high,
-    };
+    return { low: calculatedGuide.low, high: calculatedGuide.high };
   }
 
-  if (!submittedLow || !submittedHigh) {
-    return {
-      low: null,
-      high: null,
-    };
-  }
-
-  const safeLow = Math.min(submittedLow, submittedHigh);
-  const safeHigh = Math.max(submittedLow, submittedHigh);
+  if (!submittedLow || !submittedHigh) return { low: null, high: null };
 
   return {
-    low: safeLow,
-    high: safeHigh,
+    low: Math.min(submittedLow, submittedHigh),
+    high: Math.max(submittedLow, submittedHigh),
   };
 }
 
 function getFileExtension(fileName = "") {
   const extension = String(fileName).split(".").pop();
-
-  if (!extension || extension === fileName) return "jpg";
-
-  return extension.toLowerCase();
+  return !extension || extension === fileName ? "jpg" : extension.toLowerCase();
 }
 
 const allowedFeatures = new Set([
@@ -196,7 +155,6 @@ const allowedListingCategories = new Set([
 
 function cleanListingCategory(value) {
   const category = cleanText(value);
-
   return allowedListingCategories.has(category) ? category : "general";
 }
 
@@ -211,18 +169,47 @@ function cleanFeatures(formData) {
   ];
 }
 
+function getMissingColumnName(error) {
+  const message = String(error?.message || "");
+  return message.match(/Could not find the '([^']+)' column/)?.[1] || null;
+}
+
+async function insertListingWithSchemaFallback(supabase, listing) {
+  const safeListing = { ...listing };
+  const removedColumns = [];
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const { data, error } = await supabase
+      .from("kerb_listings")
+      .insert(safeListing)
+      .select()
+      .single();
+
+    if (!error) return { data, removedColumns };
+
+    const missingColumn = getMissingColumnName(error);
+
+    if (!missingColumn || !(missingColumn in safeListing)) {
+      return { error };
+    }
+
+    delete safeListing[missingColumn];
+    removedColumns.push(missingColumn);
+  }
+
+  return {
+    error: new Error("Could not save listing because the database schema did not match the listing fields."),
+  };
+}
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return Response.json(
-        { error: "Missing Supabase environment variables." },
-        { status: 500 }
-      );
+      return Response.json({ error: "Missing Supabase environment variables." }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -246,9 +233,7 @@ export async function POST(request) {
       const fileExt = getFileExtension(photo.name);
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `listings/${fileName}`;
-
-      const arrayBuffer = await photo.arrayBuffer();
-      const fileBuffer = Buffer.from(arrayBuffer);
+      const fileBuffer = Buffer.from(await photo.arrayBuffer());
 
       const { error: uploadError } = await supabase.storage
         .from("kerb-car-photos")
@@ -258,17 +243,13 @@ export async function POST(request) {
           contentType: photo.type || "image/jpeg",
         });
 
-      if (uploadError) {
-        return Response.json({ error: uploadError.message }, { status: 400 });
-      }
+      if (uploadError) return Response.json({ error: uploadError.message }, { status: 400 });
 
       const { data: publicUrlData } = supabase.storage
         .from("kerb-car-photos")
         .getPublicUrl(filePath);
 
-      if (publicUrlData?.publicUrl) {
-        photoUrls.push(publicUrlData.publicUrl);
-      }
+      if (publicUrlData?.publicUrl) photoUrls.push(publicUrlData.publicUrl);
     }
 
     const sellerEmail =
@@ -298,6 +279,18 @@ export async function POST(request) {
     const askingPrice = cleanNumber(formData.get("asking_price"));
     const location = cleanText(formData.get("location"));
     const financeAvailable = cleanBoolean(formData.get("finance_available"));
+    const features = cleanFeatures(formData);
+    const listingCategory = cleanListingCategory(formData.get("listing_category"));
+    const termsAccepted = cleanBoolean(formData.get("terms_accepted"));
+    const termsVersion = cleanText(formData.get("terms_version")) || "2026-06-28";
+
+    if (!termsAccepted) {
+      return Response.json(
+        { error: "You must agree to Kerb’s Terms and Conditions before listing your car." },
+        { status: 400 }
+      );
+    }
+
     const valuation = getSafeValuation({
       make,
       model,
@@ -312,17 +305,6 @@ export async function POST(request) {
       submittedLow: cleanNumber(formData.get("valuation_low")),
       submittedHigh: cleanNumber(formData.get("valuation_high")),
     });
-    const features = cleanFeatures(formData);
-    const listingCategory = cleanListingCategory(formData.get("listing_category"));
-    const termsAccepted = cleanBoolean(formData.get("terms_accepted"));
-    const termsVersion = cleanText(formData.get("terms_version")) || "2026-06-28";
-
-    if (!termsAccepted) {
-      return Response.json(
-        { error: "You must agree to Kerb’s Terms and Conditions before listing your car." },
-        { status: 400 }
-      );
-    }
 
     const title = [year, make, model, modelDetail, variant].filter(Boolean).join(" ");
 
@@ -331,14 +313,9 @@ export async function POST(request) {
       terms_accepted_at: new Date().toISOString(),
       terms_version: termsVersion,
 
-      account_id:
-        signedInAccount.accountId || cleanText(formData.get("account_id")),
-      account_email:
-        signedInAccount.accountEmail || cleanText(formData.get("account_email")),
-      account_name:
-        signedInAccount.accountName ||
-        cleanText(formData.get("account_name")) ||
-        sellerName,
+      account_id: signedInAccount.accountId || cleanText(formData.get("account_id")),
+      account_email: signedInAccount.accountEmail || cleanText(formData.get("account_email")),
+      account_name: signedInAccount.accountName || cleanText(formData.get("account_name")) || sellerName,
 
       seller_name: sellerName,
       seller_email: sellerEmail,
@@ -351,7 +328,6 @@ export async function POST(request) {
       make,
       model,
       model_detail: modelDetail,
-      variant,
       year,
       mileage,
       body_type: bodyType,
@@ -364,44 +340,31 @@ export async function POST(request) {
       listing_category: listingCategory,
 
       finance_available: financeAvailable,
-
       description: cleanText(formData.get("description")),
       features,
-
       valuation_low: valuation.low,
       valuation_high: valuation.high,
-
       image_url: photoUrls[0] || null,
       photos: photoUrls,
       photo_urls: photoUrls,
     };
 
-    const { data, error } = await supabase
-      .from("kerb_listings")
-      .insert(listing)
-      .select()
-      .single();
+    const { data, error, removedColumns } = await insertListingWithSchemaFallback(supabase, listing);
 
-    if (error) {
-      return Response.json({ error: error.message }, { status: 400 });
-    }
+    if (error) return Response.json({ error: error.message }, { status: 400 });
 
     const siteUrl = getSiteUrl(request);
     const sellerConfirmationEmail = await sendKerbEmail({
       to: data.seller_email || data.account_email,
       subject: `Your ${getListingTitle(data)} listing is now live on Kerb`,
-      html: createListingLiveEmail({
-        listing: data,
-        siteUrl,
-      }),
+      html: createListingLiveEmail({ listing: data, siteUrl }),
     });
 
     return Response.json({
       success: true,
       listing: data,
-      emails: {
-        seller_confirmation: sellerConfirmationEmail,
-      },
+      skipped_columns: removedColumns,
+      emails: { seller_confirmation: sellerConfirmationEmail },
     });
   } catch (error) {
     return Response.json(
