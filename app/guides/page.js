@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Car guides | Kerb",
-  description: "Helpful Kerb guides for buying and selling cars safely.",
+  title: "Car Buying and Selling Guides | Kerb Car",
+  description:
+    "Read Kerb Car guides on selling your car, buying safely and using the marketplace with confidence.",
 };
 
 export default function GuidesPage() {
@@ -20,10 +21,10 @@ export default function GuidesPage() {
       </header>
 
       <section className="hero">
-        <span>Kerb guides</span>
+        <span>Kerb Car guides</span>
         <h1>Helpful car guides</h1>
         <p>
-          Simple guides for selling, buying and browsing cars on Kerb. Kerb is a marketplace,
+          Simple guides for selling, buying and browsing cars on Kerb Car. Kerb Car is a marketplace,
           not a direct car seller, finance provider or vehicle inspection service.
         </p>
       </section>
@@ -44,7 +45,7 @@ export default function GuidesPage() {
         <Link href="/electric-cars">
           <strong>Electric cars</strong>
           <h2>Browse electric and hybrid cars</h2>
-          <p>Find electric and hybrid listings currently available on Kerb.</p>
+          <p>Find electric and hybrid listings currently available on Kerb Car.</p>
         </Link>
       </section>
 
