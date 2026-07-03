@@ -17,9 +17,21 @@ function getSafeNextPath() {
   return next;
 }
 
+function getNextLabel(path) {
+  if (path === "/post-car") return "the post your car page";
+  if (path === "/sell-car") return "the sell your car page";
+  if (path === "/saved") return "your saved cars";
+  if (path === "/account") return "your account";
+  if (path === "/account/password") return "change password";
+  if (path?.startsWith("/listing/")) return "the car listing";
+
+  return "the page you were trying to view";
+}
+
 export default function LoginPage() {
   const [mode, setMode] = useState("login");
   const [step, setStep] = useState("form");
+  const [nextPath, setNextPath] = useState("/account");
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -29,12 +41,13 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
-
   const [code, setCode] = useState("");
+
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [nextPath, setNextPath] = useState("/account");
+
+  const nextLabel = getNextLabel(nextPath);
 
   const modeCopy = useMemo(() => {
     if (mode === "register") {
@@ -88,36 +101,41 @@ export default function LoginPage() {
     window.location.href = nextPath || "/account";
   }
 
+  async function submitJson(url, body, fallbackError) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || fallbackError);
+    }
+
+    return result;
+  }
+
   async function createAccount(event) {
     event.preventDefault();
-
     setIsLoading(true);
     resetMessages();
 
     try {
-      const cleanEmail = email.trim().toLowerCase();
-
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const result = await submitJson(
+        "/api/auth/register",
+        {
           full_name: fullName.trim(),
           phone: phone.trim(),
-          email: cleanEmail,
+          email: email.trim().toLowerCase(),
           password,
           confirm_password: confirmPassword,
           terms_accepted: termsAccepted,
           terms_version: TERMS_VERSION,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Could not create account.");
-      }
+        },
+        "Could not create account."
+      );
 
       saveLogin(result);
     } catch (error) {
@@ -129,29 +147,18 @@ export default function LoginPage() {
 
   async function loginWithPassword(event) {
     event.preventDefault();
-
     setIsLoading(true);
     resetMessages();
 
     try {
-      const cleanEmail = email.trim().toLowerCase();
-
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: cleanEmail,
+      const result = await submitJson(
+        "/api/auth/login",
+        {
+          email: email.trim().toLowerCase(),
           password,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Could not sign in.");
-      }
+        },
+        "Could not sign in."
+      );
 
       saveLogin(result);
     } catch (error) {
@@ -176,22 +183,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/send-code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: cleanEmail,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Could not send code.");
-      }
-
+      await submitJson("/api/auth/send-code", { email: cleanEmail }, "Could not send code.");
       setEmail(cleanEmail);
       setStep("code");
       setSuccessMessage(`Code sent to ${cleanEmail}.`);
@@ -204,27 +196,18 @@ export default function LoginPage() {
 
   async function verifyCode(event) {
     event.preventDefault();
-
     setIsLoading(true);
     resetMessages();
 
     try {
-      const response = await fetch("/api/auth/verify-code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const result = await submitJson(
+        "/api/auth/verify-code",
+        {
           email: email.trim().toLowerCase(),
           code: code.trim(),
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Invalid login code.");
-      }
+        },
+        "Invalid login code."
+      );
 
       saveLogin(result);
     } catch (error) {
@@ -236,29 +219,20 @@ export default function LoginPage() {
 
   async function resetPassword(event) {
     event.preventDefault();
-
     setIsLoading(true);
     resetMessages();
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const result = await submitJson(
+        "/api/auth/reset-password",
+        {
           email: email.trim().toLowerCase(),
           code: code.trim(),
           password: newPassword,
           confirm_password: confirmNewPassword,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Could not reset password.");
-      }
+        },
+        "Could not reset password."
+      );
 
       saveLogin(result);
     } catch (error) {
@@ -283,10 +257,7 @@ export default function LoginPage() {
   return (
     <main className="loginPage">
       <section className="loginCard">
-        <Link href="/" className="logo">
-          Kerb
-        </Link>
-
+        <Link href="/" className="logo">Kerb</Link>
         <div className="pill">Kerb account</div>
 
         <h1>{modeCopy.title}</h1>
@@ -294,7 +265,7 @@ export default function LoginPage() {
 
         {nextPath !== "/account" && (
           <div className="nextBox">
-            You’ll continue to <strong>{nextPath}</strong> after signing in.
+            You’ll continue to <strong>{nextLabel}</strong> after signing in.
           </div>
         )}
 
@@ -309,206 +280,100 @@ export default function LoginPage() {
         </div>
 
         <div className="modeTabs">
-          <button
-            type="button"
-            className={mode === "login" ? "active" : ""}
-            onClick={() => switchMode("login")}
-          >
-            Sign in
-          </button>
-
-          <button
-            type="button"
-            className={mode === "register" ? "active" : ""}
-            onClick={() => switchMode("register")}
-          >
-            Create account
-          </button>
-
-          <button
-            type="button"
-            className={mode === "code" ? "active" : ""}
-            onClick={() => switchMode("code")}
-          >
-            Email code
-          </button>
+          <button type="button" className={mode === "login" ? "active" : ""} onClick={() => switchMode("login")}>Sign in</button>
+          <button type="button" className={mode === "register" ? "active" : ""} onClick={() => switchMode("register")}>Create account</button>
+          <button type="button" className={mode === "code" ? "active" : ""} onClick={() => switchMode("code")}>Email code</button>
         </div>
 
         {mode === "register" && (
           <form onSubmit={createAccount} className="loginForm">
-            <label>
-              Full name
-              <input type="text" placeholder="Your full name" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
-            </label>
-
-            <label>
-              Phone number
-              <input type="tel" placeholder="07..." value={phone} onChange={(event) => setPhone(event.target.value)} required />
-            </label>
-
-            <label>
-              Email address
-              <input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            </label>
-
-            <label>
-              Password
-              <input type="password" placeholder="Create a password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-            </label>
-
-            <label>
-              Confirm password
-              <input type="password" placeholder="Confirm your password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
-            </label>
+            <label>Full name<input type="text" placeholder="Your full name" value={fullName} onChange={(event) => setFullName(event.target.value)} required /></label>
+            <label>Phone number<input type="tel" placeholder="07..." value={phone} onChange={(event) => setPhone(event.target.value)} required /></label>
+            <label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+            <label>Password<input type="password" placeholder="Create a password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+            <label>Confirm password<input type="password" placeholder="Confirm your password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label>
 
             <label className="termsConsent">
               <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} required />
-              <span>
-                I understand and agree to Kerb’s <Link href="/terms" target="_blank" rel="noreferrer">Terms and Conditions</Link>, <Link href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link> and marketplace rules.
-              </span>
+              <span>I understand and agree to Kerb’s <Link href="/terms" target="_blank" rel="noreferrer">Terms and Conditions</Link>, <Link href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link> and marketplace rules.</span>
             </label>
 
-            {successMessage && <div className="successBox">{successMessage}</div>}
-            {errorMessage && <div className="errorBox">{errorMessage}</div>}
-
-            <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
-            </button>
+            <Message success={successMessage} error={errorMessage} />
+            <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Creating account..." : "Create account"}</button>
           </form>
         )}
 
         {mode === "login" && (
           <form onSubmit={loginWithPassword} className="loginForm">
-            <label>
-              Email address
-              <input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            </label>
+            <label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+            <label>Password<input type="password" placeholder="Your password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
 
-            <label>
-              Password
-              <input type="password" placeholder="Your password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-            </label>
-
-            {successMessage && <div className="successBox">{successMessage}</div>}
-            {errorMessage && <div className="errorBox">{errorMessage}</div>}
-
-            <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign in"}
-            </button>
-
-            <button className="textButton" type="button" onClick={() => switchMode("reset")}>
-              Forgot password? Reset by email code
-            </button>
+            <Message success={successMessage} error={errorMessage} />
+            <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Signing in..." : "Sign in"}</button>
+            <button className="textButton" type="button" onClick={() => switchMode("reset")}>Forgot password? Reset by email code</button>
           </form>
         )}
 
         {mode === "code" && step === "form" && (
           <form onSubmit={sendCode} className="loginForm">
-            <label>
-              Email address
-              <input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            </label>
-
-            {successMessage && <div className="successBox">{successMessage}</div>}
-            {errorMessage && <div className="errorBox">{errorMessage}</div>}
-
-            <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Sending code..." : "Send login code"}
-            </button>
+            <label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+            <Message success={successMessage} error={errorMessage} />
+            <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Sending code..." : "Send login code"}</button>
           </form>
         )}
 
         {mode === "code" && step === "code" && (
           <form onSubmit={verifyCode} className="loginForm">
-            <label>
-              Enter 6-digit code
-              <input inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={(event) => setCode(event.target.value)} required />
-            </label>
-
-            <div className="emailRow">
-              Code sent to <strong>{email}</strong>
-              <button type="button" onClick={() => { setStep("form"); setCode(""); resetMessages(); }}>
-                Change email
-              </button>
-            </div>
-
-            {successMessage && <div className="successBox">{successMessage}</div>}
-            {errorMessage && <div className="errorBox">{errorMessage}</div>}
-
-            <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Checking code..." : "Sign in with code"}
-            </button>
-
-            <button className="secondaryButton" type="button" disabled={isLoading} onClick={sendCode}>
-              Resend code
-            </button>
+            <CodeInput code={code} setCode={setCode} email={email} changeEmail={() => { setStep("form"); setCode(""); resetMessages(); }} />
+            <Message success={successMessage} error={errorMessage} />
+            <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Checking code..." : "Sign in with code"}</button>
+            <button className="secondaryButton" type="button" disabled={isLoading} onClick={sendCode}>Resend code</button>
           </form>
         )}
 
         {mode === "reset" && step === "form" && (
           <form onSubmit={sendCode} className="loginForm">
-            <label>
-              Email address
-              <input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            </label>
-
-            {successMessage && <div className="successBox">{successMessage}</div>}
-            {errorMessage && <div className="errorBox">{errorMessage}</div>}
-
-            <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Sending reset code..." : "Send reset code"}
-            </button>
-
-            <button className="textButton" type="button" onClick={() => switchMode("login")}>
-              Back to sign in
-            </button>
+            <label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
+            <Message success={successMessage} error={errorMessage} />
+            <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Sending reset code..." : "Send reset code"}</button>
+            <button className="textButton" type="button" onClick={() => switchMode("login")}>Back to sign in</button>
           </form>
         )}
 
         {mode === "reset" && step === "code" && (
           <form onSubmit={resetPassword} className="loginForm">
-            <label>
-              Enter 6-digit code
-              <input inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={(event) => setCode(event.target.value)} required />
-            </label>
-
-            <label>
-              New password
-              <input type="password" placeholder="Create a new password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
-            </label>
-
-            <label>
-              Confirm new password
-              <input type="password" placeholder="Confirm new password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required />
-            </label>
-
-            <div className="emailRow">
-              Reset code sent to <strong>{email}</strong>
-              <button type="button" onClick={() => { setStep("form"); setCode(""); resetMessages(); }}>
-                Change email
-              </button>
-            </div>
-
-            {successMessage && <div className="successBox">{successMessage}</div>}
-            {errorMessage && <div className="errorBox">{errorMessage}</div>}
-
-            <button className="primaryButton" type="submit" disabled={isLoading}>
-              {isLoading ? "Resetting password..." : "Reset password and sign in"}
-            </button>
-
-            <button className="secondaryButton" type="button" disabled={isLoading} onClick={sendCode}>
-              Resend code
-            </button>
+            <CodeInput code={code} setCode={setCode} email={email} label="Reset code sent to" changeEmail={() => { setStep("form"); setCode(""); resetMessages(); }} />
+            <label>New password<input type="password" placeholder="Create a new password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
+            <label>Confirm new password<input type="password" placeholder="Confirm new password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required /></label>
+            <Message success={successMessage} error={errorMessage} />
+            <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Resetting password..." : "Reset password and sign in"}</button>
+            <button className="secondaryButton" type="button" disabled={isLoading} onClick={sendCode}>Resend code</button>
           </form>
         )}
 
-        <Link href="/" className="backLink">
-          Back to Kerb
-        </Link>
+        <Link href="/" className="backLink">Back to Kerb</Link>
       </section>
 
       <style jsx global>{styles}</style>
     </main>
+  );
+}
+
+function Message({ success, error }) {
+  return (
+    <>
+      {success && <div className="successBox">{success}</div>}
+      {error && <div className="errorBox">{error}</div>}
+    </>
+  );
+}
+
+function CodeInput({ code, setCode, email, changeEmail, label = "Code sent to" }) {
+  return (
+    <>
+      <label>Enter 6-digit code<input inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={(event) => setCode(event.target.value)} required /></label>
+      <div className="emailRow">{label} <strong>{email}</strong><button type="button" onClick={changeEmail}>Change email</button></div>
+    </>
   );
 }
 
