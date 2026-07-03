@@ -4,9 +4,9 @@ import { fetchApprovedListings } from "../lib/kerb-server-listings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Cars with finance available | Kerb",
+  title: "Cars with Finance Available | Kerb Car",
   description:
-    "Browse cars where the seller or dealer says finance may be available. Kerb does not provide finance.",
+    "Browse cars where sellers or dealers say finance may be available. Kerb Car does not provide finance.",
 };
 
 export default async function FinanceCarsPage() {
