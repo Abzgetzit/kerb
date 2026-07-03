@@ -1,4 +1,5 @@
 import BrowseClient from "../browse/BrowseClient";
+import SeoBottomContent from "../components/SeoBottomContent";
 import { fetchApprovedListings } from "../lib/kerb-server-listings";
 
 export const dynamic = "force-dynamic";
@@ -52,11 +53,13 @@ export default async function CarsOnFinancePage() {
   const { listings, error } = await fetchApprovedListings();
 
   return (
-    <BrowseClient
-      initialCars={listings}
-      initialFilters={{ finance: "true" }}
-      initialLoadError={error}
-      landingContent={landingContent}
-    />
+    <>
+      <BrowseClient
+        initialCars={listings}
+        initialFilters={{ finance: "true" }}
+        initialLoadError={error}
+      />
+      <SeoBottomContent content={landingContent} />
+    </>
   );
 }
