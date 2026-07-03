@@ -3,12 +3,17 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import SiteMenu from "../components/SiteMenu";
-import { vehicleMakes } from "../lib/vehicle-data";
+import {
+  getPublicVehicleMake,
+  getVehicleMakeMatchKey,
+  getVehicleModelsForPublicMake,
+  publicVehicleMakeOptions,
+} from "../lib/public-vehicle-makes";
 
 const categoryLabels = {
   "first-car": "First cars",
   performance: "Performance cars",
-  "family-suv": "Family SUVs",
+  "family-suv": "Family SUV cars",
   "electric-hybrid": "Electric & hybrid cars",
   "newer-car": "New cars",
 };
@@ -101,7 +106,62 @@ function sortCars(cars, sort) {
   return items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 }
 
-export default function BrowseClient({ initialCars = [], initialFilters = {}, initialSearch = "", initialSort = "featured", initialLoadError = "" }) {
+function makeMatches(carMake, selectedMake) {
+  if (!selectedMake) return true;
+
+  const selectedKey = getVehicleMakeMatchKey(selectedMake);
+  const carKey = getVehicleMakeMatchKey(carMake);
+  const rawCarMake = String(carMake || "").toLowerCase();
+  const rawSelectedMake = String(selectedMake || "").toLowerCase();
+
+  return carKey === selectedKey || rawCarMake.includes(rawSelectedMake);
+}
+
+function LandingContent({ content, count }) {
+  if (!content) return null;
+
+  return (
+    <section className="landingIntro">
+      <div className="landingCopy">
+        {content.kicker && <span>{content.kicker}</span>}
+        <h2>{content.title}</h2>
+        <p>{content.description}</p>
+      </div>
+
+      {content.points?.length ? (
+        <div className="landingCards">
+          {content.points.map((point) => (
+            <article key={point.title}>
+              <h3>{point.title}</h3>
+              <p>{point.text}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {content.faqs?.length ? (
+        <div className="faqBlock">
+          <div>
+            <span>Kerb Car FAQs</span>
+            <h2>{content.faqTitle || "Common questions"}</h2>
+            <p>{count} {count === 1 ? "listing" : "listings"} currently match this page.</p>
+          </div>
+
+          <div className="faqGrid">
+            {content.faqs.map((faq) => (
+              <article key={faq.question}>
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+export default function BrowseClient({ initialCars = [], initialFilters = {}, initialSearch = "", initialSort = "featured", initialLoadError = "", landingContent = null }) {
   const [filters, setFilters] = useState({ ...initialFilters });
   const [query, setQuery] = useState(initialSearch || "");
   const [sort, setSort] = useState(initialSort || "featured");
@@ -112,7 +172,7 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
       (initialCars || []).filter((car) => {
         const blob = text(car);
         if (q && !blob.includes(q)) return false;
-        if (filters.make && String(car.make || "").toLowerCase() !== String(filters.make).toLowerCase()) return false;
+        if (filters.make && !makeMatches(car.make, filters.make)) return false;
         if (filters.model && !blob.includes(String(filters.model).toLowerCase())) return false;
         if (filters.location && !String(car.location || "").toLowerCase().includes(String(filters.location).toLowerCase())) return false;
         if (filters.finance === "true" && !hasFinance(car)) return false;
@@ -127,12 +187,13 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
   }, [initialCars, filters, query, sort]);
 
   const heading = filters.category ? categoryLabels[filters.category] || "Browse cars" : filters.finance === "true" ? "Cars with finance available" : "Browse cars for sale";
+  const currentMake = getPublicVehicleMake(filters.make || "");
 
   function updateFilter(name, value) {
     setFilters((current) => ({ ...current, [name]: value, ...(name === "make" ? { model: "" } : {}) }));
   }
 
-  const modelOptions = filters.make ? vehicleMakes[filters.make] || [] : [];
+  const modelOptions = currentMake ? getVehicleModelsForPublicMake(currentMake) : [];
 
   return (
     <main className="page">
@@ -151,24 +212,93 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
 
       <section className="hero">
         <div>
-          <p>Kerb marketplace</p>
+          <p>Kerb Car marketplace</p>
           <h1>{heading}</h1>
           <span>{cars.length} {cars.length === 1 ? "car" : "cars"} found</span>
         </div>
         <Link href="/sell-car" className="sellBtn">Sell your car for free</Link>
       </section>
 
-      <section className="filters">
-        <input value={filters.location || ""} onChange={(e) => updateFilter("location", e.target.value)} placeholder="Town or city" />
-        <select value={filters.make || ""} onChange={(e) => updateFilter("make", e.target.value)}><option value="">Any make</option>{Object.keys(vehicleMakes).map((make) => <option key={make}>{make}</option>)}</select>
-        <select value={filters.model || ""} onChange={(e) => updateFilter("model", e.target.value)} disabled={!filters.make}><option value="">Any model</option>{modelOptions.map((model) => <option key={model}>{model}</option>)}</select>
-        <input value={filters.priceMin || ""} onChange={(e) => updateFilter("priceMin", e.target.value.replace(/[^0-9]/g, ""))} placeholder="£ Min" />
-        <input value={filters.priceMax || ""} onChange={(e) => updateFilter("priceMax", e.target.value.replace(/[^0-9]/g, ""))} placeholder="£ Max" />
-        <input value={filters.mileageMax || ""} onChange={(e) => updateFilter("mileageMax", e.target.value.replace(/[^0-9]/g, ""))} placeholder="Mileage max" />
-        <select value={filters.finance || ""} onChange={(e) => updateFilter("finance", e.target.value)}><option value="">Any finance</option><option value="true">Finance available</option></select>
-        <select value={filters.category || ""} onChange={(e) => updateFilter("category", e.target.value)}><option value="">All categories</option><option value="newer-car">New cars</option><option value="electric-hybrid">Electric & hybrid</option><option value="family-suv">Family SUVs</option><option value="first-car">First cars</option><option value="performance">Performance cars</option></select>
-        <input className="wide" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search make, model, fuel, location..." />
-        <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="featured">Newest first</option><option value="price-low">Price low to high</option><option value="price-high">Price high to low</option><option value="mileage-low">Lowest mileage</option></select>
+      <LandingContent content={landingContent} count={cars.length} />
+
+      <section className="filters" aria-label="Car search filters">
+        <label>
+          <span>Town or city</span>
+          <input value={filters.location || ""} onChange={(e) => updateFilter("location", e.target.value)} placeholder="Any location" />
+        </label>
+
+        <label>
+          <span>Make</span>
+          <input
+            list="kerb-make-options"
+            value={filters.make || ""}
+            onChange={(e) => updateFilter("make", e.target.value)}
+            placeholder="Search make"
+          />
+          <datalist id="kerb-make-options">
+            {publicVehicleMakeOptions.map((make) => (
+              <option key={make} value={make} />
+            ))}
+          </datalist>
+        </label>
+
+        <label>
+          <span>Model</span>
+          <select value={filters.model || ""} onChange={(e) => updateFilter("model", e.target.value)} disabled={!currentMake}>
+            <option value="">Any model</option>
+            {modelOptions.map((model) => <option key={model}>{model}</option>)}
+          </select>
+        </label>
+
+        <label>
+          <span>Price from</span>
+          <input value={filters.priceMin || ""} onChange={(e) => updateFilter("priceMin", e.target.value.replace(/[^0-9]/g, ""))} placeholder="£ Min" />
+        </label>
+
+        <label>
+          <span>Price to</span>
+          <input value={filters.priceMax || ""} onChange={(e) => updateFilter("priceMax", e.target.value.replace(/[^0-9]/g, ""))} placeholder="£ Max" />
+        </label>
+
+        <label>
+          <span>Max mileage</span>
+          <input value={filters.mileageMax || ""} onChange={(e) => updateFilter("mileageMax", e.target.value.replace(/[^0-9]/g, ""))} placeholder="Mileage max" />
+        </label>
+
+        <label>
+          <span>Finance</span>
+          <select value={filters.finance || ""} onChange={(e) => updateFilter("finance", e.target.value)}>
+            <option value="">Any finance</option>
+            <option value="true">Finance available</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Category</span>
+          <select value={filters.category || ""} onChange={(e) => updateFilter("category", e.target.value)}>
+            <option value="">All categories</option>
+            <option value="newer-car">New cars</option>
+            <option value="electric-hybrid">Electric & hybrid</option>
+            <option value="family-suv">Family SUV cars</option>
+            <option value="first-car">First cars</option>
+            <option value="performance">Performance cars</option>
+          </select>
+        </label>
+
+        <label className="wide">
+          <span>Keyword</span>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search make, model, fuel, location..." />
+        </label>
+
+        <label>
+          <span>Sort by</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="featured">Newest first</option>
+            <option value="price-low">Price low to high</option>
+            <option value="price-high">Price high to low</option>
+            <option value="mileage-low">Lowest mileage</option>
+          </select>
+        </label>
       </section>
 
       {initialLoadError && <div className="notice">{initialLoadError}</div>}
@@ -180,7 +310,7 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
               <img src={image(car)} alt={title(car)} />
               <div>
                 <h2>{title(car)}</h2>
-                <p>{[car.fuel_type || car.fuel, car.gearbox, car.body_type].filter(Boolean).join(" • ") || "Used car listed on Kerb"}</p>
+                <p>{[car.fuel_type || car.fuel, car.gearbox, car.body_type].filter(Boolean).join(" • ") || "Used car listed on Kerb Car"}</p>
                 <div className="meta">{car.location && <span>{car.location}</span>}<span>{mileage(car)}</span>{hasFinance(car) && <span>Finance available</span>}</div>
                 <strong>{price(carPrice(car))}</strong>
               </div>
@@ -188,7 +318,7 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
           ))}
         </section>
       ) : (
-        <section className="empty"><h2>No cars match these filters yet</h2><p>Try widening your filters or browse all cars on Kerb.</p><button type="button" onClick={() => setFilters({})}>Clear filters</button></section>
+        <section className="empty"><h2>No cars match these filters yet</h2><p>Try widening your filters or browse all cars on Kerb Car.</p><button type="button" onClick={() => setFilters({})}>Clear filters</button></section>
       )}
 
       <style jsx>{`
@@ -202,8 +332,20 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
         h1 { margin: 0 0 10px; font-size: clamp(38px, 6vw, 72px); letter-spacing: -3px; line-height: 0.94; }
         .hero span { color: #53617a; font-weight: 900; }
         .sellBtn, .empty button { border: none; border-radius: 18px; background: #0048ff; color: white; padding: 15px 20px; text-decoration: none; font-weight: 950; cursor: pointer; }
+        .landingIntro { display: grid; gap: 18px; margin-bottom: 22px; }
+        .landingCopy, .faqBlock { border: 1px solid #dfe8f7; border-radius: 26px; background: white; padding: 26px; box-shadow: 0 16px 42px rgba(14, 30, 70, 0.06); }
+        .landingCopy span, .faqBlock span { display: inline-flex; color: #0048ff; font-weight: 950; margin-bottom: 10px; }
+        .landingCopy h2, .faqBlock h2 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 46px); letter-spacing: -1.4px; }
+        .landingCopy p, .landingCards p, .faqBlock p, .empty p { color: #53617a; line-height: 1.65; font-weight: 750; }
+        .landingCards, .faqGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .landingCards article, .faqGrid article { border: 1px solid #dfe8f7; border-radius: 22px; background: #ffffff; padding: 20px; }
+        .landingCards h3, .faqGrid h3 { margin: 0 0 8px; }
+        .landingCards p, .faqGrid p { margin: 0; }
+        .faqBlock { display: grid; gap: 18px; }
         .filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; border: 1px solid #dfe8f7; border-radius: 24px; background: white; padding: 16px; }
-        input, select { min-height: 46px; border: 1px solid #d8e3f3; border-radius: 14px; padding: 0 12px; font-weight: 800; background: #fbfdff; }
+        .filters label { display: grid; gap: 7px; }
+        .filters label span { color: #53617a; font-size: 12px; font-weight: 950; }
+        input, select { width: 100%; min-height: 46px; border: 1px solid #d8e3f3; border-radius: 14px; padding: 0 12px; font-weight: 800; background: #fbfdff; color: #071126; }
         .wide { grid-column: span 2; }
         .notice, .empty { border: 1px solid #dfe8f7; border-radius: 24px; background: white; padding: 24px; margin-bottom: 18px; }
         .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
@@ -215,8 +357,8 @@ export default function BrowseClient({ initialCars = [], initialFilters = {}, in
         .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
         .meta span { background: #eef4ff; border-radius: 999px; padding: 7px 10px; font-size: 12px; font-weight: 900; }
         .card strong { font-size: 24px; }
-        @media (max-width: 900px) { .page { padding: 16px; } .links { display: none; } .hero { flex-direction: column; align-items: flex-start; } .filters, .grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 620px) { .filters, .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+        @media (max-width: 900px) { .page { padding: 16px; } .links { display: none; } .hero { flex-direction: column; align-items: flex-start; } .filters, .grid, .landingCards, .faqGrid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 620px) { .filters, .grid, .landingCards, .faqGrid { grid-template-columns: 1fr; } .wide { grid-column: auto; } .hero, .landingCopy, .faqBlock { padding: 22px; } h1 { letter-spacing: -2px; } }
       `}</style>
     </main>
   );
