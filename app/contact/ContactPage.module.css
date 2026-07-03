@@ -1,0 +1,152 @@
+.responseGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.responseCard,
+.categoryCard,
+.noticeCard {
+  border: 1px solid #dfe8f7;
+  border-radius: 22px;
+  background: #f8fbff;
+  padding: 20px;
+}
+
+.responseCard span {
+  display: inline-flex;
+  color: #0048ff;
+  font-size: 13px;
+  font-weight: 950;
+  margin-bottom: 8px;
+}
+
+.responseCard strong {
+  display: block;
+  color: #071126;
+  font-size: 24px;
+  letter-spacing: -0.4px;
+  margin-bottom: 8px;
+}
+
+.responseCard a {
+  color: #0048ff;
+  text-decoration: none;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.categoryCard {
+  background: #ffffff;
+}
+
+.categoryCard h3,
+.noticeCard h2 {
+  margin: 0 0 8px;
+  color: #071126;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+}
+
+.categoryCard p {
+  margin: 0;
+}
+
+.contactForm {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  border: 1px solid #dfe8f7;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%);
+  padding: clamp(20px, 4vw, 28px);
+  box-shadow: 0 18px 46px rgba(14, 30, 70, 0.06);
+}
+
+.contactForm label {
+  display: grid;
+  gap: 8px;
+  color: #101832;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.contactForm input,
+.contactForm select,
+.contactForm textarea {
+  width: 100%;
+  border: 1px solid #dce5f3;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #071126;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 750;
+  padding: 14px 15px;
+  outline: none;
+}
+
+.contactForm textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.55;
+}
+
+.contactForm input:focus,
+.contactForm select:focus,
+.contactForm textarea:focus {
+  border-color: #0048ff;
+  box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08);
+}
+
+.contactForm button {
+  min-height: 54px;
+  width: fit-content;
+  border: none;
+  border-radius: 16px;
+  background: #0048ff;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 950;
+  padding: 0 22px;
+  box-shadow: 0 14px 30px rgba(0, 72, 255, 0.22);
+}
+
+.successBox {
+  border: 1px solid #bce8ca;
+  border-radius: 16px;
+  background: #eafaf0;
+  color: #137333;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.55;
+}
+
+.noticeCard ul {
+  margin-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .responseGrid,
+  .categoryGrid,
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .contactForm button {
+    width: 100%;
+  }
+}
