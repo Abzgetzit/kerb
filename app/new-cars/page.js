@@ -4,8 +4,9 @@ import { fetchApprovedListings } from "../lib/kerb-server-listings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "New cars for sale | Kerb",
-  description: "Browse newer and nearly-new cars for sale on Kerb.",
+  title: "New and Nearly New Cars for Sale | Kerb Car",
+  description:
+    "Browse newer and nearly-new cars for sale on Kerb Car from private sellers and dealers.",
 };
 
 export default async function Page() {
