@@ -1,4 +1,5 @@
 import "./globals.css";
+import BrowseHeadingCleaner from "./components/BrowseHeadingCleaner";
 
 export const metadata = {
   metadataBase: new URL("https://kerbcar.co.uk"),
@@ -27,7 +28,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <BrowseHeadingCleaner />
+        {children}
+      </body>
     </html>
   );
 }
