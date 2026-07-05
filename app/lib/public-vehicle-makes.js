@@ -1,28 +1,12 @@
 import { vehicleMakes } from "./vehicle-data";
 
-const popularMakes = [
+export const popularVehicleMakeOptions = [
   "Audi",
   "BMW",
   "Mercedes-Benz",
   "Volkswagen",
   "Ford",
   "Vauxhall",
-  "Toyota",
-  "Nissan",
-  "Kia",
-  "Hyundai",
-  "Peugeot",
-  "Renault",
-  "Land Rover",
-  "Tesla",
-  "Volvo",
-  "Honda",
-  "Mazda",
-  "MINI",
-  "Skoda",
-  "SEAT",
-  "Cupra",
-  "DS Automobiles",
 ];
 
 const makeDisplayAliases = {
@@ -65,14 +49,14 @@ const rawPublicMakes = Object.keys(vehicleMakes)
   .filter(Boolean);
 
 const publicMakeSet = new Set(rawPublicMakes);
-for (const make of popularMakes) publicMakeSet.add(make);
+for (const make of popularVehicleMakeOptions) publicMakeSet.add(make);
 
 const alphabeticMakes = [...publicMakeSet]
-  .filter((make) => !popularMakes.includes(make))
+  .filter((make) => !popularVehicleMakeOptions.includes(make))
   .sort((a, b) => a.localeCompare(b, "en-GB", { sensitivity: "base" }));
 
 export const publicVehicleMakeOptions = [
-  ...popularMakes.filter((make) => publicMakeSet.has(make)),
+  ...popularVehicleMakeOptions.filter((make) => publicMakeSet.has(make)),
   ...alphabeticMakes,
 ];
 
