@@ -6,6 +6,14 @@ export const dynamic = "force-dynamic";
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
+function getSessionIdFromSearchParams(searchParams) {
+  const value = searchParams?.session_id;
+
+  if (Array.isArray(value)) return value[0] || "";
+
+  return value || "";
+}
+
 async function getSessionStatus(sessionId) {
   const cleanSessionId = String(sessionId || "").trim();
 
@@ -87,7 +95,8 @@ async function getSessionStatus(sessionId) {
 }
 
 export default async function BoostSuccessPage({ searchParams }) {
-  const sessionId = searchParams?.session_id || "";
+  const resolvedSearchParams = await searchParams;
+  const sessionId = getSessionIdFromSearchParams(resolvedSearchParams);
   const status = await getSessionStatus(sessionId);
   const isPaid = status.state === "paid";
 
