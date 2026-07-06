@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 const TERMS_VERSION = "2026-06-terms";
+const MIN_PASSWORD_LENGTH = 8;
 
 function getSafeNextPath() {
   if (typeof window === "undefined") return "/account";
@@ -122,6 +123,12 @@ export default function LoginPage() {
     setIsLoading(true);
     resetMessages();
 
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage("Password must be at least 8 characters.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await submitJson(
         "/api/auth/register",
@@ -222,6 +229,12 @@ export default function LoginPage() {
     setIsLoading(true);
     resetMessages();
 
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setErrorMessage("Password must be at least 8 characters.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await submitJson(
         "/api/auth/reset-password",
@@ -290,8 +303,10 @@ export default function LoginPage() {
             <label>Full name<input type="text" placeholder="Your full name" value={fullName} onChange={(event) => setFullName(event.target.value)} required /></label>
             <label>Phone number<input type="tel" placeholder="07..." value={phone} onChange={(event) => setPhone(event.target.value)} required /></label>
             <label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-            <label>Password<input type="password" placeholder="Create a password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
-            <label>Confirm password<input type="password" placeholder="Confirm your password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label>
+            <PasswordField label="Password" placeholder="At least 8 characters" value={password} onChange={setPassword} autoComplete="new-password" />
+            <PasswordField label="Confirm password" placeholder="Confirm your password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
+
+            <p className="passwordHint">Password must be at least 8 characters.</p>
 
             <label className="termsConsent">
               <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} required />
@@ -306,7 +321,7 @@ export default function LoginPage() {
         {mode === "login" && (
           <form onSubmit={loginWithPassword} className="loginForm">
             <label>Email address<input type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-            <label>Password<input type="password" placeholder="Your password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+            <PasswordField label="Password" placeholder="Your password" value={password} onChange={setPassword} autoComplete="current-password" />
 
             <Message success={successMessage} error={errorMessage} />
             <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Signing in..." : "Sign in"}</button>
@@ -343,8 +358,9 @@ export default function LoginPage() {
         {mode === "reset" && step === "code" && (
           <form onSubmit={resetPassword} className="loginForm">
             <CodeInput code={code} setCode={setCode} email={email} label="Reset code sent to" changeEmail={() => { setStep("form"); setCode(""); resetMessages(); }} />
-            <label>New password<input type="password" placeholder="Create a new password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
-            <label>Confirm new password<input type="password" placeholder="Confirm new password" value={confirmNewPassword} onChange={(event) => setConfirmNewPassword(event.target.value)} required /></label>
+            <PasswordField label="New password" placeholder="At least 8 characters" value={newPassword} onChange={setNewPassword} autoComplete="new-password" />
+            <PasswordField label="Confirm new password" placeholder="Confirm new password" value={confirmNewPassword} onChange={setConfirmNewPassword} autoComplete="new-password" />
+            <p className="passwordHint">Password must be at least 8 characters.</p>
             <Message success={successMessage} error={errorMessage} />
             <button className="primaryButton" type="submit" disabled={isLoading}>{isLoading ? "Resetting password..." : "Reset password and sign in"}</button>
             <button className="secondaryButton" type="button" disabled={isLoading} onClick={sendCode}>Resend code</button>
@@ -365,6 +381,35 @@ function Message({ success, error }) {
       {success && <div className="successBox">{success}</div>}
       {error && <div className="errorBox">{error}</div>}
     </>
+  );
+}
+
+function PasswordField({ label, placeholder, value, onChange, autoComplete }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <label>
+      {label}
+      <span className="passwordWrap">
+        <input
+          type={isVisible ? "text" : "password"}
+          placeholder={placeholder}
+          value={value}
+          minLength={MIN_PASSWORD_LENGTH}
+          autoComplete={autoComplete}
+          onChange={(event) => onChange(event.target.value)}
+          required
+        />
+        <button
+          type="button"
+          className="showPasswordButton"
+          onClick={() => setIsVisible((current) => !current)}
+          aria-label={isVisible ? "Hide password" : "Show password"}
+        >
+          {isVisible ? "Hide" : "Show"}
+        </button>
+      </span>
+    </label>
   );
 }
 
@@ -399,6 +444,10 @@ const styles = `
   label { display: grid; gap: 8px; font-weight: 900; font-size: 14px; }
   input { border: 1px solid #dfe6f1; border-radius: 14px; padding: 15px 16px; font-size: 15px; outline: none; background: #fbfcff; }
   input:focus { border-color: #0048ff; box-shadow: 0 0 0 4px rgba(0, 72, 255, 0.08); }
+  .passwordWrap { position: relative; display: block; }
+  .passwordWrap input { width: 100%; padding-right: 82px; }
+  .showPasswordButton { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); min-width: 62px; height: 34px; border: none; border-radius: 10px; background: #eef3ff; color: #0048ff; font-size: 12px; font-weight: 950; cursor: pointer; }
+  .passwordHint { margin: -4px 0 0; color: #657189; font-size: 13px; font-weight: 800; }
   .primaryButton, .secondaryButton { height: 54px; border: none; border-radius: 15px; font-size: 15px; font-weight: 950; cursor: pointer; }
   .primaryButton { background: #0048ff; color: white; box-shadow: 0 10px 25px rgba(0, 72, 255, 0.22); }
   .secondaryButton { background: #eef3ff; color: #0048ff; }
@@ -414,5 +463,5 @@ const styles = `
   .emailRow strong { color: #071126; }
   .emailRow button { display: inline-flex; margin-left: 8px; border: none; background: transparent; color: #0048ff; font-weight: 900; cursor: pointer; }
   .backLink { display: inline-flex; margin-top: 24px; color: #0048ff; font-weight: 900; text-decoration: none; }
-  @media (max-width: 650px) { .loginCard { padding: 28px; } h1 { font-size: 36px; } .modeTabs { grid-template-columns: 1fr; } }
+  @media (max-width: 650px) { .loginPage { padding: 0; align-items: stretch; } .loginCard { min-height: 100vh; border-radius: 0; padding: 28px; } h1 { font-size: 36px; } .modeTabs { grid-template-columns: 1fr; } }
 `;
