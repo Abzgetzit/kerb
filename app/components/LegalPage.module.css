@@ -259,15 +259,6 @@
 }
 
 @media (max-width: 900px) {
-  .page {
-    padding: 16px;
-  }
-
-  .nav {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .grid {
     grid-template-columns: 1fr;
   }
@@ -275,37 +266,59 @@
   .sideCard {
     position: static;
   }
-
-  .hubGrid {
-    grid-template-columns: 1fr;
-  }
 }
 
-@media (max-width: 560px) {
-  .logo {
-    font-size: 34px;
+@media (max-width: 700px) {
+  .page {
+    padding: 0 0 36px;
+  }
+
+  .nav {
+    padding: 22px 22px 0;
+    margin-bottom: 22px;
+    align-items: flex-start;
   }
 
   .navLinks {
     width: 100%;
-    justify-content: stretch;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .navLinks a {
-    flex: 1 1 auto;
     justify-content: center;
+    min-height: 46px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .shell,
+  .footer {
+    padding: 0 18px;
   }
 
   .hero {
-    padding: 26px 20px;
-    border-radius: 22px;
+    border-radius: 24px;
+    padding: 28px;
   }
 
   .hero h1 {
-    letter-spacing: -1px;
+    font-size: clamp(42px, 12vw, 58px);
+    letter-spacing: -1.8px;
   }
 
-  .content {
-    border-radius: 20px;
+  .hero p {
+    font-size: 18px;
+  }
+
+  .content,
+  .sideCard,
+  .hubCard {
+    border-radius: 22px;
+  }
+
+  .hubGrid {
+    grid-template-columns: 1fr;
   }
 }
