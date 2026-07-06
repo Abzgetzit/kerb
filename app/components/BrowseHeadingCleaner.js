@@ -61,9 +61,31 @@ export default function BrowseHeadingCleaner() {
         });
     }
 
+    function addSparesAndRepairsCondition() {
+      document
+        .querySelectorAll('select[name="condition"]')
+        .forEach((select) => {
+          if (select.dataset.kerbConditionFixed === "true") return;
+
+          const exists = Array.from(select.options).some(
+            (option) => option.value === "Spares and repairs" || option.textContent === "Spares and repairs"
+          );
+
+          if (!exists) {
+            const option = document.createElement("option");
+            option.value = "Spares and repairs";
+            option.textContent = "Spares and repairs";
+            select.appendChild(option);
+          }
+
+          select.dataset.kerbConditionFixed = "true";
+        });
+    }
+
     function runFixes() {
       cleanBrowseHeading();
       organiseMakeDropdowns();
+      addSparesAndRepairsCondition();
     }
 
     runFixes();
