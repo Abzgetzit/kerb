@@ -1,5 +1,6 @@
 import "./globals.css";
 import BrowseHeadingCleaner from "./components/BrowseHeadingCleaner";
+import KerbClientEnhancements from "./components/KerbClientEnhancements";
 
 export const metadata = {
   metadataBase: new URL("https://kerbcar.co.uk"),
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <BrowseHeadingCleaner />
+        <KerbClientEnhancements />
         {children}
       </body>
     </html>
