@@ -11,13 +11,16 @@ import {
   isVehicleModelDetailYearCompatible,
   vehicleMakes,
 } from "../lib/vehicle-data";
-
 import {
   calculateKerbMarketGuide,
   getKerbPricePosition,
 } from "../lib/kerb-valuation";
 
 const MAX_LISTING_PHOTOS = 30;
+
+const postConditionOptions = Array.from(
+  new Set([...(conditionOptions || []), "Spares and repairs"])
+);
 
 const carFeatureOptions = [
   "Apple CarPlay",
@@ -80,6 +83,10 @@ const boostPlanOptions = [
   },
 ];
 
+function getAccountName(user) {
+  return user?.name || user?.full_name || user?.fullName || "";
+}
+
 export default function PostCarPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -108,6 +115,7 @@ export default function PostCarPage() {
   const [showSellerPhone, setShowSellerPhone] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [photos, setPhotos] = useState([]);
+  const [draggingPhotoId, setDraggingPhotoId] = useState("");
   const photoUrlsRef = useRef([]);
 
   useEffect(() => {
@@ -139,8 +147,17 @@ export default function PostCarPage() {
     window.location.replace("/login?next=/post-car");
   }, []);
 
+  useEffect(() => {
+    return () => {
+      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      photoUrlsRef.current = [];
+    };
+  }, []);
+
   const availableModels = make ? vehicleMakes[make] || [] : [];
   const selectedModel = model === "Other" ? customModel.trim() : model;
+  const finalModel =
+    model === "Other" ? customModel.trim() : selectedModel || customModel.trim();
   const availableModelDetails =
     make && selectedModel && model !== "Other"
       ? getVehicleModelDetailOptions({ make, model: selectedModel, year })
@@ -165,9 +182,6 @@ export default function PostCarPage() {
           selectedVariantYears ? ` (${selectedVariantYears})` : ""
         }. Choose a matching year or variant.`
       : "";
-
-  const finalModel =
-    model === "Other" ? customModel.trim() : selectedModel || customModel.trim();
 
   const valuation = useMemo(() => {
     if (!make || !finalModel || !year || !mileage || variantYearError) return null;
@@ -215,15 +229,11 @@ export default function PostCarPage() {
     window.location.href = "/";
   }
 
-  useEffect(() => {
-    return () => {
-      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      photoUrlsRef.current = [];
-    };
-  }, []);
+  function handlePhotoUpload(event) {
+    const files = Array.from(event.target.files || []);
 
-  function handlePhotoUpload(e) {
-    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
     const previews = files.map((file) => {
       const url = URL.createObjectURL(file);
       photoUrlsRef.current.push(url);
@@ -250,7 +260,7 @@ export default function PostCarPage() {
       return nextPhotos;
     });
 
-    e.target.value = "";
+    event.target.value = "";
   }
 
   function removePhoto(photoId) {
@@ -265,6 +275,40 @@ export default function PostCarPage() {
       }
 
       return currentPhotos.filter((photo) => photo.id !== photoId);
+    });
+  }
+
+  function movePhoto(photoId, direction) {
+    setPhotos((currentPhotos) => {
+      const fromIndex = currentPhotos.findIndex((photo) => photo.id === photoId);
+      const toIndex = fromIndex + direction;
+
+      if (fromIndex === -1 || toIndex < 0 || toIndex >= currentPhotos.length) {
+        return currentPhotos;
+      }
+
+      const nextPhotos = [...currentPhotos];
+      const [movedPhoto] = nextPhotos.splice(fromIndex, 1);
+      nextPhotos.splice(toIndex, 0, movedPhoto);
+      return nextPhotos;
+    });
+  }
+
+  function movePhotoToTarget(photoId, targetPhotoId) {
+    if (!photoId || !targetPhotoId || photoId === targetPhotoId) return;
+
+    setPhotos((currentPhotos) => {
+      const fromIndex = currentPhotos.findIndex((photo) => photo.id === photoId);
+      const toIndex = currentPhotos.findIndex((photo) => photo.id === targetPhotoId);
+
+      if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+        return currentPhotos;
+      }
+
+      const nextPhotos = [...currentPhotos];
+      const [movedPhoto] = nextPhotos.splice(fromIndex, 1);
+      nextPhotos.splice(toIndex, 0, movedPhoto);
+      return nextPhotos;
     });
   }
 
@@ -295,8 +339,8 @@ export default function PostCarPage() {
     return result.url;
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage("");
     setBoostCheckoutError("");
@@ -314,8 +358,7 @@ export default function PostCarPage() {
       return;
     }
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
+    const formData = new FormData(event.currentTarget);
 
     photos.forEach((photo) => {
       formData.append("photos", photo.file);
@@ -342,12 +385,12 @@ export default function PostCarPage() {
       formData.set("seller_email", currentUser.email);
     }
 
-    if (currentUser?.name) {
-      formData.set("account_name", currentUser.name);
+    if (getAccountName(currentUser)) {
+      formData.set("account_name", getAccountName(currentUser));
     }
 
-    if (currentUser?.full_name && !currentUser?.name) {
-      formData.set("account_name", currentUser.full_name);
+    if (currentUser?.profile_photo_url) {
+      formData.set("seller_profile_photo_url", currentUser.profile_photo_url);
     }
 
     if (valuation) {
@@ -384,7 +427,9 @@ export default function PostCarPage() {
           return;
         } catch (checkoutError) {
           setBoostCheckoutError(
-            `Your listing is live, but the boost checkout could not start. ${checkoutError.message || ""}`.trim()
+            `Your listing is live, but the boost checkout could not start. ${
+              checkoutError.message || ""
+            }`.trim()
           );
           setSubmitted(true);
           return;
@@ -417,7 +462,9 @@ export default function PostCarPage() {
     return (
       <main className="page">
         <div className="successBox">
-          <a href="/" className="logo">Kerb</a>
+          <a href="/" className="logo">
+            Kerb
+          </a>
           <div className="successIcon">✓</div>
           <h1>Your listing is live</h1>
           <p>Your car listing has been saved and is now live on Kerb Car.</p>
@@ -427,7 +474,13 @@ export default function PostCarPage() {
           {submittedListing && (
             <div className="listingSummary">
               <strong>
-                {[submittedListing.year, submittedListing.make, submittedListing.model, submittedListing.model_detail, submittedListing.variant]
+                {[
+                  submittedListing.year,
+                  submittedListing.make,
+                  submittedListing.model,
+                  submittedListing.model_detail,
+                  submittedListing.variant,
+                ]
                   .filter(Boolean)
                   .join(" ")}
               </strong>
@@ -436,11 +489,17 @@ export default function PostCarPage() {
           )}
 
           <div className="successActions">
-            <a href="/account" className="secondaryBtn">My account</a>
+            <a href="/account" className="secondaryBtn">
+              My account
+            </a>
             {submittedListing?.id && (
-              <a href={`/listing/${submittedListing.id}`} className="secondaryBtn">View live listing</a>
+              <a href={`/listing/${submittedListing.id}`} className="secondaryBtn">
+                View live listing
+              </a>
             )}
-            <a href="/browse" className="primaryBtn">Browse cars</a>
+            <a href="/browse" className="primaryBtn">
+              Browse cars
+            </a>
           </div>
         </div>
 
@@ -452,12 +511,20 @@ export default function PostCarPage() {
   return (
     <main className="page">
       <header className="navbar">
-        <a href="/" className="logo">Kerb</a>
+        <a href="/" className="logo">
+          Kerb
+        </a>
 
         <div className="navActions">
-          <a href="/browse" className="navLink">Browse cars</a>
-          <a href="/account" className="accountButton">My account</a>
-          <button className="logoutButton" type="button" onClick={handleLogout}>Log out</button>
+          <a href="/browse" className="navLink">
+            Browse cars
+          </a>
+          <a href="/account" className="accountButton">
+            My account
+          </a>
+          <button className="logoutButton" type="button" onClick={handleLogout}>
+            Log out
+          </button>
         </div>
 
         <SiteMenu currentUser={currentUser} onLogout={handleLogout} />
@@ -477,7 +544,7 @@ export default function PostCarPage() {
           <ul>
             <li>Add make, model, spec and body style</li>
             <li>Enter mileage, year, condition and price</li>
-            <li>Upload clear car photos</li>
+            <li>Upload clear car photos, then drag them into order</li>
             <li>Choose contact and boost options</li>
           </ul>
         </div>
@@ -500,8 +567,8 @@ export default function PostCarPage() {
                 name="make"
                 required
                 value={make}
-                onChange={(e) => {
-                  setMake(e.target.value);
+                onChange={(event) => {
+                  setMake(event.target.value);
                   setModel("");
                   setModelDetail("");
                   setModelSpec("");
@@ -510,7 +577,9 @@ export default function PostCarPage() {
               >
                 <option value="">Select make</option>
                 {Object.keys(vehicleMakes).map((makeName) => (
-                  <option key={makeName} value={makeName}>{makeName}</option>
+                  <option key={makeName} value={makeName}>
+                    {makeName}
+                  </option>
                 ))}
               </select>
             </label>
@@ -518,13 +587,19 @@ export default function PostCarPage() {
             <label>
               Model line
               {make === "Other" || availableModels.length === 0 ? (
-                <input name="model_manual" placeholder="Type the model" value={customModel} onChange={(e) => setCustomModel(e.target.value)} required />
+                <input
+                  name="model_manual"
+                  placeholder="Type the model"
+                  value={customModel}
+                  onChange={(event) => setCustomModel(event.target.value)}
+                  required
+                />
               ) : (
                 <>
                   <select
                     value={model}
-                    onChange={(e) => {
-                      setModel(e.target.value);
+                    onChange={(event) => {
+                      setModel(event.target.value);
                       setModelDetail("");
                       setModelSpec("");
                     }}
@@ -532,13 +607,22 @@ export default function PostCarPage() {
                   >
                     <option value="">Select model</option>
                     {availableModels.map((modelName) => (
-                      <option key={modelName} value={modelName}>{modelName}</option>
+                      <option key={modelName} value={modelName}>
+                        {modelName}
+                      </option>
                     ))}
                     <option value="Other">Other / type manually</option>
                   </select>
 
                   {model === "Other" && (
-                    <input className="manualInput" name="model_manual" placeholder="Type the model" value={customModel} onChange={(e) => setCustomModel(e.target.value)} required />
+                    <input
+                      className="manualInput"
+                      name="model_manual"
+                      placeholder="Type the model"
+                      value={customModel}
+                      onChange={(event) => setCustomModel(event.target.value)}
+                      required
+                    />
                   )}
                 </>
               )}
@@ -548,58 +632,114 @@ export default function PostCarPage() {
             {(availableModelDetails.length > 0 || modelDetail) && (
               <label>
                 Type / engine
-                <select value={modelDetail} onChange={(e) => setModelDetail(e.target.value)}>
+                <select
+                  value={modelDetail}
+                  onChange={(event) => setModelDetail(event.target.value)}
+                >
                   <option value="">I am not sure / standard type</option>
-                  {modelDetail && !availableModelDetails.includes(modelDetail) && <option value={modelDetail}>{modelDetail}</option>}
+                  {modelDetail && !availableModelDetails.includes(modelDetail) && (
+                    <option value={modelDetail}>{modelDetail}</option>
+                  )}
                   {availableModelDetails.map((detail) => {
-                    const years = getVehicleModelDetailYears({ make, model: selectedModel, detail });
-                    return <option key={detail} value={detail}>{years ? `${detail} (${years})` : detail}</option>;
+                    const years = getVehicleModelDetailYears({
+                      make,
+                      model: selectedModel,
+                      detail,
+                    });
+                    return (
+                      <option key={detail} value={detail}>
+                        {years ? `${detail} (${years})` : detail}
+                      </option>
+                    );
                   })}
                 </select>
-                {variantYearError && <small className="fieldNotice errorNotice">{variantYearError}</small>}
+                {variantYearError && (
+                  <small className="fieldNotice errorNotice">{variantYearError}</small>
+                )}
               </label>
             )}
 
             {(availableModelSpecs.length > 0 || modelSpec) && (
               <label>
                 Spec / trim
-                <select name="variant" value={modelSpec} onChange={(e) => setModelSpec(e.target.value)}>
+                <select
+                  name="variant"
+                  value={modelSpec}
+                  onChange={(event) => setModelSpec(event.target.value)}
+                >
                   <option value="">I am not sure / standard spec</option>
-                  {modelSpec && !availableModelSpecs.includes(modelSpec) && <option value={modelSpec}>{modelSpec}</option>}
-                  {availableModelSpecs.map((spec) => <option key={spec} value={spec}>{spec}</option>)}
+                  {modelSpec && !availableModelSpecs.includes(modelSpec) && (
+                    <option value={modelSpec}>{modelSpec}</option>
+                  )}
+                  {availableModelSpecs.map((spec) => (
+                    <option key={spec} value={spec}>
+                      {spec}
+                    </option>
+                  ))}
                 </select>
               </label>
             )}
 
             <label>
               Year
-              <input name="year" placeholder="2020" value={year} onChange={(e) => setYear(e.target.value)} required />
+              <input
+                name="year"
+                placeholder="2020"
+                value={year}
+                onChange={(event) => setYear(event.target.value)}
+                required
+              />
             </label>
 
             <label>
               Mileage
-              <input name="mileage" placeholder="45,000" value={mileage} onChange={(e) => setMileage(e.target.value)} required />
+              <input
+                name="mileage"
+                placeholder="45,000"
+                value={mileage}
+                onChange={(event) => setMileage(event.target.value)}
+                required
+              />
             </label>
 
             <label>
               Body type
-              <select name="body_type" value={bodyType} onChange={(e) => setBodyType(e.target.value)} required>
+              <select
+                name="body_type"
+                value={bodyType}
+                onChange={(event) => setBodyType(event.target.value)}
+                required
+              >
                 <option value="">Select body type</option>
-                {bodyTypeOptions.map((option) => <option key={option}>{option}</option>)}
+                {bodyTypeOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
               </select>
             </label>
 
             <label>
               Condition
-              <select name="condition" value={condition} onChange={(e) => setCondition(e.target.value)} required>
+              <select
+                name="condition"
+                value={condition}
+                onChange={(event) => setCondition(event.target.value)}
+                required
+              >
                 <option value="">Select condition</option>
-                {conditionOptions.map((option) => <option key={option}>{option}</option>)}
+                {postConditionOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
               </select>
             </label>
 
             <label>
               Fuel type
-              <select name="fuel_type" value={fuel} onChange={(e) => setFuel(e.target.value)} required>
+              <select
+                name="fuel_type"
+                value={fuel}
+                onChange={(event) => setFuel(event.target.value)}
+                required
+              >
                 <option value="">Select fuel type</option>
                 <option>Petrol</option>
                 <option>Diesel</option>
@@ -610,7 +750,12 @@ export default function PostCarPage() {
 
             <label>
               Gearbox
-              <select name="gearbox" value={gearbox} onChange={(e) => setGearbox(e.target.value)} required>
+              <select
+                name="gearbox"
+                value={gearbox}
+                onChange={(event) => setGearbox(event.target.value)}
+                required
+              >
                 <option value="">Select gearbox</option>
                 <option>Manual</option>
                 <option>Automatic</option>
@@ -620,7 +765,13 @@ export default function PostCarPage() {
 
             <label>
               Asking price
-              <input name="asking_price" value={askingPrice} onChange={(e) => setAskingPrice(e.target.value)} placeholder="£12,995" required />
+              <input
+                name="asking_price"
+                value={askingPrice}
+                onChange={(event) => setAskingPrice(event.target.value)}
+                placeholder="£12,995"
+                required
+              />
             </label>
 
             <label>
@@ -630,7 +781,12 @@ export default function PostCarPage() {
 
             <label>
               Finance available from seller/dealer?
-              <select name="finance_available" value={financeAvailable} onChange={(e) => setFinanceAvailable(e.target.value)} required>
+              <select
+                name="finance_available"
+                value={financeAvailable}
+                onChange={(event) => setFinanceAvailable(event.target.value)}
+                required
+              >
                 <option value="false">No</option>
                 <option value="true">Yes</option>
               </select>
@@ -638,9 +794,15 @@ export default function PostCarPage() {
 
             <label>
               Best fit
-              <select name="listing_category" value={listingCategory} onChange={(e) => setListingCategory(e.target.value)}>
+              <select
+                name="listing_category"
+                value={listingCategory}
+                onChange={(event) => setListingCategory(event.target.value)}
+              >
                 {listingCategoryOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -657,7 +819,9 @@ export default function PostCarPage() {
             <div className="valuationBox">
               <div>
                 <span>Kerb Market Guide</span>
-                <strong>£{valuation.low.toLocaleString()} - £{valuation.high.toLocaleString()}</strong>
+                <strong>
+                  £{valuation.low.toLocaleString()} - £{valuation.high.toLocaleString()}
+                </strong>
                 {valuation.mid && <small>Mid guide: £{valuation.mid.toLocaleString()}</small>}
               </div>
               <p>We only show an estimate. This is a guide, not a guaranteed sale price.</p>
@@ -692,29 +856,81 @@ export default function PostCarPage() {
 
           <label>
             Short description
-            <textarea name="description" placeholder="Tell buyers about condition, service history, features, MOT, ownership, modifications or damage." />
+            <textarea
+              name="description"
+              placeholder="Tell buyers about condition, service history, features, MOT, ownership, modifications or damage."
+            />
           </label>
 
           <div className="photoSection">
             <div>
               <span>Step 3</span>
               <h2>Photos</h2>
-              <p>Add up to {MAX_LISTING_PHOTOS} photos. Clear photos help buyers trust the listing.</p>
+              <p>
+                Add up to {MAX_LISTING_PHOTOS} photos. Hold and drag a photo to change the order. The first photo becomes the main listing image.
+              </p>
             </div>
 
             <label className="uploadBox">
               <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
-              <span>📸</span>
+              <span>Camera</span>
               <strong>Upload car photos</strong>
               <small>Front, rear, sides, interior, wheels and dashboard</small>
             </label>
 
             {photos.length > 0 && (
-              <div className="photoGrid">
+              <div className="photoGrid" aria-label="Uploaded car photos">
                 {photos.map((photo, index) => (
-                  <div className="photoPreview" key={photo.id}>
-                    <img src={photo.url} alt={photo.name} />
-                    <button type="button" className="removePhotoButton" onClick={() => removePhoto(photo.id)} aria-label={`Remove photo ${index + 1}`}>×</button>
+                  <div
+                    className={`photoPreview ${draggingPhotoId === photo.id ? "dragging" : ""}`}
+                    key={photo.id}
+                    draggable
+                    onDragStart={(event) => {
+                      setDraggingPhotoId(photo.id);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", photo.id);
+                    }}
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      movePhotoToTarget(draggingPhotoId, photo.id);
+                    }}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const draggedId = event.dataTransfer.getData("text/plain") || draggingPhotoId;
+                      movePhotoToTarget(draggedId, photo.id);
+                      setDraggingPhotoId("");
+                    }}
+                    onDragEnd={() => setDraggingPhotoId("")}
+                  >
+                    <img src={photo.url} alt={photo.name} draggable="false" />
+                    <span className="photoOrder">{index + 1}</span>
+                    <button
+                      type="button"
+                      className="removePhotoButton"
+                      onClick={() => removePhoto(photo.id)}
+                      aria-label={`Remove photo ${index + 1}`}
+                    >
+                      ×
+                    </button>
+                    <div className="photoMoveControls" aria-label="Move photo">
+                      <button
+                        type="button"
+                        onClick={() => movePhoto(photo.id, -1)}
+                        disabled={index === 0}
+                        aria-label="Move photo left"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => movePhoto(photo.id, 1)}
+                        disabled={index === photos.length - 1}
+                        aria-label="Move photo right"
+                      >
+                        ›
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -731,17 +947,34 @@ export default function PostCarPage() {
             <div className="grid">
               <label>
                 Full name
-                <input name="seller_name" placeholder="Your name" defaultValue={currentUser?.name || currentUser?.full_name || ""} required />
+                <input
+                  name="seller_name"
+                  placeholder="Your name"
+                  defaultValue={getAccountName(currentUser)}
+                  required
+                />
               </label>
 
               <label>
                 Email address
-                <input name="seller_email" type="email" placeholder="you@example.com" defaultValue={currentUser?.email || ""} readOnly={Boolean(currentUser?.email)} required />
+                <input
+                  name="seller_email"
+                  type="email"
+                  placeholder="you@example.com"
+                  defaultValue={currentUser?.email || ""}
+                  readOnly={Boolean(currentUser?.email)}
+                  required
+                />
               </label>
 
               <label>
                 Phone number <span className="optionalText">Optional</span>
-                <input name="seller_phone" placeholder="07..." defaultValue={currentUser?.phone || ""} required={showSellerPhone} />
+                <input
+                  name="seller_phone"
+                  placeholder="07..."
+                  defaultValue={currentUser?.phone || ""}
+                  required={showSellerPhone}
+                />
               </label>
 
               <label>
@@ -759,12 +992,18 @@ export default function PostCarPage() {
             <div>
               <span className="privacyKicker">Public contact options</span>
               <h2>Choose what buyers can see</h2>
-              <p>Your email is kept for Kerb messages and account checks. Choose whether your public listing shows your name or phone number.</p>
+              <p>
+                Your email is kept for Kerb messages and account checks. Choose whether your public listing shows your name or phone number.
+              </p>
             </div>
 
             <div className="privacyOptions">
               <label className="privacyOption">
-                <input type="checkbox" checked={showSellerName} onChange={(event) => setShowSellerName(event.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={showSellerName}
+                  onChange={(event) => setShowSellerName(event.target.checked)}
+                />
                 <span>
                   <strong>Show my name on the listing</strong>
                   <em>Turn this off to show only your seller type, like Private seller.</em>
@@ -772,7 +1011,11 @@ export default function PostCarPage() {
               </label>
 
               <label className="privacyOption">
-                <input type="checkbox" checked={showSellerPhone} onChange={(event) => setShowSellerPhone(event.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={showSellerPhone}
+                  onChange={(event) => setShowSellerPhone(event.target.checked)}
+                />
                 <span>
                   <strong>Show my phone number on the listing</strong>
                   <em>If this is off, buyers can still message you through Kerb.</em>
@@ -797,8 +1040,17 @@ export default function PostCarPage() {
 
             <div className="boostChoiceGrid">
               {boostPlanOptions.map((plan) => (
-                <label className={selectedBoostPlan === plan.value ? "boostChoice active" : "boostChoice"} key={plan.value}>
-                  <input type="radio" name="boost_plan" value={plan.value} checked={selectedBoostPlan === plan.value} onChange={() => setSelectedBoostPlan(plan.value)} />
+                <label
+                  className={selectedBoostPlan === plan.value ? "boostChoice active" : "boostChoice"}
+                  key={plan.value}
+                >
+                  <input
+                    type="radio"
+                    name="boost_plan"
+                    value={plan.value}
+                    checked={selectedBoostPlan === plan.value}
+                    onChange={() => setSelectedBoostPlan(plan.value)}
+                  />
                   <span>
                     <strong>{plan.label}</strong>
                     <em>{plan.description}</em>
@@ -811,11 +1063,20 @@ export default function PostCarPage() {
 
           <section className="termsSection">
             <label className="termsOption">
-              <input type="checkbox" checked={acceptedTerms} onChange={(event) => setAcceptedTerms(event.target.checked)} required />
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(event) => setAcceptedTerms(event.target.checked)}
+                required
+              />
               <span>
                 <strong>I agree to Kerb’s Terms and Conditions</strong>
-                <em>I understand Kerb Car is a marketplace, not a direct car seller, and I am responsible for making sure my listing is accurate, honest and allowed under Kerb’s rules.</em>
-                <a href="/terms" target="_blank" rel="noreferrer">Read Terms and Conditions</a>
+                <em>
+                  I understand Kerb Car is a marketplace, not a direct car seller, and I am responsible for making sure my listing is accurate, honest and allowed under Kerb’s rules.
+                </em>
+                <a href="/terms" target="_blank" rel="noreferrer">
+                  Read Terms and Conditions
+                </a>
               </span>
             </label>
           </section>
@@ -843,7 +1104,7 @@ const styles = `
   * { box-sizing: border-box; }
   body { margin: 0; background: #f7f9fd; color: #071126; font-family: Inter, Arial, sans-serif; }
   .page { min-height: 100vh; padding: 24px 36px 50px; background: radial-gradient(circle at top left, rgba(0,72,255,.08), transparent 30%), #f7f9fd; }
-  .navbar { height: 58px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 18px; }
+  .navbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 18px; }
   .logo { font-size: 36px; font-weight: 950; color: #0048ff; letter-spacing: -1.8px; text-decoration: none; }
   .navActions { display: flex; align-items: center; gap: 12px; }
   .navLink, .accountButton, .logoutButton { font-size: 14px; font-weight: 950; text-decoration: none; border: none; background: transparent; cursor: pointer; font-family: inherit; white-space: nowrap; }
@@ -865,7 +1126,7 @@ const styles = `
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 24px; }
   label { display: grid; gap: 8px; font-weight: 850; font-size: 14px; color: #172033; }
   .optionalText { color: #7a8499; font-size: 12px; font-weight: 850; }
-  input, select, textarea { width: 100%; border: 1px solid #dfe6f1; border-radius: 15px; padding: 15px 16px; font-size: 15px; outline: none; background: #fbfcff; font-family: inherit; }
+  input, select, textarea { width: 100%; border: 1px solid #dfe6f1; border-radius: 15px; padding: 15px 16px; font-size: 15px; outline: none; background: #fbfcff; font-family: inherit; color: #071126; }
   input:focus, select:focus, textarea:focus { border-color: #0048ff; box-shadow: 0 0 0 4px rgba(0,72,255,.08); }
   input[readonly] { background: #f1f4fa; color: #5d6778; cursor: not-allowed; }
   .manualInput { margin-top: 8px; }
@@ -888,13 +1149,19 @@ const styles = `
   .featureOption span { font-size: 13px; font-weight: 850; color: #334055; }
   .uploadBox { margin-top: 18px; min-height: 180px; border: 2px dashed #b8c8e8; border-radius: 24px; background: #f8fbff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; cursor: pointer; padding: 26px; }
   .uploadBox input { display: none; }
-  .uploadBox > span { font-size: 38px; margin-bottom: 8px; }
+  .uploadBox > span { color: #0048ff; background: #eef3ff; border-radius: 999px; padding: 7px 12px; margin-bottom: 8px; font-size: 12px; font-weight: 950; }
   .uploadBox strong { color: #0048ff; font-size: 18px; }
   .uploadBox small { color: #657189; margin-top: 4px; }
   .photoGrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-  .photoPreview { position: relative; border-radius: 18px; overflow: hidden; background: #eef3ff; aspect-ratio: 1.25 / 1; border: 1px solid #e5eaf4; }
-  .photoPreview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photoPreview { position: relative; border-radius: 18px; overflow: hidden; background: #eef3ff; aspect-ratio: 1.25 / 1; border: 1px solid #e5eaf4; cursor: grab; transition: transform .18s ease, opacity .18s ease, border-color .18s ease, box-shadow .18s ease; }
+  .photoPreview:active { cursor: grabbing; }
+  .photoPreview.dragging { opacity: .72; transform: scale(.98); border-color: #0048ff; box-shadow: 0 0 0 4px rgba(0,72,255,.12); }
+  .photoPreview img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  .photoOrder { position: absolute; left: 8px; top: 8px; min-width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; background: #0048ff; color: white; font-size: 12px; font-weight: 950; }
   .removePhotoButton { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border: none; border-radius: 999px; background: rgba(7,17,38,.85); color: white; font-size: 20px; line-height: 1; cursor: pointer; }
+  .photoMoveControls { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
+  .photoMoveControls button { width: 32px; height: 30px; border: none; border-radius: 999px; background: rgba(255,255,255,.92); color: #071126; font-size: 20px; font-weight: 950; cursor: pointer; pointer-events: auto; }
+  .photoMoveControls button:disabled { opacity: .38; cursor: not-allowed; }
   .privacySection, .boostPreviewSection { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 22px; background: #f8fbff; border: 1px solid #e5eaf4; border-radius: 24px; padding: 24px; }
   .privacySection { margin-top: 4px; }
   .privacyOptions { display: grid; gap: 12px; }
@@ -912,25 +1179,19 @@ const styles = `
   .boostChoice b { color: #0048ff; }
   .termsSection { border-top: none; }
   .termsOption a { color: #0048ff; font-weight: 950; text-decoration: none; width: fit-content; }
-  .errorBox, .warningBox { background: #fff1f1; color: #b42318; border: 1px solid #ffd1d1; border-radius: 14px; padding: 14px 16px; font-weight: 850; margin: 16px 0; }
-  .primaryBtn, .secondaryBtn { min-height: 52px; border: none; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; padding: 0 22px; font-weight: 950; font-family: inherit; cursor: pointer; }
-  .primaryBtn { width: 100%; background: #0048ff; color: white; box-shadow: 0 12px 28px rgba(0,72,255,.22); }
+  .errorBox, .warningBox { background: #fff1f1; color: #b42318; border: 1px solid #ffd6d6; border-radius: 16px; padding: 14px; font-weight: 900; margin-bottom: 16px; }
+  .primaryBtn, .primaryLink, .successActions a { min-height: 54px; border: none; border-radius: 15px; background: #0048ff; color: white; padding: 0 24px; font-size: 16px; font-weight: 950; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
   .primaryBtn:disabled { opacity: .55; cursor: not-allowed; }
-  .secondaryBtn { background: #eef3ff; color: #0048ff; }
-  .loadingBox, .successBox { width: min(680px, 100%); margin: 12vh auto 0; background: white; border: 1px solid #e5eaf4; border-radius: 28px; padding: 36px; box-shadow: 0 18px 60px rgba(20,35,70,.1); text-align: center; }
-  .successIcon { width: 58px; height: 58px; border-radius: 999px; background: #eafaf0; color: #137333; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin: 18px 0; }
-  .successBox h1 { font-size: 48px; margin: 0 0 10px; }
-  .listingSummary { display: grid; gap: 4px; border: 1px solid #e5eaf4; border-radius: 18px; background: #f8fbff; padding: 16px; margin: 20px 0; }
-  .listingSummary span { color: #657189; }
-  .successActions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .successActions .primaryBtn, .successActions .secondaryBtn { width: auto; }
-  @media (max-width: 900px) {
-    .page { padding: 16px; }
-    .navActions { display: none; }
-    .hero, .privacySection, .boostPreviewSection, .valuationBox { grid-template-columns: 1fr; padding: 26px; }
-    .valuationStatus { grid-column: auto; }
-    .formCard { padding: 22px; }
-    .grid, .featureChecklist, .photoGrid { grid-template-columns: 1fr; }
-    h1 { letter-spacing: -2px; }
-  }
+  .secondaryBtn { background: #eef3ff !important; color: #0048ff !important; }
+  .successBox, .loadingBox { max-width: 680px; margin: 90px auto; background: white; border: 1px solid #e5eaf4; border-radius: 28px; padding: 34px; box-shadow: 0 20px 60px rgba(10,20,40,.09); text-align: center; }
+  .successBox .logo { display: inline-flex; margin-bottom: 20px; }
+  .successIcon { width: 58px; height: 58px; display: grid; place-items: center; margin: 0 auto 16px; border-radius: 999px; background: #ecfdf3; color: #067647; font-size: 28px; font-weight: 950; }
+  .successBox h1 { font-size: 44px; letter-spacing: -1.5px; }
+  .listingSummary { display: grid; gap: 4px; background: #f7f9fd; border: 1px solid #e5eaf4; border-radius: 18px; padding: 16px; margin: 20px 0; text-align: left; }
+  .listingSummary strong { color: #071126; }
+  .listingSummary span { color: #657189; font-weight: 800; }
+  .successActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 22px; }
+  @media (max-width: 980px) { .hero, .privacySection, .boostPreviewSection, .valuationBox { grid-template-columns: 1fr; } .valuationStatus { grid-column: auto; } .featureChecklist { grid-template-columns: repeat(2, 1fr); } .photoGrid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 720px) { .page { padding: 18px; } .navbar { align-items: flex-start; } .navActions { display: none; } .hero { padding: 28px; border-radius: 24px; } h1 { font-size: 46px; letter-spacing: -2px; } .formCard { padding: 22px; border-radius: 22px; } .grid { grid-template-columns: 1fr; } .featureChecklist { grid-template-columns: 1fr; } .photoGrid { grid-template-columns: repeat(2, 1fr); } .privacySection, .boostPreviewSection { padding: 18px; } }
+  @media (max-width: 420px) { .page { padding: 14px; } .hero { padding: 22px; } .photoGrid { grid-template-columns: 1fr; } .successActions { display: grid; } }
 `;
