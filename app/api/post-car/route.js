@@ -265,6 +265,9 @@ export async function POST(request) {
     const sellerPhone = cleanText(formData.get("seller_phone"));
     const showSellerName = cleanBoolean(formData.get("show_seller_name"));
     const showSellerPhone = cleanBoolean(formData.get("show_seller_phone"));
+    const sellerProfilePhotoUrl =
+      cleanText(formData.get("seller_profile_photo_url")) ||
+      cleanText(signedInAccount.account?.profile_photo_url);
 
     const make = cleanText(formData.get("make"));
     const model = cleanText(formData.get("model"));
@@ -323,6 +326,7 @@ export async function POST(request) {
       seller_type: cleanText(formData.get("seller_type")),
       show_seller_name: showSellerName,
       show_seller_phone: Boolean(showSellerPhone && sellerPhone),
+      seller_profile_photo_url: sellerProfilePhotoUrl,
 
       title: title || null,
       make,
