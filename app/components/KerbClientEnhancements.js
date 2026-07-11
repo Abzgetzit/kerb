@@ -17,6 +17,17 @@ function getListingIdFromUrl(value) {
   }
 }
 
+function getInitials(name) {
+  const parts = cleanText(name)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (parts.length === 0) return "K";
+
+  return parts.map((part) => part[0]).join("").toUpperCase();
+}
+
 function addEnhancementStyles() {
   if (document.getElementById("kerb-client-enhancement-styles")) return;
 
@@ -72,6 +83,21 @@ function addEnhancementStyles() {
       margin-right: 7px !important;
       border: 1px solid rgba(255, 255, 255, 0.7) !important;
       vertical-align: middle !important;
+    }
+
+    .kerbChatAvatar {
+      width: 72px !important;
+      height: 72px !important;
+      border-radius: 999px !important;
+      display: grid !important;
+      place-items: center !important;
+      margin: 0 0 14px !important;
+      background: linear-gradient(180deg, #4f86ff, #0048ff) !important;
+      color: #ffffff !important;
+      font-size: 26px !important;
+      font-weight: 950 !important;
+      letter-spacing: -0.04em !important;
+      box-shadow: 0 18px 42px rgba(0, 72, 255, 0.22) !important;
     }
   `;
   document.head.appendChild(style);
@@ -152,6 +178,27 @@ function maskChatEmails() {
   });
 }
 
+function enhanceChatSidebarAvatar() {
+  if (!window.location.pathname.startsWith("/enquiries/")) return;
+
+  document.querySelectorAll(".sidePanel").forEach((panel) => {
+    if (panel.dataset.kerbChatAvatarEnhanced === "true") return;
+
+    const nameNode = panel.querySelector("h2");
+    const labelNode = panel.querySelector(":scope > span");
+
+    if (!nameNode || !labelNode) return;
+
+    const avatar = document.createElement("div");
+    avatar.className = "kerbChatAvatar";
+    avatar.textContent = getInitials(nameNode.textContent);
+    avatar.setAttribute("aria-hidden", "true");
+
+    panel.insertBefore(avatar, labelNode);
+    panel.dataset.kerbChatAvatarEnhanced = "true";
+  });
+}
+
 async function enhanceListingDetailAvatar() {
   if (!window.location.pathname.startsWith("/listing/")) return;
 
@@ -219,6 +266,7 @@ async function enhanceListingCardAvatars() {
 function runEnhancements() {
   addEnhancementStyles();
   maskChatEmails();
+  enhanceChatSidebarAvatar();
   enhanceListingDetailAvatar();
   enhanceListingCardAvatars();
 }
