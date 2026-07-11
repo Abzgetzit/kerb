@@ -13,6 +13,17 @@
   display: none !important;
 }
 
+/* Remove the small Step 1 / Step 2 / Step 3 / Step 4 pills from post-car sections. */
+.page:has(.formSection) .formHeader span,
+.page:has(.formSection) .featuresSection > div:first-child > span,
+.page:has(.formSection) .photoSection > div:first-child > span,
+.page:has(.formSection) .sellerSection > div:first-child > span,
+.page:has(.formSection) .privacySection > div:first-child > span,
+.page:has(.formSection) .boostPreviewSection > div:first-child > span,
+.page:has(.formSection) .termsSection > div:first-child > span {
+  display: none !important;
+}
+
 /* Post car page: back to cleaner, smaller dimensions. */
 .page:has(.formSection) .navbar {
   max-width: 1240px !important;
