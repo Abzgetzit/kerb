@@ -131,6 +131,24 @@
   letter-spacing: -0.02em !important;
 }
 
+/* Put the small camera picture back in the upload area. */
+.page:has(.formSection) .uploadBox > span {
+  font-size: 0 !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  margin-bottom: 4px !important;
+}
+
+.page:has(.formSection) .uploadBox > span::before {
+  content: "📸" !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+}
+
 /* Chat page: keep the new look but back to the old scale. */
 .page:has(.chatShell) .navbar,
 .page:has(.chatShell) .chatShell,
