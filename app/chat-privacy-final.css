@@ -1,0 +1,110 @@
+/* Final chat/privacy overrides requested after the chat redesign. */
+
+/* Put the conversation page back to the wider original feel. */
+.page:has(.chatShell) .navbar,
+.page:has(.chatShell) .chatShell,
+.page:has(.stateBox) .stateBox {
+  max-width: 1240px !important;
+}
+
+.page:has(.chatShell) .listingPreview {
+  grid-template-columns: 210px minmax(0, 1fr) 150px !important;
+  gap: 24px !important;
+  padding: 22px 24px !important;
+}
+
+.page:has(.chatShell) .listingImage {
+  height: 130px !important;
+}
+
+.page:has(.chatShell) .listingPreview h1 {
+  font-size: clamp(34px, 3.4vw, 48px) !important;
+}
+
+.page:has(.chatShell) .chatGrid {
+  grid-template-columns: 320px minmax(0, 1fr) !important;
+  gap: 22px !important;
+}
+
+.page:has(.chatShell) .messagesList {
+  min-height: 510px !important;
+  max-height: 68vh !important;
+  padding: 28px !important;
+}
+
+.page:has(.chatShell) .replyBox textarea {
+  min-height: 92px !important;
+}
+
+/* The email is now controlled by the buyer/seller privacy choice, not a useless show/hide button. */
+.kerbInlineToggle {
+  display: none !important;
+}
+
+.kerbHiddenEmailRow {
+  display: block !important;
+}
+
+.kerbHiddenEmailText {
+  color: #657189 !important;
+  font-weight: 850 !important;
+}
+
+.kerbEmailPrivacyOption {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  margin-top: 12px !important;
+  padding: 14px 16px !important;
+  border: 1px solid #dfe7f5 !important;
+  border-radius: 16px !important;
+  background: #f8fbff !important;
+  color: #172033 !important;
+}
+
+.kerbEmailPrivacyOption input {
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  margin-top: 3px !important;
+  accent-color: #0048ff !important;
+}
+
+.kerbEmailPrivacyOption span {
+  display: grid !important;
+  gap: 3px !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.35 !important;
+}
+
+.kerbEmailPrivacyOption strong {
+  color: #071126 !important;
+  font-size: 14px !important;
+}
+
+.kerbEmailPrivacyOption em {
+  color: #657189 !important;
+  font-style: normal !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+}
+
+@media (max-width: 980px) {
+  .page:has(.chatShell) .listingPreview,
+  .page:has(.chatShell) .chatGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page:has(.chatShell) .listingImage {
+    height: 180px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .page:has(.chatShell) .messagesList {
+    min-height: 360px !important;
+    max-height: none !important;
+    padding: 18px !important;
+  }
+}
