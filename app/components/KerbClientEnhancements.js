@@ -35,28 +35,17 @@ function addEnhancementStyles() {
   style.id = "kerb-client-enhancement-styles";
   style.textContent = `
     .kerbHiddenEmailRow {
-      display: flex !important;
-      align-items: center !important;
-      flex-wrap: wrap !important;
-      gap: 8px !important;
+      display: block !important;
     }
 
     .kerbHiddenEmailText {
-      color: inherit !important;
+      color: #657189 !important;
+      font-weight: 850 !important;
       word-break: break-word !important;
     }
 
     .kerbInlineToggle {
-      border: 1px solid #dbe5f5 !important;
-      border-radius: 999px !important;
-      background: #eef3ff !important;
-      color: #0048ff !important;
-      padding: 6px 10px !important;
-      font: inherit !important;
-      font-size: 12px !important;
-      font-weight: 950 !important;
-      line-height: 1 !important;
-      cursor: pointer !important;
+      display: none !important;
     }
 
     .seller-icon.kerbSellerPhotoIcon,
@@ -139,42 +128,19 @@ function maskChatEmails() {
   document.querySelectorAll(".sidePanel").forEach((panel) => {
     const emailNode = Array.from(panel.querySelectorAll("p")).find((node) => {
       const text = cleanText(node.textContent);
-      return text.includes("@") || text.toLowerCase() === "email not provided";
+      return text.includes("@") || text.toLowerCase().includes("email hidden") || text.toLowerCase() === "email not provided";
     });
 
-    if (!emailNode || emailNode.dataset.kerbEmailEnhanced === "true") return;
-
-    const email = cleanText(emailNode.textContent);
-    emailNode.dataset.kerbEmailEnhanced = "true";
-
-    if (!email || email.toLowerCase() === "email not provided") {
-      emailNode.textContent = "Email hidden";
-      return;
-    }
-
-    let isVisible = localStorage.getItem("kerbChatEmailsVisible") === "true";
-    const textSpan = document.createElement("span");
-    const toggleButton = document.createElement("button");
-
-    textSpan.className = "kerbHiddenEmailText";
-    toggleButton.type = "button";
-    toggleButton.className = "kerbInlineToggle";
-
-    function render() {
-      textSpan.textContent = isVisible ? email : "Email hidden";
-      toggleButton.textContent = isVisible ? "Hide email" : "Show email";
-    }
-
-    toggleButton.addEventListener("click", () => {
-      isVisible = !isVisible;
-      localStorage.setItem("kerbChatEmailsVisible", isVisible ? "true" : "false");
-      render();
-    });
+    if (!emailNode) return;
 
     emailNode.textContent = "";
     emailNode.classList.add("kerbHiddenEmailRow");
-    emailNode.append(textSpan, toggleButton);
-    render();
+
+    const textSpan = document.createElement("span");
+    textSpan.className = "kerbHiddenEmailText";
+    textSpan.textContent = "Email hidden";
+    emailNode.appendChild(textSpan);
+    emailNode.dataset.kerbEmailEnhanced = "true";
   });
 }
 
@@ -197,6 +163,84 @@ function enhanceChatSidebarAvatar() {
     panel.insertBefore(avatar, labelNode);
     panel.dataset.kerbChatAvatarEnhanced = "true";
   });
+}
+
+function addBuyerEmailPrivacyOption() {
+  if (!window.location.pathname.startsWith("/listing/")) return;
+
+  const enquiryForm = document.querySelector(".enquiry-form");
+  if (!enquiryForm || enquiryForm.dataset.kerbBuyerEmailPrivacy === "true") return;
+
+  const emailInput = enquiryForm.querySelector('input[type="email"]');
+  const emailLabel = emailInput?.closest("label");
+  if (!emailLabel) return;
+
+  const privacyLabel = document.createElement("label");
+  privacyLabel.className = "kerbEmailPrivacyOption";
+  privacyLabel.innerHTML = `
+    <input id="kerbBuyerEmailVisible" type="checkbox" />
+    <span>
+      <strong>Show my email to the seller in chat</strong>
+      <em>Leave this off to keep your email hidden. The seller can still reply through Kerb.</em>
+    </span>
+  `;
+
+  emailLabel.insertAdjacentElement("afterend", privacyLabel);
+  enquiryForm.dataset.kerbBuyerEmailPrivacy = "true";
+}
+
+function addSellerEmailPrivacyOption() {
+  if (window.location.pathname !== "/post-car") return;
+
+  const privacyOptions = document.querySelector(".privacyOptions");
+  if (!privacyOptions || privacyOptions.dataset.kerbSellerEmailPrivacy === "true") return;
+
+  const privacyLabel = document.createElement("label");
+  privacyLabel.className = "privacyOption kerbEmailPrivacyOption";
+  privacyLabel.innerHTML = `
+    <input name="show_seller_email" type="checkbox" value="true" />
+    <span>
+      <strong>Show my email in Kerb chat</strong>
+      <em>Leave this off to keep your email hidden from buyers. Buyers can still message you through Kerb.</em>
+    </span>
+  `;
+
+  privacyOptions.appendChild(privacyLabel);
+  privacyOptions.dataset.kerbSellerEmailPrivacy = "true";
+}
+
+function patchFetchForEmailPrivacy() {
+  if (window.__kerbEmailPrivacyFetchPatched) return;
+  window.__kerbEmailPrivacyFetchPatched = true;
+
+  const originalFetch = window.fetch.bind(window);
+
+  window.fetch = (input, init = {}) => {
+    try {
+      const url = typeof input === "string" ? input : input?.url || "";
+
+      if (url === "/api/enquiries" && init?.body && typeof init.body === "string") {
+        const body = JSON.parse(init.body);
+        const buyerEmailVisible = document.getElementById("kerbBuyerEmailVisible")?.checked === true;
+        init = {
+          ...init,
+          body: JSON.stringify({
+            ...body,
+            buyer_email_visible: buyerEmailVisible,
+          }),
+        };
+      }
+
+      if (url === "/api/post-car" && init?.body instanceof FormData) {
+        const sellerEmailVisible = document.querySelector('input[name="show_seller_email"]')?.checked === true;
+        init.body.set("show_seller_email", sellerEmailVisible ? "true" : "false");
+      }
+    } catch {
+      // Do not block the normal request if a privacy enhancement cannot run.
+    }
+
+    return originalFetch(input, init);
+  };
 }
 
 async function enhanceListingDetailAvatar() {
@@ -265,7 +309,10 @@ async function enhanceListingCardAvatars() {
 
 function runEnhancements() {
   addEnhancementStyles();
+  patchFetchForEmailPrivacy();
   maskChatEmails();
+  addBuyerEmailPrivacyOption();
+  addSellerEmailPrivacyOption();
   enhanceChatSidebarAvatar();
   enhanceListingDetailAvatar();
   enhanceListingCardAvatars();
