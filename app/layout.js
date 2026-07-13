@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./post-chat-size-fixes.css";
 import "./chat-privacy-final.css";
+import "./short-description-fix.css";
 import BrowseHeadingCleaner from "./components/BrowseHeadingCleaner";
 import KerbClientEnhancements from "./components/KerbClientEnhancements";
 
