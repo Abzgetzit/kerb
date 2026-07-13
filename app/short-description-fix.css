@@ -1,0 +1,17 @@
+/* Make the Post your car short description field properly larger.
+   Loaded after the post-car sizing fixes so it wins the cascade. */
+
+.page:has(.formSection) textarea[name="description"] {
+  min-height: 220px !important;
+  height: 220px !important;
+  padding: 18px 20px !important;
+  line-height: 1.55 !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 720px) {
+  .page:has(.formSection) textarea[name="description"] {
+    min-height: 190px !important;
+    height: 190px !important;
+  }
+}
