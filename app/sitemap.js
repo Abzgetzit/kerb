@@ -3,6 +3,7 @@ const baseUrl = "https://kerbcar.co.uk";
 const routes = [
   { path: "/", priority: 1, changeFrequency: "daily" },
   { path: "/browse", priority: 0.95, changeFrequency: "daily" },
+  { path: "/bids", priority: 0.9, changeFrequency: "daily" },
   { path: "/sell-car", priority: 0.9, changeFrequency: "weekly" },
   { path: "/electric-cars", priority: 0.85, changeFrequency: "daily" },
   { path: "/new-cars", priority: 0.85, changeFrequency: "daily" },
