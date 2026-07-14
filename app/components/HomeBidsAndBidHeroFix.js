@@ -2,8 +2,6 @@
 
 import { useEffect } from "react";
 
-const bidHeroImage = "/cars/bids-hero-car.svg";
-
 function addBidsToHomepageNav() {
   if (window.location.pathname !== "/") return;
 
@@ -28,18 +26,6 @@ function addBidsToHomepageNav() {
   } else {
     nav.prepend(bidsLink);
   }
-}
-
-function fixBidHeroImage() {
-  if (window.location.pathname !== "/bids") return;
-
-  document.querySelectorAll("img.heroCar, .bidsHero img").forEach((heroImage) => {
-    heroImage.src = bidHeroImage;
-    heroImage.alt = "Kerb white BMW bid hero car";
-    heroImage.loading = "eager";
-    heroImage.decoding = "async";
-    heroImage.style.display = "block";
-  });
 }
 
 function addStyles() {
@@ -67,7 +53,6 @@ function addStyles() {
 function runFixes() {
   addStyles();
   addBidsToHomepageNav();
-  fixBidHeroImage();
 }
 
 export default function HomeBidsAndBidHeroFix() {
@@ -79,16 +64,14 @@ export default function HomeBidsAndBidHeroFix() {
       timer = window.setTimeout(runFixes, 80);
     }
 
-    runFixes();
+    scheduleRun();
 
     const observer = new MutationObserver(scheduleRun);
     observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("popstate", scheduleRun);
 
     return () => {
-      observer.disconnect();
       window.clearTimeout(timer);
-      window.removeEventListener("popstate", scheduleRun);
+      observer.disconnect();
     };
   }, []);
 
