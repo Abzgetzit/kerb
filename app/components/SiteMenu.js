@@ -55,6 +55,7 @@ export default function SiteMenu({ currentUser, onLogout, unreadCount = null }) 
           <button className="backdrop" type="button" aria-label="Close menu" onClick={closeMenu} />
           <nav className="panel">
             <Link href="/browse" onClick={closeMenu}>Browse cars</Link>
+            <Link href="/bids" onClick={closeMenu}>Bids</Link>
             <Link href="/new-cars" onClick={closeMenu}>New cars</Link>
             <Link href="/sell-car" onClick={closeMenu}>Sell your car</Link>
             <Link href="/electric-cars" onClick={closeMenu}>Electric cars</Link>
