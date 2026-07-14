@@ -4,6 +4,7 @@ import "./chat-privacy-final.css";
 import "./short-description-fix.css";
 import BrowseHeadingCleaner from "./components/BrowseHeadingCleaner";
 import KerbClientEnhancements from "./components/KerbClientEnhancements";
+import MobileListingContactButton from "./components/MobileListingContactButton";
 
 export const metadata = {
   metadataBase: new URL("https://kerbcar.co.uk"),
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
       <body>
         <BrowseHeadingCleaner />
         <KerbClientEnhancements />
+        <MobileListingContactButton />
         {children}
       </body>
     </html>
