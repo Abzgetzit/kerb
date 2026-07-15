@@ -2,6 +2,7 @@ import "./globals.css";
 import "./post-chat-size-fixes.css";
 import "./chat-privacy-final.css";
 import "./short-description-fix.css";
+import "./bids-hero-final.css";
 import BrowseHeadingCleaner from "./components/BrowseHeadingCleaner";
 import KerbClientEnhancements from "./components/KerbClientEnhancements";
 import MobileListingContactButton from "./components/MobileListingContactButton";
