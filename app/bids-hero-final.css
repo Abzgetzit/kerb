@@ -11,11 +11,14 @@
   .bidsPage .heroCar {
     position: absolute !important;
     z-index: 0 !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center center !important;
+    top: -18px !important;
+    right: -6px !important;
+    bottom: auto !important;
+    left: auto !important;
+    width: 92% !important;
+    height: 92% !important;
+    object-fit: contain !important;
+    object-position: right top !important;
     display: block !important;
     border: 0 !important;
     background: transparent !important;
