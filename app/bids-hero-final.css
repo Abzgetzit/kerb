@@ -40,13 +40,13 @@
   .bidsPage .bidSearch {
     position: absolute !important;
     z-index: 4 !important;
-    bottom: 63px !important;
+    bottom: 48px !important;
   }
 
   .bidsPage .filterPills {
     position: absolute !important;
     z-index: 4 !important;
-    bottom: 16px !important;
+    bottom: 6px !important;
   }
 }
 
