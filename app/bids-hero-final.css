@@ -1,22 +1,21 @@
-/* Final bids hero positioning fix.
-   Keep the uploaded BMW hero visible, stop it sitting behind the filters,
-   and remove the grey lower block by cropping the image from the top area only. */
+/* Bids hero final positioning.
+   Uses the real uploaded PNG asset and lets it act as the full hero background,
+   matching the reference layout without grey blocks or broken image placeholders. */
 
 @media (min-width: 861px) {
   .bidsPage .bidsHero {
     min-height: 344px !important;
-    background: linear-gradient(105deg, #f9fbff 0%, #eef5ff 100%) !important;
+    background: #edf4ff !important;
   }
 
   .bidsPage .heroCar {
     position: absolute !important;
     z-index: 0 !important;
-    top: 0 !important;
-    right: 0 !important;
-    width: 62% !important;
-    height: 238px !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     object-fit: cover !important;
-    object-position: right top !important;
+    object-position: center center !important;
     display: block !important;
     border: 0 !important;
     background: transparent !important;
@@ -26,9 +25,9 @@
     z-index: 1 !important;
     background: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.94) 0%,
-      rgba(255, 255, 255, 0.88) 34%,
-      rgba(255, 255, 255, 0.28) 58%,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(255, 255, 255, 0.88) 30%,
+      rgba(255, 255, 255, 0.18) 57%,
       rgba(255, 255, 255, 0) 100%
     ) !important;
   }
@@ -53,9 +52,9 @@
 
 @media (max-width: 860px) {
   .bidsPage .heroCar {
-    height: 170px !important;
+    height: 190px !important;
     object-fit: cover !important;
-    object-position: right top !important;
+    object-position: center center !important;
     border-radius: 14px !important;
   }
 }
