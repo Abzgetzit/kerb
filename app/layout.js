@@ -8,6 +8,8 @@ import KerbClientEnhancements from "./components/KerbClientEnhancements";
 import MobileListingContactButton from "./components/MobileListingContactButton";
 import HomeBidsAndBidHeroFix from "./components/HomeBidsAndBidHeroFix";
 import BidFeatureEnhancements from "./components/BidFeatureEnhancements";
+import BidPageReplacement from "./components/BidPageReplacement";
+import PostCarBidTabs from "./components/PostCarBidTabs";
 
 export const metadata = {
   metadataBase: new URL("https://kerbcar.co.uk"),
@@ -42,6 +44,8 @@ export default function RootLayout({ children }) {
         <MobileListingContactButton />
         <HomeBidsAndBidHeroFix />
         <BidFeatureEnhancements />
+        <PostCarBidTabs />
+        <BidPageReplacement />
         {children}
       </body>
     </html>
