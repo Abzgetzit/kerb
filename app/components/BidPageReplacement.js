@@ -14,22 +14,26 @@ export default function BidPageReplacement() {
       return undefined;
     }
 
-    const originalFetch = window.fetch.bind(window);
+    if (!window.__kerbBidSearchFetchPatched) {
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = (input, init) => {
+        const rawUrl = typeof input === "string" ? input : input?.url || "";
 
-    window.fetch = (input, init) => {
-      const rawUrl = typeof input === "string" ? input : input?.url || "";
+        if (rawUrl.startsWith("/api/bids/listings?")) {
+          return originalFetch(
+            rawUrl.replace("/api/bids/listings?", "/api/bid-cars?"),
+            init
+          );
+        }
 
-      if (rawUrl.startsWith("/api/bids/listings?")) {
-        return originalFetch(rawUrl.replace("/api/bids/listings?", "/api/bid-cars?"), init);
-      }
-
-      return originalFetch(input, init);
-    };
+        return originalFetch(input, init);
+      };
+      window.__kerbBidSearchFetchPatched = true;
+    }
 
     setReady(true);
 
     return () => {
-      window.fetch = originalFetch;
       setReady(false);
     };
   }, [pathname]);
