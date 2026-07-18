@@ -7,7 +7,6 @@ import BrowseHeadingCleaner from "./components/BrowseHeadingCleaner";
 import KerbClientEnhancements from "./components/KerbClientEnhancements";
 import MobileListingContactButton from "./components/MobileListingContactButton";
 import HomeBidsAndBidHeroFix from "./components/HomeBidsAndBidHeroFix";
-import BidFeatureEnhancements from "./components/BidFeatureEnhancements";
 import BidPageReplacement from "./components/BidPageReplacement";
 import PostCarBidTabs from "./components/PostCarBidTabs";
 import MobileAccountCompact from "./components/MobileAccountCompact";
@@ -45,7 +44,6 @@ export default function RootLayout({ children }) {
         <KerbClientEnhancements />
         <MobileListingContactButton />
         <HomeBidsAndBidHeroFix />
-        <BidFeatureEnhancements />
         <PostCarBidTabs />
         <MobilePostCarWizard />
         <MobileAccountCompact />
