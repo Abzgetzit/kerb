@@ -14,6 +14,7 @@ import MobilePostCarWizard from "./components/MobilePostCarWizard";
 import PostCarSafariUploadFix from "./components/PostCarSafariUploadFix";
 import BidListingSubmissionFix from "./components/BidListingSubmissionFix";
 import ListingBidsNavFix from "./components/ListingBidsNavFix";
+import BidSellerContactDetails from "./components/BidSellerContactDetails";
 
 export const metadata = {
   metadataBase: new URL("https://kerbcar.co.uk"),
@@ -52,6 +53,7 @@ export default function RootLayout({ children }) {
         <PostCarSafariUploadFix />
         <BidListingSubmissionFix />
         <ListingBidsNavFix />
+        <BidSellerContactDetails />
         <MobileAccountCompact />
         <BidPageReplacement />
         {children}
