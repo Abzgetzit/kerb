@@ -37,31 +37,11 @@ async function getListing(supabase, listingId) {
   return { listing: data || null, error };
 }
 
-async function getPublicBids(supabase, listingId) {
-  const { data, error } = await supabase
-    .from("kerb_listing_bids")
-    .select("id, amount, created_at")
-    .eq("listing_id", String(listingId))
-    .eq("status", "active")
-    .order("amount", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(250);
-
-  if (error) return { bids: [], error };
-
-  return {
-    bids: (data || []).map((bid) => ({
-      id: bid.id,
-      amount: Number(bid.amount || 0),
-      created_at: bid.created_at,
-    })),
-    error: null,
-  };
-}
-
-async function getSignedInAccount(supabase, request) {
+async function getSignedInAccount(supabase, request, required = true) {
   const token = clean(request.headers.get("x-kerb-session-token"));
-  if (!token) return { error: "Sign in to submit a bid.", status: 401 };
+  if (!token) {
+    return required ? { error: "Sign in to submit a bid.", status: 401 } : { accountId: "", email: "" };
+  }
 
   const { data: session, error: sessionError } = await supabase
     .from("kerb_account_sessions")
@@ -71,7 +51,7 @@ async function getSignedInAccount(supabase, request) {
     .maybeSingle();
 
   if (sessionError) return { error: sessionError.message, status: 500 };
-  if (!session) return { error: "Your session has expired. Sign in again.", status: 401 };
+  if (!session) return required ? { error: "Your session has expired. Sign in again.", status: 401 } : { accountId: "", email: "" };
 
   const { data: account, error: accountError } = await supabase
     .from("kerb_accounts")
@@ -93,11 +73,59 @@ async function getSignedInAccount(supabase, request) {
   };
 }
 
+function isListingOwner(listing, account) {
+  const ownerAccountId = clean(listing?.account_id);
+  const ownerEmail = normaliseEmail(listing?.account_email || listing?.seller_email);
+  return Boolean(
+    (ownerAccountId && account?.accountId && ownerAccountId === account.accountId) ||
+      (ownerEmail && account?.email && ownerEmail === account.email)
+  );
+}
+
+async function getBids(supabase, listingId, includeContacts = false) {
+  const { data, error } = await supabase
+    .from("kerb_listing_bids")
+    .select("id, amount, created_at, bidder_account_id, bidder_email, bidder_name")
+    .eq("listing_id", String(listingId))
+    .eq("status", "active")
+    .order("amount", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(250);
+
+  if (error) return { bids: [], error };
+
+  let phoneByAccountId = new Map();
+  if (includeContacts) {
+    const accountIds = [...new Set((data || []).map((bid) => clean(bid.bidder_account_id)).filter(Boolean))];
+    if (accountIds.length) {
+      const { data: accounts } = await supabase
+        .from("kerb_accounts")
+        .select("id, phone")
+        .in("id", accountIds);
+      phoneByAccountId = new Map((accounts || []).map((account) => [String(account.id), clean(account.phone)]));
+    }
+  }
+
+  return {
+    bids: (data || []).map((bid) => ({
+      id: bid.id,
+      amount: Number(bid.amount || 0),
+      created_at: bid.created_at,
+      ...(includeContacts
+        ? {
+            bidder_name: clean(bid.bidder_name) || "Buyer",
+            bidder_email: clean(bid.bidder_email),
+            bidder_phone: phoneByAccountId.get(clean(bid.bidder_account_id)) || "",
+          }
+        : {}),
+    })),
+    error: null,
+  };
+}
+
 export async function GET(request) {
   const supabase = getClient();
-  if (!supabase) {
-    return Response.json({ error: "Supabase server client is not configured." }, { status: 500 });
-  }
+  if (!supabase) return Response.json({ error: "Supabase server client is not configured." }, { status: 500 });
 
   const url = new URL(request.url);
   const listingId = clean(url.searchParams.get("listingId"));
@@ -107,26 +135,20 @@ export async function GET(request) {
   if (listingError) return Response.json({ error: listingError.message }, { status: 400 });
   if (!listing) return Response.json({ error: "This car is not open to bids." }, { status: 404 });
 
-  const { bids, error } = await getPublicBids(supabase, listingId);
+  const signedIn = await getSignedInAccount(supabase, request, false);
+  const seller_view = !signedIn.error && isListingOwner(listing, signedIn);
+  const { bids, error } = await getBids(supabase, listingId, seller_view);
   if (error) return Response.json({ error: error.message }, { status: 400 });
 
-  return Response.json({
-    bids,
-    highest_bid: bids[0]?.amount || 0,
-    bid_count: bids.length,
-  });
+  return Response.json({ bids, highest_bid: bids[0]?.amount || 0, bid_count: bids.length, seller_view });
 }
 
 export async function POST(request) {
   const supabase = getClient();
-  if (!supabase) {
-    return Response.json({ error: "Supabase server client is not configured." }, { status: 500 });
-  }
+  if (!supabase) return Response.json({ error: "Supabase server client is not configured." }, { status: 500 });
 
-  const signedIn = await getSignedInAccount(supabase, request);
-  if (signedIn.error) {
-    return Response.json({ error: signedIn.error }, { status: signedIn.status || 401 });
-  }
+  const signedIn = await getSignedInAccount(supabase, request, true);
+  if (signedIn.error) return Response.json({ error: signedIn.error }, { status: signedIn.status || 401 });
 
   const body = await request.json().catch(() => ({}));
   const listingId = clean(body.listing_id || body.listingId);
@@ -139,15 +161,7 @@ export async function POST(request) {
   const { listing, error: listingError } = await getListing(supabase, listingId);
   if (listingError) return Response.json({ error: listingError.message }, { status: 400 });
   if (!listing) return Response.json({ error: "This car is not open to bids." }, { status: 404 });
-
-  const ownerAccountId = clean(listing.account_id);
-  const ownerEmail = normaliseEmail(listing.account_email || listing.seller_email);
-  if (
-    (ownerAccountId && signedIn.accountId && ownerAccountId === signedIn.accountId) ||
-    (ownerEmail && signedIn.email && ownerEmail === signedIn.email)
-  ) {
-    return Response.json({ error: "You cannot bid on your own listing." }, { status: 400 });
-  }
+  if (isListingOwner(listing, signedIn)) return Response.json({ error: "You cannot bid on your own listing." }, { status: 400 });
 
   const { error: insertError } = await supabase.from("kerb_listing_bids").insert({
     listing_id: String(listingId),
@@ -160,13 +174,8 @@ export async function POST(request) {
 
   if (insertError) return Response.json({ error: insertError.message }, { status: 400 });
 
-  const { bids, error } = await getPublicBids(supabase, listingId);
+  const { bids, error } = await getBids(supabase, listingId, false);
   if (error) return Response.json({ error: error.message }, { status: 400 });
 
-  return Response.json({
-    success: true,
-    bids,
-    highest_bid: bids[0]?.amount || amount,
-    bid_count: bids.length,
-  });
+  return Response.json({ success: true, bids, highest_bid: bids[0]?.amount || amount, bid_count: bids.length });
 }
