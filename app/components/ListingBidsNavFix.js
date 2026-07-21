@@ -4,7 +4,10 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 function addBidsLink() {
-  if (!window.location.pathname.startsWith("/listing/")) return;
+  const pathname = window.location.pathname || "/";
+
+  // The dedicated Bids pages already render their own active Bids navigation.
+  if (pathname === "/bids" || pathname.startsWith("/bids/")) return;
 
   const nav = document.querySelector("header.topbar nav.nav");
   if (!nav || nav.querySelector('[data-kerb-bids-link="true"]')) return;
@@ -33,15 +36,15 @@ export default function ListingBidsNavFix() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!pathname?.startsWith("/listing/")) return undefined;
+    if (pathname?.startsWith("/listing/")) {
+      const listingId = pathname.split("/").filter(Boolean)[1] || "";
+      const pendingBidId = sessionStorage.getItem("kerbNewBidListingId") || "";
 
-    const listingId = pathname.split("/").filter(Boolean)[1] || "";
-    const pendingBidId = sessionStorage.getItem("kerbNewBidListingId") || "";
-
-    if (listingId && pendingBidId === listingId) {
-      sessionStorage.removeItem("kerbNewBidListingId");
-      window.location.replace(`/bids/${listingId}`);
-      return undefined;
+      if (listingId && pendingBidId === listingId) {
+        sessionStorage.removeItem("kerbNewBidListingId");
+        window.location.replace(`/bids/${listingId}`);
+        return undefined;
+      }
     }
 
     addBidsLink();
