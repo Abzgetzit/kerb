@@ -78,6 +78,7 @@ export async function fetchApprovedListings({ limit = 250 } = {}) {
     .from("kerb_listings")
     .select("*")
     .eq("status", "approved")
+    .or("accept_bids.is.null,accept_bids.eq.false")
     .order("created_at", { ascending: false })
     .limit(limit);
 
