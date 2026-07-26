@@ -1,0 +1,56 @@
+name: Restore Kerb email address
+
+on:
+  push:
+    paths:
+      - ".github/workflows/restore-kerb-email.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  restore-email:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore Kerb email everywhere
+        shell: bash
+        run: |
+          set -euo pipefail
+          old_email="kerb.car-no.reply@outlook.com"
+          new_email="hello@kerbcar.co.uk"
+          workflow_file=".github/workflows/restore-kerb-email.yml"
+
+          mapfile -t files < <(git grep -Il -- "$old_email" -- ':!'"$workflow_file" || true)
+
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No occurrences of the Outlook email were found."
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            OLD_EMAIL="$old_email" NEW_EMAIL="$new_email" perl -0pi -e 's/\Q$ENV{OLD_EMAIL}\E/$ENV{NEW_EMAIL}/g' "$file"
+          done
+
+          echo "Updated files:"
+          printf ' - %s\n' "${files[@]}"
+
+      - name: Commit replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Restore hello@kerbcar.co.uk"
+          git push
