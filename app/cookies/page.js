@@ -63,7 +63,7 @@ export default function CookiesPage() {
           saved preferences may be removed.
         </p>
         <p>
-          For cookie questions, contact <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
+          For cookie questions, contact <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
         </p>
       </section>
 

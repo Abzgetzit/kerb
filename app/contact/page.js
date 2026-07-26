@@ -52,7 +52,7 @@ export default function ContactPage() {
         <div className={styles.responseCard}>
           <span>Support email</span>
           <strong>
-            <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>
+            <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>
           </strong>
           <p>
             Use this email for Kerb Car account, listing, enquiry, report and
@@ -84,7 +84,7 @@ export default function ContactPage() {
         <h2>Send a message</h2>
         <p>
           The form opens a prepared email to Kerb Car support. If your email app
-          does not open, email us directly at <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
+          does not open, email us directly at <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
         </p>
 
         <ContactForm />

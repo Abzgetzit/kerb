@@ -1038,7 +1038,7 @@ export default function HomePage() {
           <Link href="/cookies">Cookies</Link>
           <Link href="/safety">Safety</Link>
           <Link href="/contact">Contact</Link>
-          <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>
+          <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>
         </div>
       </footer>
 
