@@ -52,7 +52,7 @@ export default function SafetyPage() {
           remove or restrict listings where needed.
         </p>
         <p>
-          For urgent safety concerns, email <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
+          For urgent safety concerns, email <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 

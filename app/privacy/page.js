@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           not currently described as a limited company or registered company.
         </p>
         <p>
-          For privacy questions or data requests, contact Kerb at <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
+          For privacy questions or data requests, contact Kerb at <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
           Information Commissioner's Office.
         </p>
         <p>
-          To contact Kerb about privacy or personal information, email <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
+          To contact Kerb about privacy or personal information, email <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 

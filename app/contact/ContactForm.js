@@ -42,7 +42,7 @@ export default function ContactForm() {
       form.message,
     ].join("\n");
 
-    const mailto = `mailto:kerb.car-no.reply@outlook.com?subject=${encodeURIComponent(
+    const mailto = `mailto:hello@kerbcar.co.uk?subject=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(body)}`;
 

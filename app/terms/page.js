@@ -42,7 +42,7 @@ export default function TermsPage() {
         <p>
           You are responsible for keeping your sign-in details and device secure.
           If you believe someone has accessed your Kerb account without
-          permission, contact Kerb at <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
+          permission, contact Kerb at <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
         </p>
       </section>
 
@@ -180,7 +180,7 @@ export default function TermsPage() {
         <h2>13. Contact details</h2>
         <p className={styles.note}>
           For Kerb support, account questions, listing issues, safety concerns
-          or general enquiries, contact <a href="mailto:kerb.car-no.reply@outlook.com">kerb.car-no.reply@outlook.com</a>.
+          or general enquiries, contact <a href="mailto:hello@kerbcar.co.uk">hello@kerbcar.co.uk</a>.
           You can also use the account, message and report tools available on
           the website.
         </p>

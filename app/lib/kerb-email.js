@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <kerb.car-no.reply@outlook.com>";
+const fromEmail = process.env.KERB_FROM_EMAIL || "Kerb <hello@kerbcar.co.uk>";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
@@ -81,7 +81,7 @@ function emailShell({ title, body, buttonText, buttonUrl, footnote }) {
             : ""
         }
         <p style="margin:24px 0 0; color:#7a8499; font-size:13px; line-height:1.5;">
-          ${escapeHtml(footnote || "Thanks for using Kerb. Need help? Email kerb.car-no.reply@outlook.com.")}
+          ${escapeHtml(footnote || "Thanks for using Kerb. Need help? Email hello@kerbcar.co.uk.")}
         </p>
       </div>
     </div>
