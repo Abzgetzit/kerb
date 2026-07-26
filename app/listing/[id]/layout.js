@@ -1,7 +1,5 @@
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { notFound } from "next/navigation";
-import BidDetailClient from "./BidDetailClient";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +9,7 @@ function cleanText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-const getBidListing = cache(async (id) => {
+function createServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -19,16 +17,20 @@ const getBidListing = cache(async (id) => {
 
   if (!supabaseUrl || !supabaseKey) return null;
 
-  const supabase = createClient(supabaseUrl, supabaseKey, {
+  return createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+}
+
+const getListing = cache(async (id) => {
+  const supabase = createServerClient();
+  if (!supabase || !id) return null;
 
   const { data, error } = await supabase
     .from("kerb_listings")
     .select("*")
     .eq("id", id)
     .eq("status", "approved")
-    .eq("accept_bids", true)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -46,25 +48,26 @@ function getTitle(listing) {
       listing?.variant,
     ]
       .filter(Boolean)
-      .join(" ") ||
-    "Car open to bids"
+      .join(" ")
+      .trim() ||
+    "Used car"
   );
 }
 
 function parseImages(value) {
   if (!value) return [];
   if (Array.isArray(value)) return value.map(cleanText).filter(Boolean);
-  if (typeof value !== "string") return [];
 
-  const trimmed = value.trim();
-  if (!trimmed) return [];
-
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (Array.isArray(parsed)) return parsed.map(cleanText).filter(Boolean);
-    if (typeof parsed === "string") return [cleanText(parsed)].filter(Boolean);
-  } catch {
-    return [cleanText(trimmed)].filter(Boolean);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map(cleanText).filter(Boolean);
+      if (typeof parsed === "string") return [cleanText(parsed)].filter(Boolean);
+    } catch {
+      return [cleanText(trimmed)].filter(Boolean);
+    }
   }
 
   return [];
@@ -96,6 +99,11 @@ function getPrice(listing) {
   return Number.isFinite(price) && price > 0 ? price : 0;
 }
 
+function getCanonicalUrl(listing) {
+  const path = listing?.accept_bids ? "/bids" : "/listing";
+  return `${baseUrl}${path}/${listing.id}`;
+}
+
 function getDescription(listing) {
   const title = getTitle(listing);
   const location = cleanText(listing?.location || listing?.city);
@@ -105,21 +113,22 @@ function getDescription(listing) {
       ? `${new Intl.NumberFormat("en-GB").format(mileage)} miles`
       : "",
     cleanText(listing?.fuel_type || listing?.fuel),
-    location ? `in ${location}` : "in the UK",
+    cleanText(listing?.gearbox || listing?.transmission),
+    location ? `for sale in ${location}` : "for sale in the UK",
   ].filter(Boolean);
 
-  return `View ${title}${details.length ? `, ${details.join(", ")}` : ""} and submit your best private bid on Kerb.`.slice(0, 160);
+  const description = `View this ${title}${
+    details.length ? `, ${details.join(", ")}` : ""
+  } on Kerb.`;
+
+  return description.slice(0, 160);
 }
 
-function safeJsonLd(value) {
-  return JSON.stringify(value).replace(/</g, "\\u003c");
-}
-
-function buildSchema(listing) {
-  const canonicalUrl = `${baseUrl}/bids/${listing.id}`;
-  const images = getImages(listing);
+function buildVehicleSchema(listing) {
+  const canonicalUrl = getCanonicalUrl(listing);
   const mileage = Number(listing?.mileage || 0);
   const price = getPrice(listing);
+  const images = getImages(listing);
 
   return {
     "@context": "https://schema.org",
@@ -136,6 +145,7 @@ function buildSchema(listing) {
       : undefined,
     model: cleanText(listing?.model || listing?.model_detail) || undefined,
     vehicleModelDate: listing?.year ? String(listing.year) : undefined,
+    bodyType: cleanText(listing?.body_type) || undefined,
     fuelType: cleanText(listing?.fuel_type || listing?.fuel) || undefined,
     vehicleTransmission:
       cleanText(listing?.gearbox || listing?.transmission) || undefined,
@@ -147,7 +157,11 @@ function buildSchema(listing) {
             unitCode: "SMI",
           }
         : undefined,
-    itemCondition: "https://schema.org/UsedCondition",
+    itemCondition:
+      cleanText(listing?.condition).toLowerCase() === "new"
+        ? "https://schema.org/NewCondition"
+        : "https://schema.org/UsedCondition",
+    datePosted: listing?.created_at || undefined,
     offers:
       price > 0
         ? {
@@ -161,20 +175,27 @@ function buildSchema(listing) {
   };
 }
 
+function safeJsonLd(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
-  const listing = await getBidListing(resolvedParams?.id);
+  const listing = await getListing(resolvedParams?.id);
 
   if (!listing) {
     return {
-      title: "Bid car not found | Kerb",
+      title: "Car listing not found | Kerb",
       robots: { index: false, follow: false },
     };
   }
 
   const listingTitle = getTitle(listing);
-  const canonicalUrl = `${baseUrl}/bids/${listing.id}`;
-  const pageTitle = `${listingTitle} – Make a Bid | Kerb`;
+  const location = cleanText(listing?.location || listing?.city);
+  const canonicalUrl = getCanonicalUrl(listing);
+  const pageTitle = `${listingTitle} for Sale${
+    location ? ` in ${location}` : ""
+  } | Kerb`;
   const description = getDescription(listing);
   const images = getImages(listing);
 
@@ -212,19 +233,21 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function BidListingPage({ params }) {
+export default async function ListingLayout({ children, params }) {
   const resolvedParams = await params;
-  const listing = await getBidListing(resolvedParams?.id);
-
-  if (!listing) notFound();
+  const listing = await getListing(resolvedParams?.id);
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildSchema(listing)) }}
-      />
-      <BidDetailClient listing={listing} />
+      {listing ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: safeJsonLd(buildVehicleSchema(listing)),
+          }}
+        />
+      ) : null}
+      {children}
     </>
   );
 }
